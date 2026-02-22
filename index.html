@@ -1,83 +1,187 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>打卡系統</title>
+
   <style>
-    body {
-      font-family: "微軟正黑體", sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-      background-color: #f5f5f5;
+    body{
+      font-family: "微軟正黑體", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      min-height:100vh;
+      margin:0;
+      background:#f5f5f5;
     }
-    .btn {
-      width: 85%;
-      max-width: 320px;
-      padding: 25px;
-      margin: 15px;
-      font-size: 26px;
-      font-weight: bold;
-      color: white;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    .wrap{
+      width:min(520px, 92vw);
+      background:#fff;
+      border-radius:16px;
+      padding:20px;
+      box-shadow:0 10px 30px rgba(0,0,0,.08);
     }
-    .btn:active { transform: scale(0.95); opacity: 0.9; }
-    .btn-dispatch { background-color: #2196F3; }
-    .btn-maintain { background-color: #FF9800; }
-    #status { margin-top: 20px; font-size: 16px; color: #555; font-weight: bold; }
+    h1{ font-size:22px; margin:0 0 14px; }
+    .btn{
+      width:100%;
+      padding:16px 14px;
+      margin:10px 0;
+      font-size:18px;
+      font-weight:700;
+      color:#fff;
+      border:none;
+      border-radius:12px;
+      cursor:pointer;
+    }
+    .btn:active{ transform:scale(.99); opacity:.95; }
+    .btn-dispatch{ background:#2185d0; }
+    .btn-maintain{ background:#ff9800; }
+    .btn-test{ background:#666; }
+    .status{
+      margin-top:12px;
+      font-size:14px;
+      color:#444;
+      line-height:1.5;
+      white-space:pre-wrap;
+      background:#fafafa;
+      border:1px solid #eee;
+      border-radius:12px;
+      padding:12px;
+    }
+    .small{ font-size:12px; color:#777; margin-top:8px; }
   </style>
 </head>
 
 <body>
-  <button class="btn btn-dispatch" id="btnDispatch">調度打卡</button>
-  <button class="btn btn-maintain" id="btnMaintain">一級保養</button>
-  <div id="status">系統初始化中...</div>
+  <div class="wrap">
+    <h1>打卡系統</h1>
 
-<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-<script>
-  const myLiffId = "2009174277-dSY24pNu";
-  const gasUrl = "https://script.google.com/macros/s/AKfycbyI1gsHWcdfnynjPyuJ55VRFLiwq74ULORIvRHHc94VA0PN673AVtWF6UC_0t5Ch_Ki/exec";
+    <button class="btn btn-dispatch" id="btnDispatch">調度打卡</button>
+    <button class="btn btn-maintain" id="btnMaintain">一級保養</button>
+    <button class="btn btn-test" id="btnTest">測試寫入(不取定位)</button>
 
-  const statusDiv = document.getElementById('status');
-  function setStatus(msg) { statusDiv.innerText = msg; }
+    <div class="status" id="status">系統初始化中…</div>
+    <div class="small" id="small"></div>
+  </div>
 
-  window.addEventListener('error', (e) => {
-    setStatus("JS 錯誤 ❌\n" + (e?.message || e));
-  });
+  <!-- LIFF SDK -->
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
-  window.addEventListener('unhandledrejection', (e) => {
-    setStatus("Promise 錯誤 ❌\n" + (e?.reason?.message || JSON.stringify(e.reason)));
-  });
+  <script>
+    // ====== 你目前的設定（不要改錯） ======
+    const LIFF_ID = "2009174277-dSY24pNu";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyI1gsHWcdfnynjPyuJ55VRFLiwq74ULORIvRHHc94VA0PN673AVtWF6UC_0t5Ch_Ki/exec";
 
-  async function init() {
-    try {
-      setStatus("1/4 檢查 LIFF SDK...");
-      if (!window.liff) throw new Error("LIFF SDK 未載入（static.line-scdn.net 可能被擋）");
+    const statusEl = document.getElementById("status");
+    const smallEl  = document.getElementById("small");
+    const btnDispatch = document.getElementById("btnDispatch");
+    const btnMaintain = document.getElementById("btnMaintain");
+    const btnTest = document.getElementById("btnTest");
 
-      setStatus("2/4 LIFF 初始化中...");
-      await liff.init({ liffId: myLiffId });
+    function setStatus(msg){ statusEl.textContent = msg; }
+    function setSmall(msg){ smallEl.textContent = msg || ""; }
 
-      setStatus("3/4 檢查登入狀態...");
-      if (!liff.isLoggedIn()) {
-        setStatus("導向登入中...");
-        liff.login();
-        return;
-      }
-
-      const profile = await liff.getProfile();
-      setStatus("4/4 準備就緒 ✅\n" + profile.displayName);
-    } catch (err) {
-      console.error(err);
-      setStatus("初始化失敗 ❌\n" + (err?.message || JSON.stringify(err)));
+    // 取得定位（Promise）
+    function getLocation() {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error("此裝置不支援定位"));
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            resolve({
+              lat: pos.coords.latitude,
+              lon: pos.coords.longitude,
+              acc: pos.coords.accuracy
+            });
+          },
+          (err) => reject(err),
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        );
+      });
     }
-  }
 
-  init();
-</script>
+    // 寫入 GAS（重點：避開 CORS）
+    async function postToGAS(payload) {
+      // ⚠️ 這裡用 text/plain + no-cors，避免 preflight 被擋
+      await fetch(GAS_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+
+      // no-cors 會拿不到回應內容是正常的，所以這裡只當作「已送出」
+      return true;
+    }
+
+    async function punch(action, withGeo=true) {
+      try {
+        setStatus("處理中…");
+        setSmall("");
+
+        // 確保已登入
+        if (!liff.isLoggedIn()) {
+          setStatus("尚未登入 LINE，正在導向登入…");
+          liff.login();
+          return;
+        }
+
+        // 取 profile（拿到 UID / displayName）
+        const profile = await liff.getProfile();
+        const userId = profile.userId || "";
+        const displayName = profile.displayName || "";
+
+        let loc = { lat: "", lon: "", acc: "" };
+        if (withGeo) {
+          setStatus("取得定位中…請允許定位");
+          loc = await getLocation();
+        }
+
+        // 送到 GAS 的資料（你可以依需求加欄位）
+        const payload = {
+          action,                 // "dispatch" / "maintain" / "test"
+          userId,
+          displayName,
+          lat: loc.lat,
+          lon: loc.lon,
+          acc: loc.acc,
+          ts: new Date().toISOString()
+        };
+
+        setStatus("送出資料到 Google Sheet…");
+        await postToGAS(payload);
+
+        setStatus("✅ 已送出（請到 Google Sheet 檢查是否新增一列）");
+        setSmall("若 Sheet 沒新增：下一步我會讓你在 GAS 的 doPost 回傳更明確的錯誤文字，並在執行記錄看到。");
+      } catch (err) {
+        console.error(err);
+        setStatus("❌ 發生錯誤：" + (err?.message || err));
+        setSmall("常見原因：未允許定位 / LIFF 設定不對 / GAS 權限或 Script Properties 未設。");
+      }
+    }
+
+    async function init() {
+      try {
+        setStatus("LIFF 初始化中…");
+        await liff.init({ liffId: LIFF_ID });
+        setStatus("✅ LIFF 初始化完成");
+        setSmall("可以按按鈕測試。");
+      } catch (e) {
+        console.error(e);
+        setStatus("❌ LIFF 初始化失敗：" + (e?.message || e));
+        setSmall("請確認：LIFF 的 Endpoint URL = https://mars83830-glitch.github.io/ （完全一樣、含 https、最後斜線可有可無）");
+      }
+    }
+
+    btnDispatch.addEventListener("click", () => punch("dispatch", true));
+    btnMaintain.addEventListener("click", () => punch("maintain", true));
+    btnTest.addEventListener("click", () => punch("test", false));
+
+    init();
+  </script>
+</body>
+</html>
