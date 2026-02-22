@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>打卡系統</title>
+  <style>
+    body {
+      font-family: "微軟正黑體", sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f5f5f5;
+    }
+    .btn {
+      width: 85%;
+      max-width: 320px;
+      padding: 25px;
+      margin: 15px;
+      font-size: 26px;
+      font-weight: bold;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    .btn:active { transform: scale(0.95); opacity: 0.9; }
+    .btn-dispatch { background-color: #2196F3; }
+    .btn-maintain { background-color: #FF9800; }
+    #status { margin-top: 20px; font-size: 16px; color: #555; font-weight: bold; }
+  </style>
+</head>
+
+<body>
+  <button class="btn btn-dispatch" id="btnDispatch">調度打卡</button>
+  <button class="btn btn-maintain" id="btnMaintain">一級保養</button>
+  <div id="status">系統初始化中...</div>
+
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script>
+    const myLiffId = "2009174277-QmX5MQhH";
+    const gasUrl = "https://script.google.com/macros/s/AKfycbyATdzMJusQBqr3yeg4ZH6f7u_j7wUeux7nRUVqfpEMb4EpXG-IzgSw3F424kR1YBTA/exec";
+
+    const statusDiv = document.getElementById("status");
+    const btnDispatch = document.getElementById("btnDispatch");
+    const btnMaintain = document.getElementById("btnMaintain");
+
+    function setStatus(msg) {
+      statusDiv.innerText = msg;
+    }
+
+    async function init() {
+      try {
+        await liff.init({ liffId: myLiffId });
+
+        if (!liff.isLoggedIn()) {
+          liff.login();
+          return;
+        }
+
+        setStatus("準備就緒");
+        btnDispatch.addEventListener("click", () => handlePunch("調度打卡"));
+        btnMaintain.addEventListener("click", () => handlePunch("一級保養"));
+      } catch (err) {
+        console.error(err);
+        setStatus("初始化失敗");
+      }
+    }
+
+    function handlePunch(category) {
+      setStatus("📍 定位抓取中...");
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          sendToGas(category, position.coords.latitude, position.coords.longitude);
+        },
+        (error) => {
+          console.error(error);
+          alert("定位失敗，請確認 GPS 已開啟，並允許定位權限。");
+          setStatus("定位失敗");
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    }
+
+    async function sendToGas(category, lat, lon) {
+      try {
+        setStatus("🚀 資料傳送中...");
+
+        const profile = await liff.getProfile();
+
+        const payload = {
+          type: "stealth_checkin",
+          category: category,
+          displayName: profile.displayName,
+          userId: profile.userId,
+          lat: lat,
+          lon: lon
+        };
+
+        const res = await fetch(gasUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+
+        const text = await res.text();
+        console.log("GAS response:", res.status, text);
+
+        if (!res.ok) throw new Error("GAS 回應失敗：" + res.status);
+
+        setStatus("✅ 打卡成功，正在關閉...");
+        liff.closeWindow();
+      } catch (err) {
+        console.error(err);
+        setStatus("❌ 傳送失敗，請重試");
+        alert("傳送失敗，請稍後再試。");
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
