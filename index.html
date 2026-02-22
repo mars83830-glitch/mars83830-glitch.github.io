@@ -40,89 +40,44 @@
   <button class="btn btn-maintain" id="btnMaintain">一級保養</button>
   <div id="status">系統初始化中...</div>
 
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <script>
-    const myLiffId = "2009174277-wBu3234l";
-    const gasUrl = "https://script.google.com/macros/s/AKfycbyATdzMJusQBqr3yeg4ZH6f7u_j7wUeux7nRUVqfpEMb4EpXG-IzgSw3F424kR1YBTA/exec";
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script>
+  const myLiffId = "2009174277-wBuJ3234l";
+  const gasUrl = "https://script.google.com/macros/s/AKfycbyATdzMJusQBqr3yeg4ZH6f7u_j7wUeux7nRUVqfpEMb4EpXG-IzgSw3F424kR1YBTA/exec";
 
-    const statusDiv = document.getElementById("status");
-    const btnDispatch = document.getElementById("btnDispatch");
-    const btnMaintain = document.getElementById("btnMaintain");
+  const statusDiv = document.getElementById('status');
+  function setStatus(msg) { statusDiv.innerText = msg; }
 
-    function setStatus(msg) {
-      statusDiv.innerText = msg;
-    }
+  window.addEventListener('error', (e) => {
+    setStatus("JS 錯誤 ❌\n" + (e?.message || e));
+  });
 
-    async function init() {
-      try {
-        await liff.init({ liffId: myLiffId });
+  window.addEventListener('unhandledrejection', (e) => {
+    setStatus("Promise 錯誤 ❌\n" + (e?.reason?.message || JSON.stringify(e.reason)));
+  });
 
-        if (!liff.isLoggedIn()) {
-          liff.login();
-          return;
-        }
+  async function init() {
+    try {
+      setStatus("1/4 檢查 LIFF SDK...");
+      if (!window.liff) throw new Error("LIFF SDK 未載入（static.line-scdn.net 可能被擋）");
 
-        setStatus("準備就緒");
-        btnDispatch.addEventListener("click", () => handlePunch("調度打卡"));
-        btnMaintain.addEventListener("click", () => handlePunch("一級保養"));
-      } catch (err) {
-        console.error(err);
-        setStatus("初始化失敗");
+      setStatus("2/4 LIFF 初始化中...");
+      await liff.init({ liffId: myLiffId });
+
+      setStatus("3/4 檢查登入狀態...");
+      if (!liff.isLoggedIn()) {
+        setStatus("導向登入中...");
+        liff.login();
+        return;
       }
+
+      const profile = await liff.getProfile();
+      setStatus("4/4 準備就緒 ✅\n" + profile.displayName);
+    } catch (err) {
+      console.error(err);
+      setStatus("初始化失敗 ❌\n" + (err?.message || JSON.stringify(err)));
     }
+  }
 
-    function handlePunch(category) {
-      setStatus("📍 定位抓取中...");
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          sendToGas(category, position.coords.latitude, position.coords.longitude);
-        },
-        (error) => {
-          console.error(error);
-          alert("定位失敗，請確認 GPS 已開啟，並允許定位權限。");
-          setStatus("定位失敗");
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-      );
-    }
-
-    async function sendToGas(category, lat, lon) {
-      try {
-        setStatus("🚀 資料傳送中...");
-
-        const profile = await liff.getProfile();
-
-        const payload = {
-          type: "stealth_checkin",
-          category: category,
-          displayName: profile.displayName,
-          userId: profile.userId,
-          lat: lat,
-          lon: lon
-        };
-
-        const res = await fetch(gasUrl, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify(payload)
-        });
-
-        const text = await res.text();
-        console.log("GAS response:", res.status, text);
-
-        if (!res.ok) throw new Error("GAS 回應失敗：" + res.status);
-
-        setStatus("✅ 打卡成功，正在關閉...");
-        liff.closeWindow();
-      } catch (err) {
-        console.error(err);
-        setStatus("❌ 傳送失敗，請重試");
-        alert("傳送失敗，請稍後再試。");
-      }
-    }
-
-    init();
-  </script>
-</body>
-</html>
+  init();
+</script>
