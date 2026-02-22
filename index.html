@@ -17,14 +17,13 @@
       margin:0;
       font-family: system-ui, -apple-system, "Segoe UI", Arial, "Noto Sans TC", sans-serif;
       background:var(--bg);
-      /* iOS safe-area */
       padding-top: env(safe-area-inset-top);
       padding-bottom: env(safe-area-inset-bottom);
       padding-left: env(safe-area-inset-left);
       padding-right: env(safe-area-inset-right);
     }
     .page{
-      min-height: 100dvh;            /* iOS 新視窗高度 */
+      min-height: 100dvh;
       display:flex;
       align-items:center;
       justify-content:center;
@@ -85,7 +84,7 @@
       padding:10px;
       background:#fafafa;
       font-size:12px;
-      max-height: 180px;
+      max-height: 200px;
       overflow:auto;
       white-space:pre-wrap;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -155,10 +154,13 @@ function getMergedParams(){
   return merged;
 }
 
+function isTestMode(){
+  const p = getMergedParams();
+  return p.get("test") === "1";
+}
+
 function showDebug(obj){
-  const params = getMergedParams();
-  const isTest = params.get("test") === "1";
-  if (!isTest) return;
+  if (!isTestMode()) return;
   $dbgWrap.style.display = "";
   $debug.textContent = JSON.stringify(obj, null, 2);
 }
@@ -186,9 +188,7 @@ function getLocation(){
   });
 }
 
-/** ===== 打卡 =====
- *  重要：用 text/plain 避開 CORS preflight（GAS 不支援 OPTIONS 時會在 Safari 變成 Load failed）
- */
+/** ===== 打卡 ===== */
 async function punch(action){
   setButtonsDisabled(true);
   setStatus(`定位中…（${actionCN(action)}）`, "muted");
@@ -228,35 +228,42 @@ async function punch(action){
 
     showDebug({ step:"request", payload });
 
+    // ✅ 用 text/plain 避開 iOS/LINE WebView 常見 preflight -> Load failed
     const res = await fetch(GAS_WEB_APP_URL, {
       method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" }, // ✅ 不觸發 preflight
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(payload),
     });
 
-    const text = await res.text();           // 先拿 text 比較穩
+    const text = await res.text();
     let data = {};
     try { data = JSON.parse(text); } catch(_) {}
 
     showDebug({ step:"response", status: res.status, text, data });
 
     if (!data.ok) {
-      setStatus(`錯誤：${data.message || "未知錯誤"}`, "err");
+      // ✅ 一般使用者只看到簡化訊息；test=1 才看得到 detail（在 debug）
+      const msg = data.message || "打卡失敗，請稍後再試";
+      setStatus(`錯誤：${msg}`, "err");
       setButtonsDisabled(false);
       return;
     }
 
     const station = data.stationName ? `\n場站：${data.stationName}` : "";
-    const dist = (data.distanceM !== undefined && data.distanceM !== "") ? `\n距離：${data.distanceM}m` : "";
-    setStatus(`完成 ✅\n作業：${data.actionCN || actionCN(action)}${station}${dist}`, "ok");
+    setStatus(`完成 ✅\n作業：${data.actionCN || actionCN(action)}${station}`, "ok");
 
     setTimeout(() => {
       try { liff.closeWindow(); } catch(_) {}
     }, 900);
 
   } catch(e){
-    setStatus(`錯誤：${e && e.message ? e.message : e}`, "err");
-    showDebug({ step:"catch", error: String(e), stack: e && e.stack ? e.stack : "" });
+    // ✅ 非 test 模式：不暴露細節
+    if (!isTestMode()) {
+      setStatus("錯誤：打卡失敗，請稍後再試", "err");
+    } else {
+      setStatus(`錯誤：${e && e.message ? e.message : e}`, "err");
+      showDebug({ step:"catch", error: String(e), stack: e && e.stack ? e.stack : "" });
+    }
     setButtonsDisabled(false);
   }
 }
@@ -267,8 +274,10 @@ btns.swap.addEventListener("click", () => punch("swap"));
 
 /** 初始 debug */
 (function(){
-  const p = getMergedParams();
-  if (p.get("test") === "1") showDebug({ note:"test=1", mergedParams:Object.fromEntries(p.entries()) });
+  if (isTestMode()) {
+    const p = getMergedParams();
+    showDebug({ note:"test=1", mergedParams:Object.fromEntries(p.entries()) });
+  }
 })();
 </script>
 </body>
