@@ -9,28 +9,25 @@
     body { font-family: system-ui, -apple-system, "Segoe UI", Arial; padding: 22px; text-align: center; }
     h2 { margin: 0 0 14px; font-size: 22px; text-align: center; }
 
-    .status {
+    .status{
       padding: 12px 14px; border-radius: 14px; margin: 0 auto 14px;
-      font-size: 16px; line-height: 1.4;
-      background: #f3f4f6;
-      text-align: center;
-      max-width: 520px;
+      font-size: 16px; line-height: 1.4; background: #f3f4f6;
+      text-align: center; max-width: 520px;
     }
     .ok { background: #ecfdf5; }
     .bad { background: #fff1f2; }
 
-    .btnRow{
+    .btnCol{
       display: flex;
+      flex-direction: column;
       gap: 12px;
-      justify-content: center;
-      align-items: stretch;
       max-width: 520px;
       margin: 0 auto;
     }
 
     button{
-      flex: 1;
-      padding: 18px 10px;
+      width: 100%;
+      padding: 18px 12px;
       font-size: 22px;
       font-weight: 800;
       border: 0;
@@ -38,23 +35,25 @@
       cursor: pointer;
       color: #fff;
       text-align: center;
-      white-space: nowrap;
     }
-    #btnDispatch { background: #2563eb; } /* 藍 */
-    #btnLevel1 { background: #f97316; }   /* 橘 */
+
+    /* 你指定的顏色 */
+    #btnDispatch { background: #16a34a; } /* 綠：調度 */
+    #btnLevel1  { background: #f97316; } /* 橘：一級 */
+    #btnSwap    { background: #2563eb; } /* 藍：換電 */
+
     button:disabled { opacity: .45; cursor: not-allowed; }
 
-    .done {
+    .done{
       position: fixed; inset: 0; display: none;
       align-items: center; justify-content: center;
       background: rgba(0,0,0,.45);
       text-align: center;
     }
-    .done > div {
+    .done > div{
       background: #fff; padding: 18px 20px; border-radius: 16px;
       font-size: 20px; font-weight: 900;
-      text-align: center;
-      min-width: 220px;
+      text-align: center; min-width: 220px;
     }
   </style>
 </head>
@@ -64,9 +63,10 @@
 
   <div id="status" class="status">定位中…</div>
 
-  <div class="btnRow">
+  <div class="btnCol">
     <button id="btnDispatch" disabled>調度打卡</button>
     <button id="btnLevel1" disabled>一級打卡</button>
+    <button id="btnSwap" disabled>換電打卡</button>
   </div>
 
   <div class="done" id="done"><div>✅ 打卡完成</div></div>
@@ -78,15 +78,22 @@
   const statusEl = document.getElementById("status");
   const btnDispatch = document.getElementById("btnDispatch");
   const btnLevel1 = document.getElementById("btnLevel1");
+  const btnSwap = document.getElementById("btnSwap");
   const doneEl = document.getElementById("done");
 
   let profile = null;
   let lastPos = null;
   let canPunchNow = false;
 
+  // ✅ 測試模式：網址帶 ?test=1&key=xxx
+  const params = new URLSearchParams(location.search);
+  const isTest = params.get("test") === "1";
+  const testKey = (params.get("key") || "").trim(); // 會送去 GAS 判斷是否 bypass
+
   function setButtonsEnabled(on) {
     btnDispatch.disabled = !on;
     btnLevel1.disabled = !on;
+    btnSwap.disabled = !on;
   }
 
   function setStatus(text, type) {
@@ -113,7 +120,10 @@
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
 
-      const url = `${GAS_URL}?action=check&lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`;
+      const url =
+        `${GAS_URL}?action=check&lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`
+        + (testKey ? `&testKey=${encodeURIComponent(testKey)}` : "");
+
       const res = await fetch(url, { method: "GET" });
       const data = await res.json();
 
@@ -122,7 +132,9 @@
       if (data.canPunch) {
         canPunchNow = true;
         setButtonsEnabled(true);
-        setStatus(`✅ 可打卡（${data.station} / ${data.distanceM}m）`, "ok");
+
+        const extra = data.bypass ? "（測試模式：已略過距離）" : "";
+        setStatus(`✅ 可打卡（${data.station} / ${data.distanceM}m）${extra}`, "ok");
       } else {
         canPunchNow = false;
         setButtonsEnabled(false);
@@ -149,8 +161,9 @@
       const payload = {
         userId: profile.userId,
         displayName: profile.displayName,
-        punchType,
-        lat, lng
+        punchType, // dispatch / level1 / swap
+        lat, lng,
+        ...(testKey ? { testKey } : {})
       };
 
       const res = await fetch(GAS_URL, {
@@ -178,6 +191,7 @@
 
   btnDispatch.addEventListener("click", () => sendPunch("dispatch"));
   btnLevel1.addEventListener("click", () => sendPunch("level1"));
+  btnSwap.addEventListener("click", () => sendPunch("swap"));
 
   async function init() {
     await liff.init({ liffId: LIFF_ID });
