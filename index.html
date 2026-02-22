@@ -38,7 +38,6 @@
       user-select: none;
     }
 
-    /* 顏色依你指定 */
     #btnDispatch { background: #16a34a; } /* 綠：調度 */
     #btnLevel1  { background: #f97316; } /* 橘：一級 */
     #btnSwap    { background: #2563eb; } /* 藍：換電 */
@@ -73,9 +72,6 @@
   <div class="done" id="done"><div>✅ 打卡完成</div></div>
 
 <script>
-  /***********************
-   * ✅ 你的設定
-   ***********************/
   const LIFF_ID = "2009174277-dSY24pNu";
   const GAS_URL  = "https://script.google.com/macros/s/AKfycbyI1gsHWcdfnynjPyuJ55VRFLiwq74ULORIvRHHc94VA0PN673AVtWF6UC_0t5Ch_Ki/exec";
 
@@ -89,11 +85,6 @@
   let lastPos = null;
   let canPunchNow = false;
 
-  /***********************
-   * ✅ 取參數：支援 query + liff.state
-   * 測試模式：?test=1&key=hyb089453
-   * 或：?liff.state=test=1&key=hyb089453
-   ***********************/
   function getAllParams() {
     const out = new URLSearchParams(location.search);
 
@@ -110,7 +101,7 @@
 
   const params = getAllParams();
   const isTest = params.get("test") === "1";
-  const testKey = (params.get("key") || "").trim(); // 會送給 GAS 判斷能否 bypass
+  const testKey = (params.get("key") || "").trim(); // 送到 GAS 去判斷 bypass
 
   function setButtonsEnabled(on) {
     btnDispatch.disabled = !on;
@@ -139,6 +130,7 @@
     try {
       const pos = await getLocation();
       lastPos = pos;
+
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
 
@@ -154,7 +146,7 @@
         canPunchNow = true;
         setButtonsEnabled(true);
 
-        // 如果有 bypass，前台會提示（同仁一般不會看到）
+        // 測試模式提示：你自己測試才會看得到（同仁不會有 key）
         const extra = data.bypass ? "（測試模式：已略過距離）" : "";
         setStatus(`✅ 可打卡（${data.station} / ${data.distanceM}m）${extra}`, "ok");
       } else {
@@ -162,7 +154,6 @@
         setButtonsEnabled(false);
         setStatus(`❌ 目前不可打卡（最近：${data.station} / ${data.distanceM}m，需 ≤ ${data.allowM}m）`, "bad");
       }
-
     } catch (e) {
       canPunchNow = false;
       setButtonsEnabled(false);
@@ -203,11 +194,9 @@
           try { liff.closeWindow(); } catch (_) {}
         }, 800);
       } else {
-        // 如果太遠，GAS 會回 ERROR: out_of_range
         alert("❌ 打卡失敗，請再試一次");
         setButtonsEnabled(true);
       }
-
     } catch (e) {
       alert("❌ 打卡失敗，請檢查網路後再試一次");
       setButtonsEnabled(true);
