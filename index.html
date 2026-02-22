@@ -3,52 +3,71 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>打卡</title>
+  <title>桃園營運處-打卡系統</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
-    body { font-family: system-ui, -apple-system, "Segoe UI", Arial; padding: 22px; }
-    h2 { margin: 0 0 14px; font-size: 22px; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Arial; padding: 22px; text-align: center; }
+    h2 { margin: 0 0 14px; font-size: 22px; text-align: center; }
+
     .status {
-      padding: 12px 14px; border-radius: 14px; margin-bottom: 14px;
+      padding: 12px 14px; border-radius: 14px; margin: 0 auto 14px;
       font-size: 16px; line-height: 1.4;
       background: #f3f4f6;
+      text-align: center;
+      max-width: 520px;
     }
     .ok { background: #ecfdf5; }
     .bad { background: #fff1f2; }
 
-    button {
-      width: 100%;
-      padding: 18px 16px;
-      margin: 12px 0;
+    .btnRow{
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      align-items: stretch;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    button{
+      flex: 1;
+      padding: 18px 10px;
       font-size: 22px;
-      font-weight: 700;
+      font-weight: 800;
       border: 0;
       border-radius: 16px;
       cursor: pointer;
       color: #fff;
+      text-align: center;
+      white-space: nowrap;
     }
     #btnDispatch { background: #2563eb; } /* 藍 */
     #btnLevel1 { background: #f97316; }   /* 橘 */
-
     button:disabled { opacity: .45; cursor: not-allowed; }
 
     .done {
-      position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+      position: fixed; inset: 0; display: none;
+      align-items: center; justify-content: center;
       background: rgba(0,0,0,.45);
+      text-align: center;
     }
     .done > div {
       background: #fff; padding: 18px 20px; border-radius: 16px;
-      font-size: 20px; font-weight: 800;
+      font-size: 20px; font-weight: 900;
+      text-align: center;
+      min-width: 220px;
     }
   </style>
 </head>
+
 <body>
-  <h2>打卡</h2>
+  <h2>桃園營運處-打卡系統</h2>
 
   <div id="status" class="status">定位中…</div>
 
-  <button id="btnDispatch" disabled>調度打卡</button>
-  <button id="btnLevel1" disabled>一級打卡</button>
+  <div class="btnRow">
+    <button id="btnDispatch" disabled>調度打卡</button>
+    <button id="btnLevel1" disabled>一級打卡</button>
+  </div>
 
   <div class="done" id="done"><div>✅ 打卡完成</div></div>
 
@@ -130,7 +149,7 @@
       const payload = {
         userId: profile.userId,
         displayName: profile.displayName,
-        punchType, // dispatch / level1
+        punchType,
         lat, lng
       };
 
@@ -166,7 +185,6 @@
     profile = await liff.getProfile();
 
     await checkCanPunch();
-    // 即時刷新（每 10 秒更新一次可否打卡）
     setInterval(checkCanPunch, 10000);
   }
 
