@@ -2,221 +2,221 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>桃園營運處-打卡系統</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>打卡</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
-    body { font-family: system-ui, -apple-system, "Segoe UI", Arial; padding: 22px; text-align: center; }
-    h2 { margin: 0 0 14px; font-size: 22px; text-align: center; }
-
-    .status{
-      padding: 12px 14px; border-radius: 14px; margin: 0 auto 14px;
-      font-size: 16px; line-height: 1.4; background: #f3f4f6;
-      text-align: center; max-width: 520px;
-    }
-    .ok { background: #ecfdf5; }
-    .bad { background: #fff1f2; }
-
-    .btnCol{
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      max-width: 520px;
-      margin: 0 auto;
-    }
-
-    button{
-      width: 100%;
-      padding: 18px 12px;
-      font-size: 22px;
-      font-weight: 800;
-      border: 0;
-      border-radius: 16px;
-      cursor: pointer;
-      color: #fff;
-      text-align: center;
-      user-select: none;
-    }
-
-    #btnDispatch { background: #16a34a; } /* 綠：調度 */
-    #btnLevel1  { background: #f97316; } /* 橘：一級 */
-    #btnSwap    { background: #2563eb; } /* 藍：換電 */
-
-    button:disabled { opacity: .45; cursor: not-allowed; }
-
-    .done{
-      position: fixed; inset: 0; display: none;
-      align-items: center; justify-content: center;
-      background: rgba(0,0,0,.45);
-      text-align: center;
-    }
-    .done > div{
-      background: #fff; padding: 18px 20px; border-radius: 16px;
-      font-size: 20px; font-weight: 900;
-      text-align: center; min-width: 220px;
-    }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Arial, "Noto Sans TC", sans-serif; margin: 0; background: #f6f7fb; }
+    .wrap { max-width: 520px; margin: 0 auto; padding: 18px; }
+    .card { background: #fff; border-radius: 14px; padding: 16px; box-shadow: 0 10px 25px rgba(0,0,0,.06); }
+    .title { font-size: 18px; font-weight: 700; margin: 0 0 10px; }
+    .sub { font-size: 13px; color: #666; margin: 0 0 14px; line-height: 1.5; }
+    .btns { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    button { border: 0; border-radius: 12px; padding: 14px 14px; font-size: 16px; font-weight: 700; cursor: pointer; color: #fff; }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+    .green { background: #15a55b; }
+    .orange { background: #f08c00; }
+    .blue { background: #1e79ff; }
+    .status { margin-top: 12px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+    .ok { color: #0a7a35; font-weight: 700; }
+    .err { color: #b42318; font-weight: 700; }
+    .small { font-size: 12px; color: #666; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
   </style>
 </head>
-
 <body>
-  <h2>桃園營運處-打卡系統</h2>
+  <div class="wrap">
+    <div class="card">
+      <p class="title">桃園營運處｜打卡</p>
+      <p class="sub">請選擇作業類型後打卡。成功後會顯示「完成」並自動關閉。</p>
 
-  <div id="status" class="status">定位中…</div>
+      <div class="btns">
+        <button id="btnDispatch" class="green">調度打卡</button>
+        <button id="btnLevel1" class="orange">一級打卡</button>
+        <button id="btnSwap" class="blue">換電打卡</button>
+      </div>
 
-  <div class="btnCol">
-    <button id="btnDispatch" disabled>調度打卡</button>
-    <button id="btnLevel1" disabled>一級打卡</button>
-    <button id="btnSwap" disabled>換電打卡</button>
+      <div id="status" class="status small"></div>
+      <div id="debug" class="status small mono"></div>
+    </div>
   </div>
 
-  <div class="done" id="done"><div>✅ 打卡完成</div></div>
-
 <script>
-  const LIFF_ID = "2009174277-dSY24pNu";
-  const GAS_URL  = "https://script.google.com/macros/s/AKfycbyI1gsHWcdfnynjPyuJ55VRFLiwq74ULORIvRHHc94VA0PN673AVtWF6UC_0t5Ch_Ki/exec";
+/** ===== 你要改的只有這兩個 ===== */
+const LIFF_ID = "2009174277-dSY24pNu";
+const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyI1gsHWcdfnynjPyuJ55VRFLiwq74ULORIvRHHc94VA0PN673AVtWF6UC_0t5Ch_Ki/exec";
 
-  const statusEl = document.getElementById("status");
-  const btnDispatch = document.getElementById("btnDispatch");
-  const btnLevel1 = document.getElementById("btnLevel1");
-  const btnSwap = document.getElementById("btnSwap");
-  const doneEl = document.getElementById("done");
+/** ===== UI ===== */
+const $status = document.getElementById("status");
+const $debug = document.getElementById("debug");
+const btns = {
+  dispatch: document.getElementById("btnDispatch"),
+  level1: document.getElementById("btnLevel1"),
+  swap: document.getElementById("btnSwap"),
+};
 
-  let profile = null;
-  let lastPos = null;
-  let canPunchNow = false;
+function setStatus(msg, type) {
+  $status.className = "status " + (type === "ok" ? "ok" : type === "err" ? "err" : "small");
+  $status.textContent = msg;
+}
 
-  function getAllParams() {
-    const out = new URLSearchParams(location.search);
-
-    // LIFF 常把你帶的參數塞在 liff.state
-    const state = out.get("liff.state");
-    if (state) {
-      // state 可能是 "test=1&key=xxx" 或 "/?test=1&key=xxx"
-      const cleaned = state.replace(/^\//, "").replace(/^\?/, "").replace(/^.*\?/, "");
-      const sp = new URLSearchParams(cleaned);
-      for (const [k, v] of sp.entries()) out.set(k, v);
-    }
-    return out;
-  }
-
-  const params = getAllParams();
+function setDebug(obj) {
+  // 只在 test=1 時顯示 debug
+  const params = getMergedParams();
   const isTest = params.get("test") === "1";
-  const testKey = (params.get("key") || "").trim(); // 送到 GAS 去判斷 bypass
+  $debug.textContent = isTest ? JSON.stringify(obj, null, 2) : "";
+}
 
-  function setButtonsEnabled(on) {
-    btnDispatch.disabled = !on;
-    btnLevel1.disabled = !on;
-    btnSwap.disabled = !on;
+function setButtonsDisabled(disabled) {
+  Object.values(btns).forEach(b => b.disabled = disabled);
+}
+
+/** ===== 解析參數：支援一般 query + liff.state =====
+ *  LIFF 可能會把原本的 query encode 放進 liff.state。:contentReference[oaicite:1]{index=1}
+ */
+function getMergedParams() {
+  const normal = new URLSearchParams(window.location.search || "");
+  const merged = new URLSearchParams(normal.toString());
+
+  const stateRaw = normal.get("liff.state");
+  if (stateRaw) {
+    // stateRaw 內容通常像：%3Ftest%3D1%26key%3Dxxx%26v%3D20260222
+    let decoded = "";
+    try { decoded = decodeURIComponent(stateRaw); } catch (e) { decoded = stateRaw; }
+    if (decoded.startsWith("?")) decoded = decoded.slice(1);
+    const stateParams = new URLSearchParams(decoded);
+    for (const [k, v] of stateParams.entries()) merged.set(k, v);
   }
+  return merged;
+}
 
-  function setStatus(text, type) {
-    statusEl.textContent = text;
-    statusEl.classList.remove("ok", "bad");
-    if (type) statusEl.classList.add(type);
-  }
+/** ===== 作業對應（送到 GAS 用英文代碼，GAS 會寫中文） ===== */
+function actionCN(action) {
+  return action === "dispatch" ? "調度打卡"
+       : action === "level1" ? "一級打卡"
+       : action === "swap" ? "換電打卡"
+       : action;
+}
 
-  function getLocation() {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) return reject(new Error("no geolocation"));
-      navigator.geolocation.getCurrentPosition(
-        (pos) => resolve(pos),
-        (err) => reject(err),
-        { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
-      );
+/** ===== 取得定位 ===== */
+function getLocation() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return reject(new Error("此裝置不支援定位"));
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        accuracy: pos.coords.accuracy
+      }),
+      (err) => reject(new Error(err.message || "定位失敗")),
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+    );
+  });
+}
+
+/** ===== 主流程：打卡 ===== */
+async function punch(action) {
+  setButtonsDisabled(true);
+  setStatus("初始化中…", "small");
+
+  const params = getMergedParams();
+  const bypassKey = params.get("key") || "";
+  const v = params.get("v") || "";
+  const test = params.get("test") || "";
+
+  try {
+    if (!liff.isInClient() && !liff.isLoggedIn()) {
+      // 外部瀏覽器需要登入
+      liff.login();
+      return; // login 會導轉
+    }
+
+    setStatus("取得使用者資料…", "small");
+    const profile = await liff.getProfile(); // userId / displayName
+    const userId = profile.userId || "";
+    const displayName = profile.displayName || "";
+
+    setStatus("定位中…", "small");
+    const loc = await getLocation();
+
+    setStatus(`送出打卡…（${actionCN(action)}）`, "small");
+
+    const payload = {
+      action,               // dispatch/level1/swap
+      userId,
+      displayName,
+      lat: loc.lat,
+      lng: loc.lng,
+      accuracy: loc.accuracy,
+      bypassKey,            // 你的測試 key
+      test,                 // test=1
+      v,                    // 版本字串
+      ua: navigator.userAgent,
+      href: location.href,
+      ts: Date.now()
+    };
+
+    setDebug(payload);
+
+    const res = await fetch(GAS_WEB_APP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     });
-  }
 
-  async function checkCanPunch() {
-    try {
-      const pos = await getLocation();
-      lastPos = pos;
+    const data = await res.json().catch(() => ({}));
 
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-
-      const url =
-        `${GAS_URL}?action=check&lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`
-        + (testKey ? `&testKey=${encodeURIComponent(testKey)}` : "");
-
-      const res = await fetch(url, { method: "GET" });
-      const data = await res.json();
-      if (!data.ok) throw new Error("check failed");
-
-      if (data.canPunch) {
-        canPunchNow = true;
-        setButtonsEnabled(true);
-
-        // 測試模式提示：你自己測試才會看得到（同仁不會有 key）
-        const extra = data.bypass ? "（測試模式：已略過距離）" : "";
-        setStatus(`✅ 可打卡（${data.station} / ${data.distanceM}m）${extra}`, "ok");
-      } else {
-        canPunchNow = false;
-        setButtonsEnabled(false);
-        setStatus(`❌ 目前不可打卡（最近：${data.station} / ${data.distanceM}m，需 ≤ ${data.allowM}m）`, "bad");
-      }
-    } catch (e) {
-      canPunchNow = false;
-      setButtonsEnabled(false);
-      setStatus("❌ 無法取得定位或檢查失敗，請開啟定位後重試", "bad");
+    if (!data.ok) {
+      setStatus(`失敗：${data.message || "未知錯誤"}`, "err");
+      setDebug({ payload, response: data });
+      setButtonsDisabled(false);
+      return;
     }
+
+    const station = data.stationName ? `\n場站：${data.stationName}` : "";
+    const dist = (data.distanceM !== undefined && data.distanceM !== "") ? `\n距離：${data.distanceM}m` : "";
+    setStatus(`完成 ✅\n作業：${data.actionCN || actionCN(action)}${station}${dist}`, "ok");
+
+    // 1 秒後關閉
+    setTimeout(() => {
+      try {
+        if (liff.isInClient()) liff.closeWindow();
+        else window.close();
+      } catch (_) {}
+    }, 900);
+
+  } catch (e) {
+    setStatus(`錯誤：${e.message || e}`, "err");
+    setButtonsDisabled(false);
   }
+}
 
-  async function sendPunch(punchType) {
-    if (!profile) return alert("尚未登入，請重新開啟");
-    if (!lastPos) return alert("定位中，請稍等");
-    if (!canPunchNow) return alert("目前不在可打卡範圍內");
-
-    setButtonsEnabled(false);
-
-    const lat = lastPos.coords.latitude;
-    const lng = lastPos.coords.longitude;
-
-    try {
-      const payload = {
-        userId: profile.userId,
-        displayName: profile.displayName,
-        punchType, // dispatch / level1 / swap
-        lat, lng,
-        ...(testKey ? { testKey } : {})
-      };
-
-      const res = await fetch(GAS_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload),
-      });
-
-      const text = await res.text();
-
-      if (res.ok && String(text).startsWith("OK")) {
-        doneEl.style.display = "flex";
-        setTimeout(() => {
-          try { liff.closeWindow(); } catch (_) {}
-        }, 800);
-      } else {
-        alert("❌ 打卡失敗，請再試一次");
-        setButtonsEnabled(true);
-      }
-    } catch (e) {
-      alert("❌ 打卡失敗，請檢查網路後再試一次");
-      setButtonsEnabled(true);
-    }
-  }
-
-  btnDispatch.addEventListener("click", () => sendPunch("dispatch"));
-  btnLevel1.addEventListener("click", () => sendPunch("level1"));
-  btnSwap.addEventListener("click", () => sendPunch("swap"));
-
-  async function init() {
+/** ===== 初始化 LIFF ===== */
+async function boot() {
+  setStatus("啟動中…", "small");
+  try {
     await liff.init({ liffId: LIFF_ID });
-    if (!liff.isLoggedIn()) { liff.login(); return; }
-    profile = await liff.getProfile();
+    setStatus("請選擇打卡類型", "small");
 
-    await checkCanPunch();
-    setInterval(checkCanPunch, 10000);
+    btns.dispatch.addEventListener("click", () => punch("dispatch"));
+    btns.level1.addEventListener("click", () => punch("level1"));
+    btns.swap.addEventListener("click", () => punch("swap"));
+
+    // 如果 test=1 顯示目前解析到的參數
+    const params = getMergedParams();
+    if (params.get("test") === "1") {
+      setDebug({
+        note: "test=1：顯示 debug",
+        mergedParams: Object.fromEntries(params.entries()),
+        locationHref: location.href,
+      });
+    }
+  } catch (e) {
+    setStatus(`LIFF 初始化失敗：${e.message || e}`, "err");
   }
+}
 
-  init().catch(() => setStatus("❌ 初始化失敗，請重新開啟", "bad"));
+boot();
 </script>
 </body>
 </html>
