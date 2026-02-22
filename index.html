@@ -104,7 +104,8 @@
         <button id="btnSwap" class="blue">換電打卡</button>
       </div>
 
-      <div id="status" class="status muted">啟動中…</div>
+      <!-- ✅ 預設文案改成不會誤會的字 -->
+      <div id="status" class="status muted">請選擇打卡類型</div>
 
       <details id="dbgWrap" style="display:none;">
         <summary>debug（僅 test=1 顯示）</summary>
@@ -228,7 +229,7 @@ async function punch(action){
 
     showDebug({ step:"request", payload });
 
-    // ✅ 用 text/plain 避開 iOS/LINE WebView 常見 preflight -> Load failed
+    // ✅ 用 text/plain 避開 iOS/LIFF 常見 preflight -> Load failed
     const res = await fetch(GAS_WEB_APP_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -242,7 +243,6 @@ async function punch(action){
     showDebug({ step:"response", status: res.status, text, data });
 
     if (!data.ok) {
-      // ✅ 一般使用者只看到簡化訊息；test=1 才看得到 detail（在 debug）
       const msg = data.message || "打卡失敗，請稍後再試";
       setStatus(`錯誤：${msg}`, "err");
       setButtonsDisabled(false);
@@ -257,7 +257,6 @@ async function punch(action){
     }, 900);
 
   } catch(e){
-    // ✅ 非 test 模式：不暴露細節
     if (!isTestMode()) {
       setStatus("錯誤：打卡失敗，請稍後再試", "err");
     } else {
@@ -272,8 +271,9 @@ btns.dispatch.addEventListener("click", () => punch("dispatch"));
 btns.level1.addEventListener("click", () => punch("level1"));
 btns.swap.addEventListener("click", () => punch("swap"));
 
-/** 初始 debug */
+/** 初始：一進來就顯示「請選擇打卡類型」 */
 (function(){
+  setStatus("請選擇打卡類型", "muted");
   if (isTestMode()) {
     const p = getMergedParams();
     showDebug({ note:"test=1", mergedParams:Object.fromEntries(p.entries()) });
