@@ -3,113 +3,103 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>LIFF 並發測試</title>
+  <title>打卡</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
-    body { font-family: system-ui, -apple-system, "Segoe UI", Arial; padding: 16px; }
-    button { padding: 10px 14px; margin-right: 8px; cursor: pointer; }
-    #log { white-space: pre-wrap; background: #f6f6f6; padding: 12px; border-radius: 8px; }
-    input { padding: 8px; width: 320px; max-width: 100%; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Arial; padding: 24px; }
+    h2 { margin: 0 0 16px; }
+    button {
+      width: 100%;
+      padding: 14px 16px;
+      margin: 10px 0;
+      font-size: 18px;
+      border: 0;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    .hint { margin-top: 12px; font-size: 14px; opacity: .7; }
+    .disabled { opacity: .6; cursor: not-allowed; }
   </style>
 </head>
 <body>
-  <h2>LIFF → GAS 並發寫入測試</h2>
+  <h2>打卡</h2>
 
-  <div style="margin: 10px 0;">
-    <label>訊息前綴：</label>
-    <input id="prefix" value="lock-test" />
-  </div>
+  <button id="btnDispatch">調度打卡</button>
+  <button id="btnLevel1">一級打卡</button>
 
-  <div style="margin: 10px 0;">
-    <button id="btnInit">Init LIFF</button>
-    <button id="btnBurst">並發送出 10 筆</button>
-    <button id="btnClear">清空 log</button>
-  </div>
-
-  <div id="log"></div>
+  <div class="hint" id="hint"></div>
 
   <script>
     const LIFF_ID = "2009174277-dSY24pNu";
     const GAS_URL  = "https://script.google.com/macros/s/AKfycbyI1gsHWcdfnynjPyuJ55VRFLiwq74ULORIvRHHc94VA0PN673AVtWF6UC_0t5Ch_Ki/exec";
 
-    const logEl = document.getElementById("log");
-    const log = (m) => { logEl.textContent += m + "\n"; };
+    let profile = null;
 
-    let cachedProfile = null;
+    const hintEl = document.getElementById("hint");
+    const btnDispatch = document.getElementById("btnDispatch");
+    const btnLevel1 = document.getElementById("btnLevel1");
 
-    async function initLiff() {
+    function setBusy(busy) {
+      [btnDispatch, btnLevel1].forEach(b => {
+        b.disabled = busy;
+        b.classList.toggle("disabled", busy);
+      });
+      hintEl.textContent = busy ? "送出中…" : "";
+    }
+
+    async function init() {
       await liff.init({ liffId: LIFF_ID });
-      log("✅ LIFF init OK");
 
       if (!liff.isLoggedIn()) {
-        log("⚠️ Not logged in -> liff.login()");
         liff.login();
         return;
       }
 
-      cachedProfile = await liff.getProfile();
-      log("✅ userId: " + cachedProfile.userId);
-      log("✅ name: " + cachedProfile.displayName);
+      profile = await liff.getProfile();
     }
 
-    async function postOne(i) {
-      const prefix = document.getElementById("prefix").value.trim() || "lock-test";
-      const now = new Date();
-      const tag = `${prefix}-${now.toISOString()}-#${i}`;
-
-      const payload = {
-        userId: cachedProfile?.userId || "",
-        content: tag
-      };
-
-      const t0 = performance.now();
-      const res = await fetch(GAS_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload),
-      });
-      const text = await res.text();
-      const t1 = performance.now();
-
-      return { i, tag, ok: res.ok, text, ms: Math.round(t1 - t0) };
-    }
-
-    async function burst10() {
-      if (!cachedProfile) {
-        log("⚠️ 先按 Init LIFF（或確認已登入）");
+    async function sendPunch(punchType) {
+      if (!profile) {
+        alert("尚未登入 LINE，請重新開啟");
         return;
       }
 
-      log("🚀 開始並發送出 10 筆...");
-      const jobs = [];
-      for (let i = 1; i <= 10; i++) jobs.push(postOne(i));
+      setBusy(true);
 
-      const results = await Promise.allSettled(jobs);
+      try {
+        const payload = {
+          userId: profile.userId,
+          displayName: profile.displayName,
+          punchType
+        };
 
-      log("✅ 完成，結果如下：");
-      results.forEach(r => {
-        if (r.status === "fulfilled") {
-          const x = r.value;
-          log(`- #${x.i} ${x.text} (${x.ms}ms) | ${x.tag}`);
+        const res = await fetch(GAS_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload),
+        });
+
+        const text = await res.text();
+
+        if (res.ok && String(text).startsWith("OK")) {
+          alert("✅ 打卡成功");
+          // 你想要成功後自動關閉 LIFF 視窗就打開這行：
+          // liff.closeWindow();
         } else {
-          log(`- ❌ rejected: ${r.reason}`);
+          alert("❌ 打卡失敗，請再試一次");
         }
-      });
 
-      log("👉 請到 Google Sheet 看是否新增 10 列，且 content 欄位有 10 個不同 tag。");
+      } catch (err) {
+        alert("❌ 打卡失敗，請檢查網路後再試一次");
+      } finally {
+        setBusy(false);
+      }
     }
 
-    document.getElementById("btnInit").addEventListener("click", () => {
-      initLiff().catch(err => log("❌ init error: " + err));
-    });
+    btnDispatch.addEventListener("click", () => sendPunch("調度打卡"));
+    btnLevel1.addEventListener("click", () => sendPunch("一級打卡"));
 
-    document.getElementById("btnBurst").addEventListener("click", () => {
-      burst10().catch(err => log("❌ burst error: " + err));
-    });
-
-    document.getElementById("btnClear").addEventListener("click", () => {
-      logEl.textContent = "";
-    });
+    init().catch(() => alert("初始化失敗，請重新開啟"));
   </script>
 </body>
 </html>
