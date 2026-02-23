@@ -17,10 +17,7 @@
       margin:0;
       font-family: system-ui, -apple-system, "Segoe UI", Arial, "Noto Sans TC", sans-serif;
       background:var(--bg);
-      padding-top: env(safe-area-inset-top);
-      padding-bottom: env(safe-area-inset-bottom);
-      padding-left: env(safe-area-inset-left);
-      padding-right: env(safe-area-inset-right);
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     }
     .page{
       min-height: 100dvh;
@@ -31,7 +28,7 @@
       box-sizing:border-box;
     }
     .card{
-      width:min(560px, 100%);
+      width:min(520px, 100%);
       background:var(--card);
       border-radius:var(--radius);
       padding:18px;
@@ -51,40 +48,23 @@
       line-height:1.55;
     }
 
-    .groups{ display:flex; flex-direction:column; gap:12px; }
-
     .group{
-      border:1px solid #e5e7eb;
+      margin:10px 0 12px;
+      border:1px solid #eef0f5;
       border-radius:14px;
       padding:12px;
     }
-    .gHead{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      margin-bottom:10px;
-      gap:10px;
-    }
-    .gTitle{
+    .gtitle{
+      font-size:14px;
       font-weight:900;
-      font-size:16px;
-      display:flex;
-      align-items:center;
-      gap:8px;
+      margin:0 0 10px;
+      color:#222;
     }
-    .dot{
-      width:10px;height:10px;border-radius:999px;display:inline-block;
-    }
-    .green{ background:#15a55b; }
-    .orange{ background:#f08c00; }
-    .blue{ background:#1e79ff; }
-
-    .btnRow{
+    .row2{
       display:grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns:1fr 1fr;
       gap:10px;
     }
-
     button{
       border:0;
       border-radius:14px;
@@ -96,8 +76,9 @@
     }
     button:disabled{ opacity:.55; cursor:not-allowed; }
 
-    .btnArrive{ filter: brightness(1.0); }
-    .btnLeave { filter: brightness(0.9); }
+    .green{ background:#15a55b; }
+    .orange{ background:#f08c00; }
+    .blue{ background:#1e79ff; }
 
     .status{
       margin-top:14px;
@@ -118,7 +99,7 @@
       padding:10px;
       background:#fafafa;
       font-size:12px;
-      max-height: 220px;
+      max-height: 200px;
       overflow:auto;
       white-space:pre-wrap;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -130,37 +111,29 @@
   <div class="page">
     <div class="card">
       <p class="title">桃園營運處｜打卡系統</p>
-      <p class="sub">請選擇作業後，直接點「到站 / 離站」打卡。成功後會顯示完成並自動關閉。</p>
+      <p class="sub">請直接選擇「到站 / 離站」打卡。成功後會顯示完成並自動關閉。</p>
 
-      <div class="groups">
-        <div class="group">
-          <div class="gHead">
-            <div class="gTitle"><span class="dot green"></span>調度</div>
-          </div>
-          <div class="btnRow">
-            <button id="btnDispatchArrive" class="green btnArrive">到站</button>
-            <button id="btnDispatchLeave" class="green btnLeave">離站</button>
-          </div>
+      <div class="group">
+        <p class="gtitle">調度</p>
+        <div class="row2">
+          <button id="d_arr" class="green">到站</button>
+          <button id="d_lev" class="green">離站</button>
         </div>
+      </div>
 
-        <div class="group">
-          <div class="gHead">
-            <div class="gTitle"><span class="dot orange"></span>一級</div>
-          </div>
-          <div class="btnRow">
-            <button id="btnLevel1Arrive" class="orange btnArrive">到站</button>
-            <button id="btnLevel1Leave" class="orange btnLeave">離站</button>
-          </div>
+      <div class="group">
+        <p class="gtitle">一級</p>
+        <div class="row2">
+          <button id="l_arr" class="orange">到站</button>
+          <button id="l_lev" class="orange">離站</button>
         </div>
+      </div>
 
-        <div class="group">
-          <div class="gHead">
-            <div class="gTitle"><span class="dot blue"></span>換電</div>
-          </div>
-          <div class="btnRow">
-            <button id="btnSwapArrive" class="blue btnArrive">到站</button>
-            <button id="btnSwapLeave" class="blue btnLeave">離站</button>
-          </div>
+      <div class="group">
+        <p class="gtitle">換電</p>
+        <div class="row2">
+          <button id="s_arr" class="blue">到站</button>
+          <button id="s_lev" class="blue">離站</button>
         </div>
       </div>
 
@@ -174,19 +147,16 @@
   </div>
 
 <script>
-/** ===== 只要確認這兩個 ===== */
+/** ✅ 只要確認這兩個 */
 const LIFF_ID = "2009174277-dSY24pNu";
 const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyI1gsHWcdfnynjPyuJ55VRFLiwq74ULORIvRHHc94VA0PN673AVtWF6UC_0t5Ch_Ki/exec";
 
-/** ===== UI ===== */
 const $status = document.getElementById("status");
 const $debug = document.getElementById("debug");
 const $dbgWrap = document.getElementById("dbgWrap");
 
-const allButtons = [
-  "btnDispatchArrive","btnDispatchLeave",
-  "btnLevel1Arrive","btnLevel1Leave",
-  "btnSwapArrive","btnSwapLeave"
+const btnList = [
+  "d_arr","d_lev","l_arr","l_lev","s_arr","s_lev"
 ].map(id => document.getElementById(id));
 
 function setStatus(msg, type){
@@ -194,10 +164,10 @@ function setStatus(msg, type){
   $status.textContent = msg;
 }
 function setButtonsDisabled(disabled){
-  allButtons.forEach(b => b.disabled = disabled);
+  btnList.forEach(b => b.disabled = disabled);
 }
 
-/** ===== 解析參數：一般 query + liff.state ===== */
+/** query + liff.state */
 function getMergedParams(){
   const normal = new URLSearchParams(window.location.search || "");
   const merged = new URLSearchParams(normal.toString());
@@ -212,12 +182,10 @@ function getMergedParams(){
   }
   return merged;
 }
-
 function isTestMode(){
   const p = getMergedParams();
   return p.get("test") === "1";
 }
-
 function showDebug(obj){
   if (!isTestMode()) return;
   $dbgWrap.style.display = "";
@@ -226,15 +194,15 @@ function showDebug(obj){
 
 function actionName(action){
   return action === "dispatch" ? "調度"
-       : action === "level1" ? "一級"
-       : action === "swap" ? "換電"
+       : action === "level1"  ? "一級"
+       : action === "swap"    ? "換電"
        : action;
 }
 function phaseName(phase){
-  return phase === "arrive" ? "到站" : phase === "leave" ? "離站" : phase;
+  return phase === "arrive" ? "到站" : "離站";
 }
 
-/** ===== 定位 ===== */
+/** 定位 */
 function getLocation(){
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) return reject(new Error("此裝置不支援定位"));
@@ -250,15 +218,14 @@ function getLocation(){
   });
 }
 
-/** ===== 打卡 ===== */
+/** 打卡 */
 async function punch(action, phase){
   setButtonsDisabled(true);
   setStatus(`定位中…（${actionName(action)}｜${phaseName(phase)}）`, "muted");
 
   const params = getMergedParams();
-  const bypassKey = params.get("key") || "";
-  const v = params.get("v") || "";
   const test = params.get("test") || "";
+  const v = params.get("v") || "";
 
   try{
     await liff.init({ liffId: LIFF_ID });
@@ -274,14 +241,15 @@ async function punch(action, phase){
     setStatus("送出打卡…", "muted");
 
     const payload = {
-      action,               // dispatch|level1|swap
-      phase,                // arrive|leave
-      userId: profile.userId || "",
+      action,                 // dispatch|level1|swap
+      phase,                  // arrive|leave
+      userId: profile.userId || "",         // Ua...
       displayName: profile.displayName || "",
+
       lat: loc.lat,
       lng: loc.lng,
       accuracy: loc.accuracy,
-      bypassKey,
+
       test,
       v,
       ua: navigator.userAgent,
@@ -291,7 +259,6 @@ async function punch(action, phase){
 
     showDebug({ step:"request", payload });
 
-    // ✅ 用 text/plain 避開 iOS/LINE WebView 常見 preflight -> Load failed
     const res = await fetch(GAS_WEB_APP_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -311,8 +278,8 @@ async function punch(action, phase){
       return;
     }
 
-    const station = data.stationName ? `\n站點比對：${data.stationName}` : "";
-    setStatus(`完成 ✅\n作業：${actionName(action)}｜${phaseName(phase)}${station}`, "ok");
+    const st = data.stationName ? `\n站點：${data.stationName}` : "";
+    setStatus(`完成 ✅\n作業：${actionName(action)}｜${phaseName(phase)}${st}`, "ok");
 
     setTimeout(() => {
       try { liff.closeWindow(); } catch(_) {}
@@ -329,15 +296,14 @@ async function punch(action, phase){
   }
 }
 
-document.getElementById("btnDispatchArrive").addEventListener("click", () => punch("dispatch","arrive"));
-document.getElementById("btnDispatchLeave").addEventListener("click", () => punch("dispatch","leave"));
-document.getElementById("btnLevel1Arrive").addEventListener("click", () => punch("level1","arrive"));
-document.getElementById("btnLevel1Leave").addEventListener("click", () => punch("level1","leave"));
-document.getElementById("btnSwapArrive").addEventListener("click", () => punch("swap","arrive"));
-document.getElementById("btnSwapLeave").addEventListener("click", () => punch("swap","leave"));
+document.getElementById("d_arr").addEventListener("click", ()=>punch("dispatch","arrive"));
+document.getElementById("d_lev").addEventListener("click", ()=>punch("dispatch","leave"));
+document.getElementById("l_arr").addEventListener("click", ()=>punch("level1","arrive"));
+document.getElementById("l_lev").addEventListener("click", ()=>punch("level1","leave"));
+document.getElementById("s_arr").addEventListener("click", ()=>punch("swap","arrive"));
+document.getElementById("s_lev").addEventListener("click", ()=>punch("swap","leave"));
 
-/** 初始 debug */
-(function(){
+(function init(){
   if (isTestMode()) {
     const p = getMergedParams();
     showDebug({ note:"test=1", mergedParams:Object.fromEntries(p.entries()) });
