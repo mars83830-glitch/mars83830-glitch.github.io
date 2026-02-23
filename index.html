@@ -1,284 +1,673 @@
-<!doctype html>
-<html lang="zh-Hant">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>桃園營運處｜打卡系統</title>
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <style>
-    :root{
-      --bg:#f6f7fb;
-      --card:#fff;
-      --shadow:0 10px 25px rgba(0,0,0,.06);
-      --radius:16px;
+/***********************
+ * LIFF 打卡系統 - GAS Web App
+ *
+ * ✅ 新版：三種作業（調度/一級/換電）拆成「到站 / 離站」
+ * - 到站：新增一列
+ * - 離站：用 UID 找最後一筆「未離站」回填同一列
+ *
+ * 三個打卡分頁欄位（A~J）
+ * A LINE ID（顯示用：displayName/lineId；沒值=TEST）
+ * B 作業（調度/一級/換電）
+ * C 到站時間
+ * D 到站GPS（HYPERLINK）
+ * E 到站站點比對（最近場站名）
+ * F 離站時間
+ * G 離站GPS（HYPERLINK）
+ * H 離站站點比對（最近場站名）
+ * I 作業時間（分鐘；離站回填時才算）
+ * J UID（唯一識別：Ua...）
+ *
+ * 場站資料庫欄位（固定讀）
+ * D 場站名稱
+ * E 緯度
+ * F 經度
+ *
+ * 測試頁：
+ * /exec?page=test
+ * - 送 test=1
+ * - bypassKey 正確可繞過距離限制
+ * - ✅ 按鈕「更新場站資訊」：輸入 bypassKey 後一鍵清快取
+ *
+ * 清快取（網址指令）：
+ * /exec?cmd=clearStationsCache&key=TEST_BYPASS_KEY
+ ***********************/
+
+/**
+ * Script Properties 必填：
+ * SHEET_ID
+ * ALLOW_RADIUS_M
+ * TEST_BYPASS_KEY
+ *
+ * 可選：
+ * STATION_SHEET_NAME   預設：場站資料庫
+ * DISPATCH_SHEET_NAME  預設：調度打卡資料
+ * LEVEL1_SHEET_NAME    預設：一級打卡資料
+ * SWAP_SHEET_NAME      預設：換電打卡資料
+ */
+
+function doGet(e) {
+  const params = (e && e.parameter) ? e.parameter : {};
+  const page = params.page ? String(params.page) : "";
+  const cmd  = params.cmd  ? String(params.cmd)  : "";
+
+  // ✅ 網址指令清快取
+  if (cmd === "clearStationsCache") {
+    const key = String(params.key || "");
+    const cfg = getConfig_();
+
+    if (!key || key !== cfg.testBypassKey) {
+      return json_({ ok: false, message: "unauthorized", hint: "need correct key" });
     }
-    html,body{ height:100%; }
-    body{
-      margin:0;
-      font-family: system-ui, -apple-system, "Segoe UI", Arial, "Noto Sans TC", sans-serif;
-      background:var(--bg);
-      padding-top: env(safe-area-inset-top);
-      padding-bottom: env(safe-area-inset-bottom);
-      padding-left: env(safe-area-inset-left);
-      padding-right: env(safe-area-inset-right);
-    }
-    .page{
-      min-height: 100dvh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:16px;
-      box-sizing:border-box;
-    }
-    .card{
-      width:min(520px, 100%);
-      background:var(--card);
-      border-radius:var(--radius);
-      padding:18px;
-      box-shadow:var(--shadow);
-      box-sizing:border-box;
-    }
-    .title{
-      font-size:20px;
-      font-weight:800;
-      margin:0 0 8px;
-      text-align:left;
-    }
-    .sub{
-      font-size:13px;
-      color:#666;
-      margin:0 0 14px;
-      line-height:1.55;
-    }
-    .btns{ display:grid; grid-template-columns:1fr; gap:10px; }
-    button{
-      border:0;
-      border-radius:14px;
-      padding:14px 14px;
-      font-size:18px;
-      font-weight:800;
-      cursor:pointer;
-      color:#fff;
-    }
-    button:disabled{ opacity:.55; cursor:not-allowed; }
-    .green{ background:#15a55b; }
-    .orange{ background:#f08c00; }
-    .blue{ background:#1e79ff; }
 
-    .status{
-      margin-top:14px;
-      font-size:14px;
-      line-height:1.6;
-      white-space:pre-wrap;
-    }
-    .ok{ color:#0a7a35; font-weight:800; }
-    .err{ color:#b42318; font-weight:800; }
-    .muted{ color:#666; font-size:12px; }
-
-    details{ margin-top:12px; }
-    summary{ cursor:pointer; color:#666; font-size:12px; }
-    .debugBox{
-      margin-top:8px;
-      border:1px solid #e5e7eb;
-      border-radius:12px;
-      padding:10px;
-      background:#fafafa;
-      font-size:12px;
-      max-height: 200px;
-      overflow:auto;
-      white-space:pre-wrap;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    }
-  </style>
-</head>
-
-<body>
-  <div class="page">
-    <div class="card">
-      <p class="title">桃園營運處｜打卡系統</p>
-      <p class="sub">請選擇作業類型後打卡。成功後會顯示「完成」並自動關閉。</p>
-
-      <div class="btns">
-        <button id="btnDispatch" class="green">調度打卡</button>
-        <button id="btnLevel1" class="orange">一級打卡</button>
-        <button id="btnSwap" class="blue">換電打卡</button>
-      </div>
-
-      <!-- ✅ 預設文案改成不會誤會的字 -->
-      <div id="status" class="status muted">請選擇打卡類型</div>
-
-      <details id="dbgWrap" style="display:none;">
-        <summary>debug（僅 test=1 顯示）</summary>
-        <div id="debug" class="debugBox"></div>
-      </details>
-    </div>
-  </div>
-
-<script>
-/** ===== 只要確認這兩個 ===== */
-const LIFF_ID = "2009174277-dSY24pNu";
-const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyI1gsHWcdfnynjPyuJ55VRFLiwq74ULORIvRHHc94VA0PN673AVtWF6UC_0t5Ch_Ki/exec";
-
-/** ===== UI ===== */
-const $status = document.getElementById("status");
-const $debug = document.getElementById("debug");
-const $dbgWrap = document.getElementById("dbgWrap");
-
-const btns = {
-  dispatch: document.getElementById("btnDispatch"),
-  level1: document.getElementById("btnLevel1"),
-  swap: document.getElementById("btnSwap"),
-};
-
-function setStatus(msg, type){
-  $status.className = "status " + (type === "ok" ? "ok" : type === "err" ? "err" : "muted");
-  $status.textContent = msg;
-}
-
-function setButtonsDisabled(disabled){
-  Object.values(btns).forEach(b => b.disabled = disabled);
-}
-
-/** ===== 解析參數：一般 query + liff.state ===== */
-function getMergedParams(){
-  const normal = new URLSearchParams(window.location.search || "");
-  const merged = new URLSearchParams(normal.toString());
-
-  const stateRaw = normal.get("liff.state");
-  if (stateRaw) {
-    let decoded = "";
-    try { decoded = decodeURIComponent(stateRaw); } catch(e){ decoded = stateRaw; }
-    if (decoded.startsWith("?")) decoded = decoded.slice(1);
-    const sp = new URLSearchParams(decoded);
-    for (const [k,v] of sp.entries()) merged.set(k,v);
+    const result = clearStationsCache_(cfg);
+    return json_({
+      ok: true,
+      cleared: true,
+      deletedKeys: result.deletedKeys,
+      stationSheet: cfg.stationSheetName,
+      ts: new Date().toISOString()
+    });
   }
-  return merged;
-}
 
-function isTestMode(){
-  const p = getMergedParams();
-  return p.get("test") === "1";
-}
+  // 測試頁
+  if (page === "test") {
+    return HtmlService
+      .createHtmlOutput(TEST_PAGE_HTML_())
+      .setTitle("LIFF 打卡 - 測試頁面")
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
 
-function showDebug(obj){
-  if (!isTestMode()) return;
-  $dbgWrap.style.display = "";
-  $debug.textContent = JSON.stringify(obj, null, 2);
-}
-
-function actionCN(action){
-  return action === "dispatch" ? "調度打卡"
-       : action === "level1" ? "一級打卡"
-       : action === "swap" ? "換電打卡"
-       : action;
-}
-
-/** ===== 定位 ===== */
-function getLocation(){
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) return reject(new Error("此裝置不支援定位"));
-    navigator.geolocation.getCurrentPosition(
-      (pos) => resolve({
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude,
-        accuracy: pos.coords.accuracy
-      }),
-      (err) => reject(new Error(err.message || "定位失敗")),
-      { enableHighAccuracy:true, timeout:12000, maximumAge:0 }
-    );
+  const info = getConfig_();
+  return json_({
+    ok: true,
+    msg: "LIFF 打卡後端正常",
+    sheetId: mask_(info.sheetId),
+    allowRadiusM: info.allowRadiusM,
+    stationSheet: info.stationSheetName,
+    ts: new Date().toISOString(),
   });
 }
 
-/** ===== 打卡 ===== */
-async function punch(action){
-  setButtonsDisabled(true);
-  setStatus(`定位中…（${actionCN(action)}）`, "muted");
-
-  const params = getMergedParams();
-  const bypassKey = params.get("key") || "";
-  const v = params.get("v") || "";
-  const test = params.get("test") || "";
-
-  try{
-    await liff.init({ liffId: LIFF_ID });
-
-    if (!liff.isInClient() && !liff.isLoggedIn()) {
-      liff.login();
-      return;
-    }
-
-    const profile = await liff.getProfile();
-    const loc = await getLocation();
-
-    setStatus("送出打卡…", "muted");
-
-    const payload = {
-      action,
-      userId: profile.userId || "",
-      displayName: profile.displayName || "",
-      lat: loc.lat,
-      lng: loc.lng,
-      accuracy: loc.accuracy,
-      bypassKey,
-      test,
-      v,
-      ua: navigator.userAgent,
-      href: location.href,
-      ts: Date.now()
-    };
-
-    showDebug({ step:"request", payload });
-
-    // ✅ 用 text/plain 避開 iOS/LIFF 常見 preflight -> Load failed
-    const res = await fetch(GAS_WEB_APP_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload),
+function doPost(e) {
+  const lock = LockService.getScriptLock();
+  lock.tryLock(20000);
+  try {
+    const bodyText = (e && e.postData && e.postData.contents) ? e.postData.contents : "";
+    const payload = bodyText ? JSON.parse(bodyText) : {};
+    return json_(handlePunch_(payload));
+  } catch (err) {
+    return json_({
+      ok: false,
+      message: "打卡失敗，請稍後再試",
+      debug: { error: String(err && err.stack ? err.stack : err) }
     });
-
-    const text = await res.text();
-    let data = {};
-    try { data = JSON.parse(text); } catch(_) {}
-
-    showDebug({ step:"response", status: res.status, text, data });
-
-    if (!data.ok) {
-      const msg = data.message || "打卡失敗，請稍後再試";
-      setStatus(`錯誤：${msg}`, "err");
-      setButtonsDisabled(false);
-      return;
-    }
-
-    const station = data.stationName ? `\n場站：${data.stationName}` : "";
-    setStatus(`完成 ✅\n作業：${data.actionCN || actionCN(action)}${station}`, "ok");
-
-    setTimeout(() => {
-      try { liff.closeWindow(); } catch(_) {}
-    }, 900);
-
-  } catch(e){
-    if (!isTestMode()) {
-      setStatus("錯誤：打卡失敗，請稍後再試", "err");
-    } else {
-      setStatus(`錯誤：${e && e.message ? e.message : e}`, "err");
-      showDebug({ step:"catch", error: String(e), stack: e && e.stack ? e.stack : "" });
-    }
-    setButtonsDisabled(false);
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
   }
 }
 
-btns.dispatch.addEventListener("click", () => punch("dispatch"));
-btns.level1.addEventListener("click", () => punch("level1"));
-btns.swap.addEventListener("click", () => punch("swap"));
-
-/** 初始：一進來就顯示「請選擇打卡類型」 */
-(function(){
-  setStatus("請選擇打卡類型", "muted");
-  if (isTestMode()) {
-    const p = getMergedParams();
-    showDebug({ note:"test=1", mergedParams:Object.fromEntries(p.entries()) });
+/** 測試頁專用（避免 fetch/CORS） */
+function testPunch(payload) {
+  const lock = LockService.getScriptLock();
+  lock.tryLock(20000);
+  try {
+    payload = payload || {};
+    payload.test = 1;
+    return handlePunch_(payload);
+  } catch (err) {
+    return {
+      ok: false,
+      message: "打卡失敗，請稍後再試",
+      debug: { error: String(err && err.stack ? err.stack : err) }
+    };
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
   }
-})();
+}
+
+/**
+ * ✅ 測試頁「更新場站資訊」按鈕會呼叫這個
+ * - 需要正確 bypassKey 才會清快取
+ */
+function clearStationsCacheFromTest(bypassKey) {
+  const cfg = getConfig_();
+  const key = String(bypassKey || "").trim();
+
+  if (!key || key !== cfg.testBypassKey) {
+    return { ok: false, message: "bypassKey 錯誤，無法更新場站資訊" };
+  }
+
+  const result = clearStationsCache_(cfg);
+  return {
+    ok: true,
+    message: "已更新場站資訊（快取已清除）",
+    deletedKeys: result.deletedKeys,
+    stationSheet: cfg.stationSheetName,
+    ts: new Date().toISOString(),
+  };
+}
+
+/* =========================
+ * 核心打卡邏輯（到站 / 離站）
+ * ========================= */
+
+function handlePunch_(payload) {
+  const started = Date.now();
+  const cfg = getConfig_();
+
+  const test = String(payload.test || "0") === "1";
+  const bypassKey = String(payload.bypassKey || "");
+
+  // action: dispatch/level1/swap（前端送）
+  // phase: arrive/leave（前端送）
+  // 也相容舊的 job（中文：調度打卡/一級打卡/換電打卡）
+  const rawActionOrJob = payload.action || payload.job || "";
+  const actionKey = normalizeActionKey_(rawActionOrJob); // dispatch|level1|swap
+  const workText = actionKeyToWorkText_(actionKey);      // 調度/一級/換電
+  const phase = normalizePhase_(payload.phase);          // arrive|leave
+
+  const lat = Number(payload.lat);
+  const lng = Number(payload.lng);
+
+  if (!actionKey || !workText || !phase || !isFinite(lat) || !isFinite(lng)) {
+    return failObj_("打卡失敗，請稍後再試", test, {
+      reason: "missing_required_fields",
+      rawActionOrJob,
+      actionKey,
+      workText,
+      phase,
+      lat, lng
+    });
+  }
+
+  // ✅ 場站比對：固定 D/E/F
+  const stations = getStations_(cfg);
+  const nearest = findNearestStation_(stations, lat, lng);
+
+  // 距離計算仍做（用來判斷是否過遠），但 ✅ 不寫入到 Sheet
+  const bypass = test && bypassKey && bypassKey === cfg.testBypassKey;
+  const distanceM = nearest ? Math.round(nearest.distanceM) : 999999;
+
+  if (!bypass) {
+    if (!nearest || distanceM > cfg.allowRadiusM) {
+      return failObj_("離場站過遠，無法打卡", test, {
+        reason: "too_far",
+        distanceM,
+        allowRadiusM: cfg.allowRadiusM,
+        nearestName: nearest ? nearest.name : ""
+      });
+    }
+  }
+
+  const ss = SpreadsheetApp.openById(cfg.sheetId);
+  const targetSheetName = getTargetSheetNameByActionKey_(cfg, actionKey);
+  const sheet = ss.getSheetByName(targetSheetName);
+  if (!sheet) {
+    return failObj_("打卡失敗，請稍後再試", test, {
+      reason: "target_sheet_not_found",
+      target: targetSheetName
+    });
+  }
+
+  const now = new Date();
+
+  // ✅ A欄顯示用：優先 displayName / lineId，不寫 Ua...
+  const displayName = String(payload.displayName || "").trim();
+  const lineId = String(payload.lineId || "").trim();
+  const lineIdToWrite = displayName || lineId || "TEST";
+
+  // ✅ J欄唯一識別：優先 uid（若你自訂），否則 userId(Ua...)
+  const userId = String(payload.userId || payload.lineUserId || "").trim(); // Ua...
+  const uid = String(payload.uid || "").trim();
+  const uidToWrite = uid || userId || "";
+
+  if (!uidToWrite) {
+    return failObj_("打卡失敗，請稍後再試", test, { reason: "missing_uid" });
+  }
+
+  const stationName = nearest ? nearest.name : "";
+  const mapLink = makeGoogleMapLink_(lat, lng);
+  const mapFormula = `=HYPERLINK("${mapLink}","開啟地圖")`;
+
+  if (phase === "arrive") {
+    const row = sheet.getLastRow() + 1;
+
+    // A~J
+    sheet.getRange(row, 1).setValue(lineIdToWrite);          // A LINE ID
+    sheet.getRange(row, 2).setValue(workText);               // B 作業
+    sheet.getRange(row, 3).setValue(now).setNumberFormat("yyyy/MM/dd HH:mm:ss"); // C 到站時間
+    sheet.getRange(row, 4).setFormula(mapFormula);           // D 到站GPS(超連結)
+    sheet.getRange(row, 5).setValue(stationName);            // E 到站比對
+    sheet.getRange(row, 6).setValue("");                     // F 離站時間
+    sheet.getRange(row, 7).setValue("");                     // G 離站GPS
+    sheet.getRange(row, 8).setValue("");                     // H 離站比對
+    sheet.getRange(row, 9).setValue("");                     // I 作業時間(分鐘)
+    sheet.getRange(row, 10).setValue(uidToWrite);            // J UID
+
+    return {
+      ok: true,
+      message: "到站打卡完成",
+      phase: "arrive",
+      work: workText,
+      stationName,
+      row,
+      bypass,
+      costMs: Date.now() - started
+    };
+  }
+
+  // phase === "leave"：找最後一筆未離站回填
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    return failObj_("尚未到站，請先到站打卡", test, { reason: "no_rows" });
+  }
+
+  const uidCol = 10; // J
+  const leaveTimeCol = 6; // F
+  const arriveTimeCol = 3; // C
+
+  const uidVals = sheet.getRange(2, uidCol, lastRow - 1, 1).getValues();        // J2:J
+  const leaveVals = sheet.getRange(2, leaveTimeCol, lastRow - 1, 1).getValues();// F2:F
+
+  let targetRow = -1;
+  for (let i = uidVals.length - 1; i >= 0; i--) {
+    const u = String(uidVals[i][0] || "").trim();
+    const lv = leaveVals[i][0];
+    const isLeaveEmpty = (lv === "" || lv === null);
+    if (u === uidToWrite && isLeaveEmpty) {
+      targetRow = i + 2; // 因為從第2列開始
+      break;
+    }
+  }
+
+  if (targetRow === -1) {
+    return failObj_("尚未到站，請先到站打卡", test, { reason: "no_open_arrive_record" });
+  }
+
+  // 取到站時間（C欄）用來算作業時間
+  const arriveVal = sheet.getRange(targetRow, arriveTimeCol).getValue();
+  let arriveDate = null;
+  if (arriveVal instanceof Date) arriveDate = arriveVal;
+  else {
+    // 若使用者手動改成文字，這裡就不強求可解析，作業時間留白
+    arriveDate = null;
+  }
+
+  // 回填離站
+  sheet.getRange(targetRow, 6).setValue(now).setNumberFormat("yyyy/MM/dd HH:mm:ss"); // F 離站時間
+  sheet.getRange(targetRow, 7).setFormula(mapFormula);                               // G 離站GPS(超連結)
+  sheet.getRange(targetRow, 8).setValue(stationName);                                // H 離站比對
+
+  // I 作業時間（分鐘）
+  if (arriveDate) {
+    const mins = Math.max(0, Math.round((now.getTime() - arriveDate.getTime()) / 60000));
+    sheet.getRange(targetRow, 9).setValue(mins);
+  } else {
+    sheet.getRange(targetRow, 9).setValue("");
+  }
+
+  return {
+    ok: true,
+    message: "離站打卡完成",
+    phase: "leave",
+    work: workText,
+    stationName,
+    row: targetRow,
+    bypass,
+    costMs: Date.now() - started
+  };
+}
+
+/* =========================
+ * 測試頁 HTML（LINE ID 固定 TEST）
+ * ========================= */
+
+function TEST_PAGE_HTML_() {
+  return `
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>LIFF 打卡 - 測試頁面</title>
+  <style>
+    body{font-family:system-ui,-apple-system,"Microsoft JhengHei",sans-serif;margin:18px;line-height:1.5}
+    .row{margin:10px 0}
+    input,select,button{font-size:16px;padding:10px;border:1px solid #ccc;border-radius:10px}
+    button{cursor:pointer}
+    .btns button{margin-right:8px;margin-bottom:8px}
+    .hint{color:#666;font-size:13px}
+    pre{background:#0b1020;color:#d7e3ff;padding:12px;border-radius:12px;overflow:auto}
+    .ok{color:#0a7a24;font-weight:600}
+    .bad{color:#b00020;font-weight:600}
+  </style>
+</head>
+<body>
+  <h2>LIFF 打卡 - 測試頁面</h2>
+  <div class="hint">此頁會送 <b>test=1</b>；bypassKey 正確時可繞過距離限制。</div>
+
+  <div class="row">
+    <label>作業：</label>
+    <select id="action">
+      <option value="dispatch">調度</option>
+      <option value="level1">一級</option>
+      <option value="swap">換電</option>
+    </select>
+  </div>
+
+  <div class="row">
+    <label>LINE ID：</label>
+    <input value="TEST" disabled/>
+  </div>
+
+  <div class="row"><label>UID：</label><input id="uid" value="Ua_TEST_123"/></div>
+
+  <div class="row">
+    <label>bypassKey：</label>
+    <input id="bypassKey" type="password" value="" placeholder="請輸入"/>
+  </div>
+
+  <div class="row">
+    <label>lat：</label><input id="lat" value="24.996544"/>
+    <label style="margin-left:8px">lng：</label><input id="lng" value="121.254196"/>
+  </div>
+
+  <div class="row btns">
+    <button onclick="useGPS()">套用目前所在位置GPS</button>
+    <button onclick="sendPunch('arrive')">送出到站</button>
+    <button onclick="sendPunch('leave')">送出離站</button>
+    <button onclick="refreshStations()">更新場站資訊</button>
+  </div>
+
+  <div class="row"><div id="status" class="hint"></div><pre id="out">{}</pre></div>
+
+<script>
+  function setStatus(msg, ok){
+    const el=document.getElementById('status');
+    el.textContent=msg;
+    el.className=ok?'ok':'bad';
+  }
+
+  function useGPS(){
+    setStatus('取得定位中...', true);
+    if(!navigator.geolocation){ setStatus('此瀏覽器不支援定位', false); return; }
+    navigator.geolocation.getCurrentPosition(
+      (pos)=>{
+        document.getElementById('lat').value=pos.coords.latitude;
+        document.getElementById('lng').value=pos.coords.longitude;
+        setStatus('已套用目前所在位置GPS', true);
+      },
+      (err)=>{ setStatus('定位失敗：'+err.message, false); },
+      { enableHighAccuracy:true, timeout:10000, maximumAge:0 }
+    );
+  }
+
+  function sendPunch(phase){
+    const payload={
+      lineId:"TEST",
+      uid:document.getElementById('uid').value.trim(),
+      action:document.getElementById('action').value,
+      phase:phase,
+      lat:Number(document.getElementById('lat').value),
+      lng:Number(document.getElementById('lng').value),
+      test:1,
+      bypassKey:document.getElementById('bypassKey').value.trim()
+    };
+
+    if(!payload.bypassKey){
+      setStatus('請輸入 bypassKey', false);
+      return;
+    }
+    if(!isFinite(payload.lat)||!isFinite(payload.lng)){
+      setStatus('lat/lng 格式不正確', false);
+      return;
+    }
+
+    setStatus('送出中...', true);
+
+    google.script.run
+      .withSuccessHandler(function(res){
+        document.getElementById('out').textContent=JSON.stringify(res,null,2);
+        if(res && res.ok) setStatus('完成 ✅', true);
+        else setStatus('失敗 ❌（看下方回傳）', false);
+      })
+      .withFailureHandler(function(err){
+        setStatus('呼叫失敗：'+(err&&err.message?err.message:err), false);
+      })
+      .testPunch(payload);
+  }
+
+  function refreshStations(){
+    const key = document.getElementById('bypassKey').value.trim();
+    if(!key){
+      setStatus('請先輸入 bypassKey 才能更新場站資訊', false);
+      return;
+    }
+
+    setStatus('更新場站資訊中（清理快取）...', true);
+
+    google.script.run
+      .withSuccessHandler(function(res){
+        document.getElementById('out').textContent = JSON.stringify(res,null,2);
+        if(res && res.ok){
+          setStatus('✅ 已更新場站資訊（快取已清除）', true);
+        }else{
+          setStatus('❌ 更新失敗（看下方回傳）', false);
+        }
+      })
+      .withFailureHandler(function(err){
+        setStatus('更新失敗：'+(err&&err.message?err.message:err), false);
+      })
+      .clearStationsCacheFromTest(key);
+  }
 </script>
 </body>
-</html>
+</html>`;
+}
+
+/* =========================
+ * Config
+ * ========================= */
+
+function getConfig_() {
+  const props = PropertiesService.getScriptProperties();
+
+  const sheetId = String(props.getProperty("SHEET_ID") || "").trim();
+  const allowRadiusM = Number(props.getProperty("ALLOW_RADIUS_M") || "150");
+  const testBypassKey = String(props.getProperty("TEST_BYPASS_KEY") || "").trim();
+
+  const stationSheetName  = String(props.getProperty("STATION_SHEET_NAME")  || "場站資料庫").trim();
+  const dispatchSheetName = String(props.getProperty("DISPATCH_SHEET_NAME") || "調度打卡資料").trim();
+  const level1SheetName   = String(props.getProperty("LEVEL1_SHEET_NAME")   || "一級打卡資料").trim();
+  const swapSheetName     = String(props.getProperty("SWAP_SHEET_NAME")     || "換電打卡資料").trim();
+
+  if (!sheetId) throw new Error("Missing Script Property: SHEET_ID");
+
+  return {
+    sheetId,
+    allowRadiusM: isFinite(allowRadiusM) ? allowRadiusM : 150,
+    testBypassKey,
+    stationSheetName,
+    dispatchSheetName,
+    level1SheetName,
+    swapSheetName,
+  };
+}
+
+/** dispatch/level1/swap（相容你舊的中文 job） */
+function normalizeActionKey_(x) {
+  const s = String(x || "").trim();
+  if (s === "dispatch" || s === "調度" || s === "調度打卡") return "dispatch";
+  if (s === "level1"  || s === "一級" || s === "一級打卡") return "level1";
+  if (s === "swap"    || s === "換電" || s === "換電打卡") return "swap";
+  return "";
+}
+
+function actionKeyToWorkText_(actionKey) {
+  if (actionKey === "dispatch") return "調度";
+  if (actionKey === "level1") return "一級";
+  if (actionKey === "swap") return "換電";
+  return "";
+}
+
+function normalizePhase_(p) {
+  const s = String(p || "").trim().toLowerCase();
+  if (s === "arrive" || s === "到站") return "arrive";
+  if (s === "leave"  || s === "離站") return "leave";
+  return "";
+}
+
+function getTargetSheetNameByActionKey_(cfg, actionKey) {
+  if (actionKey === "dispatch") return cfg.dispatchSheetName;
+  if (actionKey === "level1") return cfg.level1SheetName;
+  if (actionKey === "swap") return cfg.swapSheetName;
+  return cfg.dispatchSheetName;
+}
+
+/* =========================
+ * 場站資料庫：固定 D/E/F + 分段快取
+ * ========================= */
+
+function getStationsCacheBaseKey_(cfg) {
+  const cacheVersion = "v9_def_chunk"; // 換個版本號，避免舊快取混到新程式
+  return `stations_${cacheVersion}_${cfg.sheetId}_${cfg.stationSheetName}`;
+}
+
+function getStations_(cfg) {
+  const cache = CacheService.getScriptCache();
+  const baseKey = getStationsCacheBaseKey_(cfg);
+
+  const metaStr = cache.get(baseKey + "_meta");
+  if (metaStr) {
+    try {
+      const meta = JSON.parse(metaStr);
+      const parts = [];
+      for (let i = 0; i < Number(meta.parts || 0); i++) {
+        const p = cache.get(baseKey + "_p" + i);
+        if (!p) return loadAndCacheStations_(cfg, baseKey, cache);
+        parts.push(p);
+      }
+      return JSON.parse(parts.join(""));
+    } catch (_) {
+      return loadAndCacheStations_(cfg, baseKey, cache);
+    }
+  }
+  return loadAndCacheStations_(cfg, baseKey, cache);
+}
+
+function loadAndCacheStations_(cfg, baseKey, cache) {
+  const ss = SpreadsheetApp.openById(cfg.sheetId);
+  const sheet = ss.getSheetByName(cfg.stationSheetName);
+  if (!sheet) throw new Error("Station sheet not found: " + cfg.stationSheetName);
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+
+  // 只抓 D:E:F（第4,5,6欄），從第2列開始
+  const data = sheet.getRange(2, 4, lastRow - 1, 3).getValues();
+
+  const stations = [];
+  for (const r of data) {
+    const name = String(r[0] || "").trim(); // D
+    const lat = Number(r[1]);              // E
+    const lng = Number(r[2]);              // F
+    if (!name) continue;
+    if (!isFinite(lat) || !isFinite(lng)) continue;
+    stations.push({ name, lat, lng });
+  }
+
+  const json = JSON.stringify(stations);
+
+  // ✅ 分段避免 value too large
+  const chunkSize = 70000; // 保守值
+  const parts = Math.ceil(json.length / chunkSize);
+
+  cache.put(baseKey + "_meta", JSON.stringify({ parts }), 21600);
+  for (let i = 0; i < parts; i++) {
+    cache.put(baseKey + "_p" + i, json.slice(i * chunkSize, (i + 1) * chunkSize), 21600);
+  }
+
+  return stations;
+}
+
+function clearStationsCache_(cfg) {
+  const cache = CacheService.getScriptCache();
+  const baseKey = getStationsCacheBaseKey_(cfg);
+
+  const deletedKeys = [];
+  const metaKey = baseKey + "_meta";
+  const metaStr = cache.get(metaKey);
+
+  cache.remove(metaKey);
+  deletedKeys.push(metaKey);
+
+  if (metaStr) {
+    try {
+      const meta = JSON.parse(metaStr);
+      const parts = Number(meta.parts || 0);
+      for (let i = 0; i < parts; i++) {
+        const k = baseKey + "_p" + i;
+        cache.remove(k);
+        deletedKeys.push(k);
+      }
+    } catch (_) {
+      for (let i = 0; i < 10; i++) {
+        const k = baseKey + "_p" + i;
+        cache.remove(k);
+        deletedKeys.push(k);
+      }
+    }
+  } else {
+    for (let i = 0; i < 10; i++) {
+      const k = baseKey + "_p" + i;
+      cache.remove(k);
+      deletedKeys.push(k);
+    }
+  }
+
+  return { deletedKeys };
+}
+
+function findNearestStation_(stations, lat, lng) {
+  if (!stations || stations.length === 0) return null;
+  let best = null;
+  for (const s of stations) {
+    const d = haversineMeters_(lat, lng, s.lat, s.lng);
+    if (!best || d < best.distanceM) best = { name: s.name, lat: s.lat, lng: s.lng, distanceM: d };
+  }
+  return best;
+}
+
+function haversineMeters_(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const toRad = x => (x * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function makeGoogleMapLink_(lat, lng) {
+  return `https://www.google.com/maps?q=${lat},${lng}&hl=zh-TW&gl=TW`;
+}
+
+function failObj_(msg, test, debugObj) {
+  const res = { ok: false, message: msg };
+  if (test) res.debug = debugObj || {};
+  return res;
+}
+
+function json_(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function mask_(s) {
+  const t = String(s || "");
+  if (t.length <= 8) return "****";
+  return t.slice(0, 4) + "****" + t.slice(-4);
+}
