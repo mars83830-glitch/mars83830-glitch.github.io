@@ -10,96 +10,133 @@
       --bg:#f6f7fb;
       --card:#fff;
       --shadow:0 10px 25px rgba(0,0,0,.06);
-      --radius:16px;
+      --radius:18px;
+
+      /* ✅ 字體整體放大 */
+      --fs-title: 24px;
+      --fs-sub: 16px;
+      --fs-btn: 20px;
+      --fs-status: 16px;
+      --fs-debug: 13px;
+
+      /* ✅ 顏色：到站淺、離站深 */
+      --dispatch-light:#5fd49a;
+      --dispatch-dark:#15905a;
+
+      --level1-light:#ffbe5c;
+      --level1-dark:#e07a00;
+
+      --swap-light:#7fb2ff;
+      --swap-dark:#1e79ff;
     }
+
     html,body{ height:100%; }
     body{
       margin:0;
       font-family: system-ui, -apple-system, "Segoe UI", Arial, "Noto Sans TC", sans-serif;
       background:var(--bg);
-      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+      font-size: 18px; /* ✅ 基礎字體放大 */
     }
+
     .page{
       min-height: 100dvh;
       display:flex;
       align-items:center;
       justify-content:center;
-      padding:16px;
+      padding:18px;
       box-sizing:border-box;
     }
+
     .card{
-      width:min(520px, 100%);
+      width:min(560px, 100%);
       background:var(--card);
       border-radius:var(--radius);
-      padding:18px;
+      padding:20px;
       box-shadow:var(--shadow);
       box-sizing:border-box;
     }
+
     .title{
-      font-size:20px;
-      font-weight:800;
-      margin:0 0 8px;
+      font-size:var(--fs-title);
+      font-weight:900;
+      margin:0 0 10px;
       text-align:left;
+      letter-spacing:.2px;
     }
+
     .sub{
-      font-size:13px;
+      font-size:var(--fs-sub);
       color:#666;
-      margin:0 0 14px;
-      line-height:1.55;
+      margin:0 0 16px;
+      line-height:1.65;
     }
 
     .group{
-      margin:10px 0 12px;
-      border:1px solid #eef0f5;
-      border-radius:14px;
-      padding:12px;
+      margin-bottom:14px;
     }
-    .gtitle{
-      font-size:14px;
+
+    .groupTitle{
+      font-size:16px;
       font-weight:900;
-      margin:0 0 10px;
-      color:#222;
+      color:#111;
+      margin:0 0 8px;
     }
+
     .row2{
       display:grid;
-      grid-template-columns:1fr 1fr;
+      grid-template-columns: 1fr 1fr;
       gap:10px;
     }
+
     button{
       border:0;
-      border-radius:14px;
-      padding:14px 12px;
-      font-size:18px;
+      border-radius:16px;
+      padding:16px 14px;
+      font-size:var(--fs-btn);
       font-weight:900;
       cursor:pointer;
       color:#fff;
+      width:100%;
     }
     button:disabled{ opacity:.55; cursor:not-allowed; }
 
-    .green{ background:#15a55b; }
-    .orange{ background:#f08c00; }
-    .blue{ background:#1e79ff; }
+    /* ✅ 調度：到站淺 / 離站深 */
+    .dispatchArrive{ background: var(--dispatch-light); }
+    .dispatchLeave{ background: var(--dispatch-dark); }
+
+    /* ✅ 一級：到站淺 / 離站深 */
+    .level1Arrive{ background: var(--level1-light); color:#4b2b00; }
+    .level1Leave{ background: var(--level1-dark); }
+
+    /* ✅ 換電：到站淺 / 離站深 */
+    .swapArrive{ background: var(--swap-light); }
+    .swapLeave{ background: var(--swap-dark); }
 
     .status{
-      margin-top:14px;
-      font-size:14px;
-      line-height:1.6;
+      margin-top:16px;
+      font-size:var(--fs-status);
+      line-height:1.7;
       white-space:pre-wrap;
+      min-height: 22px; /* ✅ 沒訊息也不會跳 */
     }
     .ok{ color:#0a7a35; font-weight:900; }
     .err{ color:#b42318; font-weight:900; }
-    .muted{ color:#666; font-size:12px; }
+    .muted{ color:#666; }
 
-    details{ margin-top:12px; }
-    summary{ cursor:pointer; color:#666; font-size:12px; }
+    details{ margin-top:14px; }
+    summary{ cursor:pointer; color:#666; font-size:14px; }
     .debugBox{
-      margin-top:8px;
+      margin-top:10px;
       border:1px solid #e5e7eb;
-      border-radius:12px;
-      padding:10px;
+      border-radius:14px;
+      padding:12px;
       background:#fafafa;
-      font-size:12px;
-      max-height: 200px;
+      font-size:var(--fs-debug);
+      max-height: 240px;
       overflow:auto;
       white-space:pre-wrap;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -111,33 +148,34 @@
   <div class="page">
     <div class="card">
       <p class="title">桃園營運處｜打卡系統</p>
-      <p class="sub">請直接選擇「到站 / 離站」打卡。成功後會顯示完成並自動關閉。</p>
+      <p class="sub">請選擇作業類型後，點選「到站」或「離站」打卡。成功後會顯示「完成」並自動關閉。</p>
 
       <div class="group">
-        <p class="gtitle">調度</p>
+        <div class="groupTitle">調度</div>
         <div class="row2">
-          <button id="d_arr" class="green">到站</button>
-          <button id="d_lev" class="green">離站</button>
+          <button id="btnDispatchArrive" class="dispatchArrive">到站打卡</button>
+          <button id="btnDispatchLeave" class="dispatchLeave">離站打卡</button>
         </div>
       </div>
 
       <div class="group">
-        <p class="gtitle">一級</p>
+        <div class="groupTitle">一級</div>
         <div class="row2">
-          <button id="l_arr" class="orange">到站</button>
-          <button id="l_lev" class="orange">離站</button>
+          <button id="btnLevel1Arrive" class="level1Arrive">到站打卡</button>
+          <button id="btnLevel1Leave" class="level1Leave">離站打卡</button>
         </div>
       </div>
 
-      <div class="group">
-        <p class="gtitle">換電</p>
+      <div class="group" style="margin-bottom:6px;">
+        <div class="groupTitle">換電</div>
         <div class="row2">
-          <button id="s_arr" class="blue">到站</button>
-          <button id="s_lev" class="blue">離站</button>
+          <button id="btnSwapArrive" class="swapArrive">到站打卡</button>
+          <button id="btnSwapLeave" class="swapLeave">離站打卡</button>
         </div>
       </div>
 
-      <div id="status" class="status muted">啟動中…</div>
+      <!-- ✅ 不再顯示「啟動中…」，預設空白 -->
+      <div id="status" class="status muted"></div>
 
       <details id="dbgWrap" style="display:none;">
         <summary>debug（僅 test=1 顯示）</summary>
@@ -147,27 +185,34 @@
   </div>
 
 <script>
-/** ✅ 只要確認這兩個 */
+/** ===== 只要確認這兩個 ===== */
 const LIFF_ID = "2009174277-dSY24pNu";
 const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyI1gsHWcdfnynjPyuJ55VRFLiwq74ULORIvRHHc94VA0PN673AVtWF6UC_0t5Ch_Ki/exec";
 
+/** ===== UI ===== */
 const $status = document.getElementById("status");
 const $debug = document.getElementById("debug");
 const $dbgWrap = document.getElementById("dbgWrap");
 
-const btnList = [
-  "d_arr","d_lev","l_arr","l_lev","s_arr","s_lev"
-].map(id => document.getElementById(id));
+const btns = {
+  dispatchArrive: document.getElementById("btnDispatchArrive"),
+  dispatchLeave:  document.getElementById("btnDispatchLeave"),
+  level1Arrive:   document.getElementById("btnLevel1Arrive"),
+  level1Leave:    document.getElementById("btnLevel1Leave"),
+  swapArrive:     document.getElementById("btnSwapArrive"),
+  swapLeave:      document.getElementById("btnSwapLeave"),
+};
 
 function setStatus(msg, type){
   $status.className = "status " + (type === "ok" ? "ok" : type === "err" ? "err" : "muted");
-  $status.textContent = msg;
-}
-function setButtonsDisabled(disabled){
-  btnList.forEach(b => b.disabled = disabled);
+  $status.textContent = msg || "";
 }
 
-/** query + liff.state */
+function setButtonsDisabled(disabled){
+  Object.values(btns).forEach(b => b.disabled = disabled);
+}
+
+/** ===== 解析參數：一般 query + liff.state ===== */
 function getMergedParams(){
   const normal = new URLSearchParams(window.location.search || "");
   const merged = new URLSearchParams(normal.toString());
@@ -182,27 +227,30 @@ function getMergedParams(){
   }
   return merged;
 }
+
 function isTestMode(){
   const p = getMergedParams();
   return p.get("test") === "1";
 }
+
 function showDebug(obj){
   if (!isTestMode()) return;
   $dbgWrap.style.display = "";
   $debug.textContent = JSON.stringify(obj, null, 2);
 }
 
-function actionName(action){
-  return action === "dispatch" ? "調度"
-       : action === "level1"  ? "一級"
-       : action === "swap"    ? "換電"
-       : action;
-}
-function phaseName(phase){
-  return phase === "arrive" ? "到站" : "離站";
+function actionCN(job, step){
+  const jobCN = job === "dispatch" ? "調度"
+              : job === "level1" ? "一級"
+              : job === "swap" ? "換電"
+              : job;
+  const stepCN = step === "arrive" ? "到站"
+               : step === "leave" ? "離站"
+               : step;
+  return `${jobCN}${stepCN}打卡`;
 }
 
-/** 定位 */
+/** ===== 定位 ===== */
 function getLocation(){
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) return reject(new Error("此裝置不支援定位"));
@@ -218,14 +266,15 @@ function getLocation(){
   });
 }
 
-/** 打卡 */
-async function punch(action, phase){
+/** ===== 打卡 ===== */
+async function punch(job, step){
   setButtonsDisabled(true);
-  setStatus(`定位中…（${actionName(action)}｜${phaseName(phase)}）`, "muted");
+  setStatus(`定位中…（${actionCN(job, step)}）`, "muted");
 
   const params = getMergedParams();
-  const test = params.get("test") || "";
+  const bypassKey = params.get("key") || "";
   const v = params.get("v") || "";
+  const test = params.get("test") || "";
 
   try{
     await liff.init({ liffId: LIFF_ID });
@@ -240,16 +289,16 @@ async function punch(action, phase){
 
     setStatus("送出打卡…", "muted");
 
+    // ✅ 後端請用 job + step 來判斷（你 GAS 那邊要配合）
     const payload = {
-      action,                 // dispatch|level1|swap
-      phase,                  // arrive|leave
-      userId: profile.userId || "",         // Ua...
+      job,        // dispatch | level1 | swap
+      step,       // arrive | leave
+      userId: profile.userId || "",
       displayName: profile.displayName || "",
-
       lat: loc.lat,
       lng: loc.lng,
       accuracy: loc.accuracy,
-
+      bypassKey,
       test,
       v,
       ua: navigator.userAgent,
@@ -259,6 +308,7 @@ async function punch(action, phase){
 
     showDebug({ step:"request", payload });
 
+    // ✅ 用 text/plain 避開 iOS/LINE WebView 常見 preflight -> Load failed
     const res = await fetch(GAS_WEB_APP_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -278,8 +328,8 @@ async function punch(action, phase){
       return;
     }
 
-    const st = data.stationName ? `\n站點：${data.stationName}` : "";
-    setStatus(`完成 ✅\n作業：${actionName(action)}｜${phaseName(phase)}${st}`, "ok");
+    const station = data.stationName ? `\n站點：${data.stationName}` : "";
+    setStatus(`完成 ✅\n${actionCN(job, step)}${station}`, "ok");
 
     setTimeout(() => {
       try { liff.closeWindow(); } catch(_) {}
@@ -296,17 +346,23 @@ async function punch(action, phase){
   }
 }
 
-document.getElementById("d_arr").addEventListener("click", ()=>punch("dispatch","arrive"));
-document.getElementById("d_lev").addEventListener("click", ()=>punch("dispatch","leave"));
-document.getElementById("l_arr").addEventListener("click", ()=>punch("level1","arrive"));
-document.getElementById("l_lev").addEventListener("click", ()=>punch("level1","leave"));
-document.getElementById("s_arr").addEventListener("click", ()=>punch("swap","arrive"));
-document.getElementById("s_lev").addEventListener("click", ()=>punch("swap","leave"));
+/** 綁定：三作業 * 到站/離站 */
+btns.dispatchArrive.addEventListener("click", () => punch("dispatch","arrive"));
+btns.dispatchLeave.addEventListener("click", () => punch("dispatch","leave"));
 
-(function init(){
+btns.level1Arrive.addEventListener("click", () => punch("level1","arrive"));
+btns.level1Leave.addEventListener("click", () => punch("level1","leave"));
+
+btns.swapArrive.addEventListener("click", () => punch("swap","arrive"));
+btns.swapLeave.addEventListener("click", () => punch("swap","leave"));
+
+/** 初始 debug（不再顯示啟動中文字） */
+(function(){
   if (isTestMode()) {
     const p = getMergedParams();
     showDebug({ note:"test=1", mergedParams:Object.fromEntries(p.entries()) });
+  } else {
+    setStatus("", "muted");
   }
 })();
 </script>
