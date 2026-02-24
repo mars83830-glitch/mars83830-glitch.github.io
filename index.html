@@ -12,15 +12,15 @@
       --shadow:0 10px 25px rgba(0,0,0,.06);
       --radius:18px;
 
-      /* 字體（你已調整到 32）：標題 32、按鈕放大 */
+      /* 字體 */
       --fs-title: 24px;
       --fs-sub: 16px;
-      --fs-group: 32px;  /* ✅ 調度/一級/換電 */
-      --fs-btn: 24px;    /* ✅ 到站/離站（約+50%） */
+      --fs-group: 32px; /* 調度/一級/換電 */
+      --fs-btn: 30px;   /* 到站/離站 */
       --fs-status: 16px;
       --fs-debug: 13px;
 
-      /* 顏色：到站淺、離站深 */
+      /* 顏色：到站淺（黑字）、離站深（白字） */
       --dispatch-light:#5fd49a;
       --dispatch-dark:#15905a;
 
@@ -73,7 +73,7 @@
       line-height:1.65;
     }
 
-    /* ✅ 分隔：每個項目一張卡 */
+    /* 每個項目一張卡 */
     .group{
       margin-bottom: 22px;
       border: 2px solid #e9edf5;
@@ -84,9 +84,9 @@
     }
     .group:last-child{ margin-bottom: 0; }
 
-    /* ✅ 作法 B：標題正常排版（不貼紙、不絕對定位） */
+    /* 作法B：標題正常排版 */
     .groupTitle{
-      font-size: var(--fs-group);   /* 32px */
+      font-size: var(--fs-group);
       font-weight: 900;
       color:#111;
       margin: 0 0 14px;
@@ -103,19 +103,19 @@
       border:0;
       border-radius:16px;
       padding: 18px 14px;
-      font-size:var(--fs-btn);      /* 30px */
+      font-size:var(--fs-btn);
       font-weight:900;
       cursor:pointer;
       width:100%;
     }
     button:disabled{ opacity:.55; cursor:not-allowed; }
 
-    /* ✅ 到站：淺色 + 黑字 */
+    /* 到站：淺色 + 黑字 */
     .dispatchArrive{ background: var(--dispatch-light); color:#000; }
     .level1Arrive{ background: var(--level1-light); color:#000; }
     .swapArrive{ background: var(--swap-light); color:#000; }
 
-    /* ✅ 離站：深色 + 白字 */
+    /* 離站：深色 + 白字 */
     .dispatchLeave{ background: var(--dispatch-dark); color:#fff; }
     .level1Leave{ background: var(--level1-dark); color:#fff; }
     .swapLeave{ background: var(--swap-dark); color:#fff; }
@@ -130,6 +130,38 @@
     .ok{ color:#0a7a35; font-weight:900; }
     .err{ color:#b42318; font-weight:900; }
     .muted{ color:#666; }
+
+    /* ✅ 閒置提醒區 */
+    .idleWrap{
+      display:none;
+      margin-top:12px;
+      border:2px dashed #e5e7eb;
+      border-radius:16px;
+      padding:12px;
+      background:#fff;
+    }
+    .idleTitle{
+      font-weight:900;
+      margin:0 0 6px;
+      color:#111;
+    }
+    .idleText{
+      margin:0 0 10px;
+      color:#666;
+      font-size:14px;
+      line-height:1.5;
+    }
+    .idleBtn{
+      font-size:16px;
+      font-weight:900;
+      padding:12px 14px;
+      border-radius:14px;
+      border:0;
+      width:auto;
+      color:#fff;
+      background:#111;
+      cursor:pointer;
+    }
 
     details{ margin-top:14px; }
     summary{ cursor:pointer; color:#666; font-size:14px; }
@@ -181,6 +213,13 @@
         </div>
       </div>
 
+      <!-- ✅ 閒置提醒（掛太久自救） -->
+      <div id="idleWrap" class="idleWrap">
+        <p class="idleTitle">頁面已久未操作</p>
+        <p class="idleText">若你把打卡頁面放太久，LINE/定位可能會失效，容易出現「打卡失敗」。建議按下重新整理再打卡。</p>
+        <button class="idleBtn" onclick="hardReload()">重新整理</button>
+      </div>
+
       <!-- ✅ 不顯示「啟動中…」，預設空白 -->
       <div id="status" class="status muted"></div>
 
@@ -192,14 +231,25 @@
   </div>
 
 <script>
-/** ✅ 只要確認這兩個 */
+/** ===== 只要確認這兩個 ===== */
 const LIFF_ID = "2009174277-dSY24pNu";
 const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyI1gsHWcdfnynjPyuJ55VRFLiwq74ULORIvRHHc94VA0PN673AVtWF6UC_0t5Ch_Ki/exec";
 
-/** UI */
+/** ✅ 閒置超過幾分鐘就提醒（可調整） */
+const IDLE_WARN_MIN = 8;
+
+/** ✅ 定位策略（更快更穩） */
+const GEO_OPTIONS = {
+  enableHighAccuracy: false,
+  timeout: 8000,
+  maximumAge: 15000
+};
+
+/** ===== UI ===== */
 const $status = document.getElementById("status");
 const $debug = document.getElementById("debug");
 const $dbgWrap = document.getElementById("dbgWrap");
+const $idleWrap = document.getElementById("idleWrap");
 
 const btns = {
   dispatchArrive: document.getElementById("btnDispatchArrive"),
@@ -219,7 +269,7 @@ function setButtonsDisabled(disabled){
   Object.values(btns).forEach(b => b.disabled = disabled);
 }
 
-/** 解析參數：一般 query + liff.state */
+/** ===== 解析參數：一般 query + liff.state ===== */
 function getMergedParams(){
   const normal = new URLSearchParams(window.location.search || "");
   const merged = new URLSearchParams(normal.toString());
@@ -246,7 +296,8 @@ function showDebug(obj){
   $debug.textContent = JSON.stringify(obj, null, 2);
 }
 
-function actionCN(job){
+/** ===== 文字 ===== */
+function jobCN(job){
   return job === "dispatch" ? "調度"
        : job === "level1" ? "一級"
        : job === "swap" ? "換電"
@@ -256,7 +307,39 @@ function stepCN(step){
   return step === "arrive" ? "到站" : "離站";
 }
 
-/** 定位 */
+/** ===== 閒置自救 ===== */
+let openedAt = Date.now();
+let lastActionAt = Date.now();
+let idleShown = false;
+
+function touchAction(){
+  lastActionAt = Date.now();
+  if (idleShown) {
+    $idleWrap.style.display = "none";
+    idleShown = false;
+  }
+}
+
+function hardReload(){
+  try {
+    const url = new URL(location.href);
+    // 加一個 cache bust，避免 GitHub/瀏覽器快取
+    url.searchParams.set("v", String(Date.now()));
+    location.replace(url.toString());
+  } catch(_) {
+    location.reload(true);
+  }
+}
+
+setInterval(() => {
+  const idleMin = (Date.now() - lastActionAt) / 60000;
+  if (idleMin >= IDLE_WARN_MIN && !idleShown) {
+    idleShown = true;
+    $idleWrap.style.display = "";
+  }
+}, 15000);
+
+/** ===== 定位 ===== */
 function getLocation(){
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) return reject(new Error("此裝置不支援定位"));
@@ -267,37 +350,49 @@ function getLocation(){
         accuracy: pos.coords.accuracy
       }),
       (err) => reject(new Error(err.message || "定位失敗")),
-      { enableHighAccuracy:true, timeout:12000, maximumAge:0 }
+      GEO_OPTIONS
     );
   });
 }
 
-/** 打卡 */
+/** ===== LIFF profile（加強版，失效時提示） ===== */
+async function getProfileSafe(){
+  await liff.init({ liffId: LIFF_ID });
+
+  // 非 LINE 內：需要登入
+  if (!liff.isInClient() && !liff.isLoggedIn()) {
+    liff.login();
+    throw new Error("redirect_login");
+  }
+
+  try {
+    return await liff.getProfile();
+  } catch (e) {
+    // LIFF session 常見掛太久失效
+    throw new Error("liff_profile_failed");
+  }
+}
+
+/** ===== 打卡 ===== */
 async function punch(job, step){
+  touchAction();
   setButtonsDisabled(true);
-  setStatus(`定位中…（${actionCN(job)}｜${stepCN(step)}）`, "muted");
+  setStatus(`定位中…（${jobCN(job)}｜${stepCN(step)}）`, "muted");
 
   const params = getMergedParams();
-  const bypassKey = params.get("key") || "";
+  const bypassKey = params.get("key") || "";  // 如果你用 ?key=hyb... 繞過測試
   const v = params.get("v") || "";
   const test = params.get("test") || "";
 
   try{
-    await liff.init({ liffId: LIFF_ID });
-
-    if (!liff.isInClient() && !liff.isLoggedIn()) {
-      liff.login();
-      return;
-    }
-
-    const profile = await liff.getProfile();
+    const profile = await getProfileSafe();
     const loc = await getLocation();
 
     setStatus("送出打卡…", "muted");
 
     const payload = {
-      job,              // dispatch|level1|swap
-      step,             // arrive|leave
+      job,
+      step,
       userId: profile.userId || "",
       displayName: profile.displayName || "",
       lat: loc.lat,
@@ -306,7 +401,6 @@ async function punch(job, step){
       bypassKey,
       test,
       v,
-      ua: navigator.userAgent,
       href: location.href,
       ts: Date.now()
     };
@@ -327,25 +421,57 @@ async function punch(job, step){
 
     if (!data.ok) {
       const msg = data.message || "打卡失敗，請稍後再試";
-      setStatus(`錯誤：${msg}`, "err");
+      // 特別針對常見錯誤給更好提示
+      if (msg.includes("離場站過遠")) {
+        setStatus(`錯誤：${msg}`, "err");
+      } else if (msg.includes("尚未到站")) {
+        setStatus(`錯誤：${msg}`, "err");
+      } else {
+        setStatus(`錯誤：${msg}\n（若頁面放太久，建議按下重新整理再試）`, "err");
+        $idleWrap.style.display = "";
+        idleShown = true;
+      }
       setButtonsDisabled(false);
       return;
     }
 
     const station = data.stationName ? `\n站點：${data.stationName}` : "";
-    setStatus(`完成 ✅\n${actionCN(job)}｜${stepCN(step)}打卡${station}`, "ok");
+    setStatus(`完成 ✅\n${jobCN(job)}｜${stepCN(step)}打卡${station}`, "ok");
 
     setTimeout(() => {
       try { liff.closeWindow(); } catch(_) {}
     }, 900);
 
   } catch(e){
-    if (!isTestMode()) {
-      setStatus("錯誤：打卡失敗，請稍後再試", "err");
-    } else {
-      setStatus(`錯誤：${e && e.message ? e.message : e}`, "err");
-      showDebug({ step:"catch", error: String(e), stack: e && e.stack ? e.stack : "" });
+    const msg = (e && e.message) ? e.message : String(e);
+
+    if (msg === "redirect_login") {
+      // 已觸發 liff.login()，不再顯示錯誤
+      setButtonsDisabled(false);
+      return;
     }
+
+    if (!isTestMode()) {
+      // 正式模式：不暴露細節，但給出自救引導
+      if (msg === "liff_profile_failed") {
+        setStatus("錯誤：頁面已放置過久，請重新整理後再打卡", "err");
+        $idleWrap.style.display = "";
+        idleShown = true;
+      } else if (msg.toLowerCase().includes("timeout")) {
+        setStatus("錯誤：定位逾時，請開啟定位或重新整理後再試", "err");
+      } else {
+        setStatus("錯誤：打卡失敗，請稍後再試\n（若頁面放太久，建議重新整理）", "err");
+        $idleWrap.style.display = "";
+        idleShown = true;
+      }
+    } else {
+      // 測試模式：顯示更多細節
+      setStatus(`錯誤：${msg}`, "err");
+      showDebug({ step:"catch", error: String(e), stack: e && e.stack ? e.stack : "" });
+      $idleWrap.style.display = "";
+      idleShown = true;
+    }
+
     setButtonsDisabled(false);
   }
 }
@@ -362,6 +488,11 @@ btns.swapLeave.addEventListener("click", () => punch("swap","leave"));
 
 /** 初始（不顯示啟動中文字） */
 (function(){
+  // 任何互動都刷新 lastActionAt
+  document.addEventListener("click", touchAction, { passive:true });
+  document.addEventListener("touchstart", touchAction, { passive:true });
+  document.addEventListener("keydown", touchAction, { passive:true });
+
   if (isTestMode()) {
     const p = getMergedParams();
     showDebug({ note:"test=1", mergedParams:Object.fromEntries(p.entries()) });
