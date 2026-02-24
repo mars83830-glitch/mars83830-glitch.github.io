@@ -12,14 +12,15 @@
       --shadow:0 10px 25px rgba(0,0,0,.06);
       --radius:18px;
 
-      /* ✅ 字體整體放大 */
+      /* 字體（你已調整到 32）：標題 32、按鈕放大 */
       --fs-title: 24px;
       --fs-sub: 16px;
-      --fs-btn: 30px;
+      --fs-group: 32px;  /* ✅ 調度/一級/換電 */
+      --fs-btn: 30px;    /* ✅ 到站/離站（約+50%） */
       --fs-status: 16px;
       --fs-debug: 13px;
 
-      /* ✅ 顏色：到站淺、離站深 */
+      /* 顏色：到站淺、離站深 */
       --dispatch-light:#5fd49a;
       --dispatch-dark:#15905a;
 
@@ -35,11 +36,8 @@
       margin:0;
       font-family: system-ui, -apple-system, "Segoe UI", Arial, "Noto Sans TC", sans-serif;
       background:var(--bg);
-      padding-top: env(safe-area-inset-top);
-      padding-bottom: env(safe-area-inset-bottom);
-      padding-left: env(safe-area-inset-left);
-      padding-right: env(safe-area-inset-right);
-      font-size: 18px; /* ✅ 基礎字體放大 */
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      font-size: 18px;
     }
 
     .page{
@@ -75,62 +73,59 @@
       line-height:1.65;
     }
 
+    /* ✅ 分隔：每個項目一張卡 */
     .group{
-      position: relative;
       margin-bottom: 22px;
-      padding: 28px 18px 18px;  /* 上方留給標籤 */
       border: 2px solid #e9edf5;
       border-radius: 18px;
-      background:#fff;
+      padding: 18px;
+      background: #fff;
+      box-shadow: 0 6px 16px rgba(0,0,0,.04);
     }
+    .group:last-child{ margin-bottom: 0; }
 
+    /* ✅ 作法 B：標題正常排版（不貼紙、不絕對定位） */
     .groupTitle{
-      position:absolute;
-      top:-16px;
-      left:16px;
-      background:#fff;
-      padding: 4px 12px;
-      border-radius: 999px;
-      border: 2px solid #e9edf5;
-      font-size: 32px; /* 你要的 300% 可放這裡，但我建議稍微收斂 */
+      font-size: var(--fs-group);   /* 32px */
+      font-weight: 900;
+      color:#111;
+      margin: 0 0 14px;
+      line-height: 1.1;
     }
 
     .row2{
       display:grid;
       grid-template-columns: 1fr 1fr;
-      gap:10px;
+      gap: 14px;
     }
 
     button{
       border:0;
       border-radius:16px;
-      padding:16px 14px;
-      font-size:var(--fs-btn);
+      padding: 18px 14px;
+      font-size:var(--fs-btn);      /* 30px */
       font-weight:900;
       cursor:pointer;
-      color:#fff;
       width:100%;
     }
     button:disabled{ opacity:.55; cursor:not-allowed; }
 
-    /* ✅ 調度：到站淺 / 離站深 */
+    /* ✅ 到站：淺色 + 黑字 */
     .dispatchArrive{ background: var(--dispatch-light); color:#000; }
-    .dispatchLeave{ background: var(--dispatch-dark); }
-
-    /* ✅ 一級：到站淺 / 離站深 */
     .level1Arrive{ background: var(--level1-light); color:#000; }
-    .level1Leave{ background: var(--level1-dark); }
-
-    /* ✅ 換電：到站淺 / 離站深 */
     .swapArrive{ background: var(--swap-light); color:#000; }
-    .swapLeave{ background: var(--swap-dark); }
+
+    /* ✅ 離站：深色 + 白字 */
+    .dispatchLeave{ background: var(--dispatch-dark); color:#fff; }
+    .level1Leave{ background: var(--level1-dark); color:#fff; }
+    .swapLeave{ background: var(--swap-dark); color:#fff; }
 
     .status{
       margin-top:16px;
       font-size:var(--fs-status);
       line-height:1.7;
       white-space:pre-wrap;
-      min-height: 22px; /* ✅ 沒訊息也不會跳 */
+      min-height: 22px;
     }
     .ok{ color:#0a7a35; font-weight:900; }
     .err{ color:#b42318; font-weight:900; }
@@ -175,7 +170,7 @@
         </div>
       </div>
 
-      <div class="group" style="margin-bottom:6px;">
+      <div class="group">
         <div class="groupTitle">換電</div>
         <div class="row2">
           <button id="btnSwapArrive" class="swapArrive">到站打卡</button>
@@ -183,7 +178,7 @@
         </div>
       </div>
 
-      <!-- ✅ 不再顯示「啟動中…」，預設空白 -->
+      <!-- ✅ 不顯示「啟動中…」，預設空白 -->
       <div id="status" class="status muted"></div>
 
       <details id="dbgWrap" style="display:none;">
@@ -194,11 +189,11 @@
   </div>
 
 <script>
-/** ===== 只要確認這兩個 ===== */
+/** ✅ 只要確認這兩個 */
 const LIFF_ID = "2009174277-dSY24pNu";
 const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyI1gsHWcdfnynjPyuJ55VRFLiwq74ULORIvRHHc94VA0PN673AVtWF6UC_0t5Ch_Ki/exec";
 
-/** ===== UI ===== */
+/** UI */
 const $status = document.getElementById("status");
 const $debug = document.getElementById("debug");
 const $dbgWrap = document.getElementById("dbgWrap");
@@ -221,7 +216,7 @@ function setButtonsDisabled(disabled){
   Object.values(btns).forEach(b => b.disabled = disabled);
 }
 
-/** ===== 解析參數：一般 query + liff.state ===== */
+/** 解析參數：一般 query + liff.state */
 function getMergedParams(){
   const normal = new URLSearchParams(window.location.search || "");
   const merged = new URLSearchParams(normal.toString());
@@ -248,18 +243,17 @@ function showDebug(obj){
   $debug.textContent = JSON.stringify(obj, null, 2);
 }
 
-function actionCN(job, step){
-  const jobCN = job === "dispatch" ? "調度"
-              : job === "level1" ? "一級"
-              : job === "swap" ? "換電"
-              : job;
-  const stepCN = step === "arrive" ? "到站"
-               : step === "leave" ? "離站"
-               : step;
-  return `${jobCN}${stepCN}打卡`;
+function actionCN(job){
+  return job === "dispatch" ? "調度"
+       : job === "level1" ? "一級"
+       : job === "swap" ? "換電"
+       : job;
+}
+function stepCN(step){
+  return step === "arrive" ? "到站" : "離站";
 }
 
-/** ===== 定位 ===== */
+/** 定位 */
 function getLocation(){
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) return reject(new Error("此裝置不支援定位"));
@@ -275,10 +269,10 @@ function getLocation(){
   });
 }
 
-/** ===== 打卡 ===== */
+/** 打卡 */
 async function punch(job, step){
   setButtonsDisabled(true);
-  setStatus(`定位中…（${actionCN(job, step)}）`, "muted");
+  setStatus(`定位中…（${actionCN(job)}｜${stepCN(step)}）`, "muted");
 
   const params = getMergedParams();
   const bypassKey = params.get("key") || "";
@@ -298,10 +292,9 @@ async function punch(job, step){
 
     setStatus("送出打卡…", "muted");
 
-    // ✅ 後端請用 job + step 來判斷（你 GAS 那邊要配合）
     const payload = {
-      job,        // dispatch | level1 | swap
-      step,       // arrive | leave
+      job,              // dispatch|level1|swap
+      step,             // arrive|leave
       userId: profile.userId || "",
       displayName: profile.displayName || "",
       lat: loc.lat,
@@ -317,7 +310,6 @@ async function punch(job, step){
 
     showDebug({ step:"request", payload });
 
-    // ✅ 用 text/plain 避開 iOS/LINE WebView 常見 preflight -> Load failed
     const res = await fetch(GAS_WEB_APP_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -338,7 +330,7 @@ async function punch(job, step){
     }
 
     const station = data.stationName ? `\n站點：${data.stationName}` : "";
-    setStatus(`完成 ✅\n${actionCN(job, step)}${station}`, "ok");
+    setStatus(`完成 ✅\n${actionCN(job)}｜${stepCN(step)}打卡${station}`, "ok");
 
     setTimeout(() => {
       try { liff.closeWindow(); } catch(_) {}
@@ -355,7 +347,7 @@ async function punch(job, step){
   }
 }
 
-/** 綁定：三作業 * 到站/離站 */
+/** 綁定：三作業 × 到站/離站 */
 btns.dispatchArrive.addEventListener("click", () => punch("dispatch","arrive"));
 btns.dispatchLeave.addEventListener("click", () => punch("dispatch","leave"));
 
@@ -365,7 +357,7 @@ btns.level1Leave.addEventListener("click", () => punch("level1","leave"));
 btns.swapArrive.addEventListener("click", () => punch("swap","arrive"));
 btns.swapLeave.addEventListener("click", () => punch("swap","leave"));
 
-/** 初始 debug（不再顯示啟動中文字） */
+/** 初始（不顯示啟動中文字） */
 (function(){
   if (isTestMode()) {
     const p = getMergedParams();
