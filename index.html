@@ -343,7 +343,7 @@ function setPhotoButtonsDisabled(disabled){
 }
 
 /** ===== 本次打卡結果（供照片上傳綁定） ===== */
-let lastPunch = null; 
+let lastPunch = null;
 // { recordKey, row, step, job, stationName, uid, displayName, lineIdToWrite }
 
 /** ===== 解析參數：一般 query + liff.state ===== */
@@ -566,6 +566,9 @@ async function punch(job, step){
     const station = data.stationName ? `\n站點：${data.stationName}` : "";
     setStatus(`完成 ✅\n${jobCN(job)}｜${stepCN(step)}打卡${station}`, "ok");
 
+    // ✅ 修正：打卡成功後解除主按鈕鎖定（避免畫面看起來卡住）
+    setButtonsDisabled(false);
+
     // 儲存這次打卡資訊，供照片上傳綁定
     lastPunch = {
       recordKey: data.recordKey || "",
@@ -582,6 +585,11 @@ async function punch(job, step){
     $photoText.textContent = `打卡已完成（${jobCN(job)}｜${stepCN(step)}）${data.stationName ? "，站點：" + data.stationName : ""}。\n可選擇拍照上傳作為紀錄（不影響打卡）。`;
     setPhotoWrapVisible(true);
     setPhotoButtonsDisabled(false);
+
+    // ✅ 修正：自動捲動到拍照區（看起來像跳到拍照）
+    setTimeout(() => {
+      try { $photoWrap.scrollIntoView({ behavior: "smooth", block: "nearest" }); } catch(_) {}
+    }, 50);
 
   } catch(e){
     const msg = (e && e.message) ? e.message : String(e);
