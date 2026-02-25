@@ -15,18 +15,16 @@
       /* 字體 */
       --fs-title: 24px;
       --fs-sub: 16px;
-      --fs-group: 32px; /* 調度/一級/換電 */
-      --fs-btn: 30px;   /* 到站/離站 */
+      --fs-group: 32px;
+      --fs-btn: 30px;
       --fs-status: 16px;
       --fs-debug: 13px;
 
       /* 顏色：到站淺（黑字）、離站深（白字） */
       --dispatch-light:#5fd49a;
       --dispatch-dark:#15905a;
-
       --level1-light:#ffbe5c;
       --level1-dark:#e07a00;
-
       --swap-light:#7fb2ff;
       --swap-dark:#1e79ff;
     }
@@ -84,7 +82,6 @@
     }
     .group:last-child{ margin-bottom: 0; }
 
-    /* 作法B：標題正常排版 */
     .groupTitle{
       font-size: var(--fs-group);
       font-weight: 900;
@@ -163,6 +160,56 @@
       cursor:pointer;
     }
 
+    /* ✅ 可選拍照區 */
+    .photoWrap{
+      display:none;
+      margin-top:12px;
+      border:2px solid #e5e7eb;
+      border-radius:16px;
+      padding:12px;
+      background:#fff;
+    }
+    .photoTitle{
+      font-weight:900;
+      margin:0 0 6px;
+      color:#111;
+    }
+    .photoText{
+      margin:0 0 10px;
+      color:#666;
+      font-size:14px;
+      line-height:1.5;
+      white-space:pre-wrap;
+    }
+    .photoRow{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    .photoBtn{
+      font-size:18px;
+      font-weight:900;
+      padding:12px 10px;
+      border-radius:14px;
+      width:100%;
+    }
+    .photoTake{
+      background:#111;
+      color:#fff;
+      border:0;
+    }
+    .photoSkip{
+      background:#fff;
+      color:#666;
+      border:2px solid #d1d5db;
+    }
+    .photoHint{
+      margin-top:8px;
+      color:#666;
+      font-size:12px;
+      line-height:1.4;
+    }
+
     details{ margin-top:14px; }
     summary{ cursor:pointer; color:#666; font-size:14px; }
     .debugBox{
@@ -186,7 +233,7 @@
       <p class="title">桃園營運處｜打卡系統</p>
       <p class="sub">
         選擇作業類，點選「到站」或「離站」打卡<br>
-        成功後會顯示「完成」並自動關閉。
+        成功後可選擇拍照上傳（不影響打卡）。
       </p>
 
       <div class="group">
@@ -220,8 +267,22 @@
         <button class="idleBtn" onclick="hardReload()">重新整理</button>
       </div>
 
-      <!-- ✅ 不顯示「啟動中…」，預設空白 -->
+      <!-- ✅ 狀態訊息 -->
       <div id="status" class="status muted"></div>
+
+      <!-- ✅ 打卡成功後顯示：可選拍照 -->
+      <div id="photoWrap" class="photoWrap">
+        <p class="photoTitle">📷 可選：拍照上傳站點照片</p>
+        <p id="photoText" class="photoText">打卡已完成，可拍照補充現場紀錄（不影響打卡）。</p>
+        <div class="photoRow">
+          <button id="btnTakePhoto" class="photoBtn photoTake" type="button">拍照上傳</button>
+          <button id="btnSkipPhoto" class="photoBtn photoSkip" type="button">略過並關閉</button>
+        </div>
+        <div class="photoHint">※ 系統會優先開啟相機；部分手機/LINE版本仍可能顯示相簿選項。</div>
+      </div>
+
+      <!-- 隱藏檔案輸入：優先後鏡頭 -->
+      <input id="photoInput" type="file" accept="image/*" capture="environment" style="display:none">
 
       <details id="dbgWrap" style="display:none;">
         <summary>debug（僅 test=1 顯示）</summary>
@@ -251,6 +312,12 @@ const $debug = document.getElementById("debug");
 const $dbgWrap = document.getElementById("dbgWrap");
 const $idleWrap = document.getElementById("idleWrap");
 
+const $photoWrap = document.getElementById("photoWrap");
+const $photoText = document.getElementById("photoText");
+const $photoInput = document.getElementById("photoInput");
+const $btnTakePhoto = document.getElementById("btnTakePhoto");
+const $btnSkipPhoto = document.getElementById("btnSkipPhoto");
+
 const btns = {
   dispatchArrive: document.getElementById("btnDispatchArrive"),
   dispatchLeave:  document.getElementById("btnDispatchLeave"),
@@ -264,10 +331,20 @@ function setStatus(msg, type){
   $status.className = "status " + (type === "ok" ? "ok" : type === "err" ? "err" : "muted");
   $status.textContent = msg || "";
 }
-
 function setButtonsDisabled(disabled){
   Object.values(btns).forEach(b => b.disabled = disabled);
 }
+function setPhotoWrapVisible(show){
+  $photoWrap.style.display = show ? "" : "none";
+}
+function setPhotoButtonsDisabled(disabled){
+  $btnTakePhoto.disabled = disabled;
+  $btnSkipPhoto.disabled = disabled;
+}
+
+/** ===== 本次打卡結果（供照片上傳綁定） ===== */
+let lastPunch = null; 
+// { recordKey, row, step, job, stationName, uid, displayName, lineIdToWrite }
 
 /** ===== 解析參數：一般 query + liff.state ===== */
 function getMergedParams(){
@@ -284,12 +361,10 @@ function getMergedParams(){
   }
   return merged;
 }
-
 function isTestMode(){
   const p = getMergedParams();
   return p.get("test") === "1";
 }
-
 function showDebug(obj){
   if (!isTestMode()) return;
   $dbgWrap.style.display = "";
@@ -308,7 +383,6 @@ function stepCN(step){
 }
 
 /** ===== 閒置自救 ===== */
-let openedAt = Date.now();
 let lastActionAt = Date.now();
 let idleShown = false;
 
@@ -319,18 +393,15 @@ function touchAction(){
     idleShown = false;
   }
 }
-
 function hardReload(){
   try {
     const url = new URL(location.href);
-    // 加一個 cache bust，避免 GitHub/瀏覽器快取
     url.searchParams.set("v", String(Date.now()));
     location.replace(url.toString());
   } catch(_) {
     location.reload(true);
   }
 }
-
 setInterval(() => {
   const idleMin = (Date.now() - lastActionAt) / 60000;
   if (idleMin >= IDLE_WARN_MIN && !idleShown) {
@@ -359,7 +430,6 @@ function getLocation(){
 async function getProfileSafe(){
   await liff.init({ liffId: LIFF_ID });
 
-  // 非 LINE 內：需要登入
   if (!liff.isInClient() && !liff.isLoggedIn()) {
     liff.login();
     throw new Error("redirect_login");
@@ -368,19 +438,88 @@ async function getProfileSafe(){
   try {
     return await liff.getProfile();
   } catch (e) {
-    // LIFF session 常見掛太久失效
     throw new Error("liff_profile_failed");
   }
+}
+
+/** ===== 圖片壓縮工具 ===== */
+function fileToImage(file){
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("圖片讀取失敗"));
+      img.src = fr.result;
+    };
+    fr.onerror = () => reject(new Error("檔案讀取失敗"));
+    fr.readAsDataURL(file);
+  });
+}
+function canvasToBlob(canvas, type, quality){
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (!blob) return reject(new Error("圖片壓縮失敗"));
+      resolve(blob);
+    }, type, quality);
+  });
+}
+async function compressImageFile(file, maxEdge = 1280, quality = 0.75){
+  const img = await fileToImage(file);
+  let w = img.naturalWidth || img.width;
+  let h = img.naturalHeight || img.height;
+  if (!w || !h) throw new Error("圖片尺寸無效");
+
+  const scale = Math.min(1, maxEdge / Math.max(w, h));
+  const tw = Math.max(1, Math.round(w * scale));
+  const th = Math.max(1, Math.round(h * scale));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = tw;
+  canvas.height = th;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0, tw, th);
+
+  return await canvasToBlob(canvas, "image/jpeg", quality);
+}
+function blobToBase64(blob){
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const result = String(fr.result || "");
+      const base64 = result.includes(",") ? result.split(",")[1] : result;
+      resolve(base64);
+    };
+    fr.onerror = () => reject(new Error("圖片轉檔失敗"));
+    fr.readAsDataURL(blob);
+  });
+}
+
+/** ===== 共用 POST ===== */
+async function postJSON(payload){
+  const res = await fetch(GAS_WEB_APP_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload),
+  });
+
+  const text = await res.text();
+  let data = {};
+  try { data = JSON.parse(text); } catch(_) {}
+  return { res, text, data };
 }
 
 /** ===== 打卡 ===== */
 async function punch(job, step){
   touchAction();
   setButtonsDisabled(true);
+  setPhotoWrapVisible(false);
+  lastPunch = null;
+
   setStatus(`定位中…（${jobCN(job)}｜${stepCN(step)}）`, "muted");
 
   const params = getMergedParams();
-  const bypassKey = params.get("key") || "";  // 如果你用 ?key=hyb... 繞過測試
+  const bypassKey = params.get("key") || "";
   const v = params.get("v") || "";
   const test = params.get("test") || "";
 
@@ -391,6 +530,7 @@ async function punch(job, step){
     setStatus("送出打卡…", "muted");
 
     const payload = {
+      action: "punch",
       job,
       step,
       userId: profile.userId || "",
@@ -405,26 +545,14 @@ async function punch(job, step){
       ts: Date.now()
     };
 
-    showDebug({ step:"request", payload });
+    showDebug({ step:"request_punch", payload });
 
-    const res = await fetch(GAS_WEB_APP_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload),
-    });
-
-    const text = await res.text();
-    let data = {};
-    try { data = JSON.parse(text); } catch(_) {}
-
-    showDebug({ step:"response", status: res.status, text, data });
+    const { res, text, data } = await postJSON(payload);
+    showDebug({ step:"response_punch", status: res.status, text, data });
 
     if (!data.ok) {
       const msg = data.message || "打卡失敗，請稍後再試";
-      // 特別針對常見錯誤給更好提示
-      if (msg.includes("離場站過遠")) {
-        setStatus(`錯誤：${msg}`, "err");
-      } else if (msg.includes("尚未到站")) {
+      if (msg.includes("離場站過遠") || msg.includes("尚未到站") || msg.includes("同一站點")) {
         setStatus(`錯誤：${msg}`, "err");
       } else {
         setStatus(`錯誤：${msg}\n（若頁面放太久，建議按下重新整理再試）`, "err");
@@ -438,21 +566,32 @@ async function punch(job, step){
     const station = data.stationName ? `\n站點：${data.stationName}` : "";
     setStatus(`完成 ✅\n${jobCN(job)}｜${stepCN(step)}打卡${station}`, "ok");
 
-    setTimeout(() => {
-      try { liff.closeWindow(); } catch(_) {}
-    }, 900);
+    // 儲存這次打卡資訊，供照片上傳綁定
+    lastPunch = {
+      recordKey: data.recordKey || "",
+      row: data.row || "",
+      step: data.step || step,
+      job: data.jobRaw || job,
+      stationName: data.stationName || "",
+      uid: data.uid || (profile.userId || ""),
+      displayName: profile.displayName || "",
+      lineIdToWrite: data.lineIdToWrite || (profile.displayName || profile.userId || "TEST")
+    };
+
+    // 顯示可選拍照區（不強制）
+    $photoText.textContent = `打卡已完成（${jobCN(job)}｜${stepCN(step)}）${data.stationName ? "，站點：" + data.stationName : ""}。\n可選擇拍照上傳作為紀錄（不影響打卡）。`;
+    setPhotoWrapVisible(true);
+    setPhotoButtonsDisabled(false);
 
   } catch(e){
     const msg = (e && e.message) ? e.message : String(e);
 
     if (msg === "redirect_login") {
-      // 已觸發 liff.login()，不再顯示錯誤
       setButtonsDisabled(false);
       return;
     }
 
     if (!isTestMode()) {
-      // 正式模式：不暴露細節，但給出自救引導
       if (msg === "liff_profile_failed") {
         setStatus("錯誤：頁面已放置過久，請重新整理後再打卡", "err");
         $idleWrap.style.display = "";
@@ -465,9 +604,8 @@ async function punch(job, step){
         idleShown = true;
       }
     } else {
-      // 測試模式：顯示更多細節
       setStatus(`錯誤：${msg}`, "err");
-      showDebug({ step:"catch", error: String(e), stack: e && e.stack ? e.stack : "" });
+      showDebug({ step:"catch_punch", error: String(e), stack: e && e.stack ? e.stack : "" });
       $idleWrap.style.display = "";
       idleShown = true;
     }
@@ -475,6 +613,102 @@ async function punch(job, step){
     setButtonsDisabled(false);
   }
 }
+
+/** ===== 拍照上傳（可選） ===== */
+$btnTakePhoto.addEventListener("click", () => {
+  touchAction();
+  if (!lastPunch || !lastPunch.recordKey) {
+    setStatus("錯誤：找不到本次打卡紀錄，請重新打卡", "err");
+    return;
+  }
+  $photoInput.value = "";
+  $photoInput.click();
+});
+
+$btnSkipPhoto.addEventListener("click", () => {
+  touchAction();
+  setPhotoButtonsDisabled(true);
+  setStatus(($status.textContent || "完成 ✅") + "\n（已略過照片）", "ok");
+  setTimeout(() => {
+    try { liff.closeWindow(); } catch(_) {}
+  }, 700);
+});
+
+$photoInput.addEventListener("change", async (ev) => {
+  touchAction();
+  const file = ev.target.files && ev.target.files[0];
+  if (!file) return;
+
+  if (!lastPunch || !lastPunch.recordKey) {
+    setStatus("錯誤：找不到本次打卡紀錄，請重新打卡", "err");
+    setPhotoButtonsDisabled(false);
+    return;
+  }
+
+  try {
+    setPhotoButtonsDisabled(true);
+    setStatus("照片處理中…", "muted");
+
+    const compressed = await compressImageFile(file, 1280, 0.75);
+    const imageBase64 = await blobToBase64(compressed);
+
+    const params = getMergedParams();
+    const test = params.get("test") || "";
+    const bypassKey = params.get("key") || "";
+
+    const payload = {
+      action: "uploadPhoto",
+      recordKey: lastPunch.recordKey,
+      uid: lastPunch.uid || "",
+      job: lastPunch.job || "",
+      step: lastPunch.step || "",
+      stationName: lastPunch.stationName || "",
+      displayName: lastPunch.displayName || "",
+      lineIdToWrite: lastPunch.lineIdToWrite || "",
+      mimeType: "image/jpeg",
+      fileName: `${stepCN(lastPunch.step)}_${jobCN(lastPunch.job)}_${Date.now()}.jpg`,
+      imageBase64,
+      test,
+      bypassKey,
+      ts: Date.now()
+    };
+
+    showDebug({
+      step: "request_upload_photo",
+      payload: {
+        ...payload,
+        imageBase64: `<<base64 ${imageBase64.length} chars>>`
+      }
+    });
+
+    const { res, text, data } = await postJSON(payload);
+    showDebug({ step:"response_upload_photo", status: res.status, text, data });
+
+    if (!data.ok) {
+      const msg = data.message || "照片上傳失敗";
+      setStatus(`完成 ✅（打卡已成功）\n照片上傳失敗：${msg}\n可重試或略過`, "err");
+      setPhotoButtonsDisabled(false);
+      return;
+    }
+
+    setStatus(`完成 ✅\n照片已上傳`, "ok");
+    setPhotoButtonsDisabled(true);
+
+    setTimeout(() => {
+      try { liff.closeWindow(); } catch(_) {}
+    }, 700);
+
+  } catch (e) {
+    const msg = (e && e.message) ? e.message : String(e);
+    if (!isTestMode()) {
+      setStatus("完成 ✅（打卡已成功）\n照片上傳失敗，請稍後再試或略過", "err");
+    } else {
+      setStatus(`完成 ✅（打卡已成功）\n照片上傳失敗：${msg}`, "err");
+      showDebug({ step:"catch_upload_photo", error: String(e), stack: e && e.stack ? e.stack : "" });
+    }
+    setPhotoButtonsDisabled(false);
+  }
+});
 
 /** 綁定：三作業 × 到站/離站 */
 btns.dispatchArrive.addEventListener("click", () => punch("dispatch","arrive"));
@@ -488,7 +722,6 @@ btns.swapLeave.addEventListener("click", () => punch("swap","leave"));
 
 /** 初始（不顯示啟動中文字） */
 (function(){
-  // 任何互動都刷新 lastActionAt
   document.addEventListener("click", touchAction, { passive:true });
   document.addEventListener("touchstart", touchAction, { passive:true });
   document.addEventListener("keydown", touchAction, { passive:true });
