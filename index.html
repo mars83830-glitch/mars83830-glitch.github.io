@@ -222,6 +222,7 @@
 
       <!-- ✅ 不顯示「啟動中…」，預設空白 -->
       <div id="status" class="status muted"></div>
+      <div id="authBox" style="display:none; margin-top:12px; padding:12px; border-radius:12px; background:#fff7e6; border:1px solid #f5d08a; color:#8a5300; font-weight:700; line-height:1.5;"></div>
 
       <details id="dbgWrap" style="display:none;">
         <summary>debug（僅 test=1 顯示）</summary>
@@ -250,6 +251,7 @@ const $status = document.getElementById("status");
 const $debug = document.getElementById("debug");
 const $dbgWrap = document.getElementById("dbgWrap");
 const $idleWrap = document.getElementById("idleWrap");
+const $authBox = document.getElementById("authBox");
 
 const btns = {
   dispatchArrive: document.getElementById("btnDispatchArrive"),
@@ -259,6 +261,9 @@ const btns = {
   swapArrive:     document.getElementById("btnSwapArrive"),
   swapLeave:      document.getElementById("btnSwapLeave"),
 };
+
+let CURRENT_PROFILE = null;
+let AUTH_READY = false;
 
 function setStatus(msg, type){
   $status.className = "status " + (type === "ok" ? "ok" : type === "err" ? "err" : "muted");
@@ -373,8 +378,82 @@ async function getProfileSafe(){
   }
 }
 
+async function postJsonToGas(payload){
+  const res = await fetch(GAS_WEB_APP_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload),
+  });
+  const text = await res.text();
+  let data = {};
+  try { data = JSON.parse(text); } catch(_) {}
+  return { res, text, data };
+}
+
+/** ===== 登入 + 授權閘門（待審核） ===== */
+async function initAuthGate(){
+  setButtonsDisabled(true);
+  AUTH_READY = false;
+  setStatus("登入驗證中…", "muted");
+
+  try {
+    const profile = await getProfileSafe(); // 可能觸發 liff.login()
+    CURRENT_PROFILE = profile;
+
+    const { data } = await postJsonToGas({
+      action: "checkAuth",
+      userId: profile.userId || "",
+      displayName: profile.displayName || "",
+      test: isTestMode() ? "1" : "0",
+      ts: Date.now()
+    });
+
+    showDebug({ step:"checkAuth", profile, result:data });
+
+    if (!data || !data.ok) {
+      $authBox.style.display = "";
+      $authBox.textContent = "授權檢查失敗，請稍後再試";
+      setStatus("錯誤：授權檢查失敗", "err");
+      return;
+    }
+
+    if (data.canPunch === true) {
+      $authBox.style.display = "none";
+      AUTH_READY = true;
+      setButtonsDisabled(false);
+      setStatus(`已登入：${profile.displayName || "使用者"}，可開始打卡`, "muted");
+      return;
+    }
+
+    // pending / blocked / disabled
+    AUTH_READY = false;
+    setButtonsDisabled(true);
+    $authBox.style.display = "";
+    $authBox.textContent = data.message || "尚未開通打卡權限，請聯絡管理員";
+    setStatus("目前無法打卡", "err");
+  } catch (e) {
+    const msg = (e && e.message) ? e.message : String(e);
+
+    if (msg === "redirect_login") {
+      // 已跳轉登入，不額外顯示錯誤
+      return;
+    }
+
+    $authBox.style.display = "";
+    if (msg === "liff_profile_failed") {
+      $authBox.textContent = "登入狀態已失效，請重新整理後再試";
+    } else {
+      $authBox.textContent = "登入或授權初始化失敗，請重新整理後再試";
+    }
+    setStatus("錯誤：登入初始化失敗", "err");
+    setButtonsDisabled(true);
+    AUTH_READY = false;
+  }
+}
+
 /** ===== 打卡 ===== */
 async function punch(job, step){
+
   touchAction();
   setButtonsDisabled(true);
   setStatus(`定位中…（${jobCN(job)}｜${stepCN(step)}）`, "muted");
@@ -385,7 +464,7 @@ async function punch(job, step){
   const test = params.get("test") || "";
 
   try{
-    const profile = await getProfileSafe();
+    const profile = CURRENT_PROFILE;
     const loc = await getLocation();
 
     setStatus("送出打卡…", "muted");
@@ -407,15 +486,7 @@ async function punch(job, step){
 
     showDebug({ step:"request", payload });
 
-    const res = await fetch(GAS_WEB_APP_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload),
-    });
-
-    const text = await res.text();
-    let data = {};
-    try { data = JSON.parse(text); } catch(_) {}
+    const { res, text, data } = await postJsonToGas(payload);
 
     showDebug({ step:"response", status: res.status, text, data });
 
@@ -499,6 +570,8 @@ btns.swapLeave.addEventListener("click", () => punch("swap","leave"));
   } else {
     setStatus("", "muted");
   }
+
+  initAuthGate();
 })();
 </script>
 </body>
