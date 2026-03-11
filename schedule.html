@@ -213,10 +213,10 @@
     .template-head{
       display:flex;
       justify-content:space-between;
-      align-items:center;
+      align-items:flex-start;
       gap:10px;
-      flex-wrap:wrap;
-      margin-bottom:10px;
+      flex-wrap:nowrap;
+      margin-bottom:8px;
       padding-bottom:8px;
       border-bottom:1px solid #e8edf5;
       width:100%;
@@ -225,6 +225,43 @@
     .template-name{
       font-size:17px;
       font-weight:900;
+      min-width:0;
+      line-height:1.3;
+      padding-top:2px;
+    }
+
+    .template-actions{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:8px;
+      flex-wrap:nowrap;
+      flex-shrink:0;
+      margin-left:auto;
+    }
+
+    .split-check{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      font-weight:900;
+      color:#1f2937;
+      white-space:nowrap;
+      font-size:14px;
+      line-height:1;
+      padding-top:2px;
+    }
+
+    .split-check input{
+      width:18px;
+      height:18px;
+      margin:0;
+    }
+
+    .template-actions .btn-danger{
+      height:38px;
+      padding:0 16px;
+      border-radius:12px;
     }
 
     .template-flat-row{
@@ -550,6 +587,23 @@
       .template-chip{ min-width:98px; font-size:11px; min-height:64px; }
       .template-name{ font-size:16px; }
 
+      .template-head{
+        gap:8px;
+      }
+
+      .template-actions{
+        gap:6px;
+      }
+
+      .split-check{
+        font-size:13px;
+      }
+
+      .template-actions .btn-danger{
+        height:36px;
+        padding:0 12px;
+      }
+
       .template-flat-row{
         grid-template-columns:54px 1fr;
         gap:8px;
@@ -573,6 +627,18 @@
     }
 
     @media (max-width: 380px){
+      .template-head{
+        align-items:flex-start;
+      }
+
+      .template-actions{
+        gap:5px;
+      }
+
+      .split-check{
+        font-size:12px;
+      }
+
       .template-flat-row{
         grid-template-columns:50px 1fr;
         gap:6px;
@@ -640,7 +706,6 @@
       <div class="card" id="step1">
         <h2 class="section-title">第 1 步｜驗證排班權限</h2>
         <div class="hint">
-          目前先保留前台骨架。<br>
           下一步會接上 LIFF 抓 UID，再去 GAS 檢查這個人是否有排班權限。
         </div>
         <div class="status" id="authStatus">尚未驗證</div>
@@ -652,8 +717,7 @@
       <div class="card hidden" id="step2">
         <h2 class="section-title">第 2 步｜設定上班時段模板</h2>
         <div class="hint">
-          固定有 1 組主上班時段。<br>
-          次上班時段可新增、可刪除；每組都可以設定兩段班。<br>
+          時段可新增、可刪除；每組都可以設定兩段班。<br>
           進入下一步前，系統會檢查模板是否合法，且單日總工時不得超過 12 小時。
         </div>
 
@@ -665,7 +729,7 @@
         </div>
 
         <div class="footer-actions">
-          <button class="btn-secondary" onclick="addTemplate()">＋ 新增次上班時段</button>
+          <button class="btn-secondary" onclick="addTemplate()">＋ 新增時段</button>
         </div>
 
         <div class="footer-actions">
@@ -819,11 +883,10 @@
       return cells;
     }
 
-    function createDefaultTemplate(isPrimary = false, index = 0) {
+    function createDefaultTemplate(index = 1) {
       return {
         id: 'tpl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
-        label: isPrimary ? '主上班時段' : `次上班時段${index}`,
-        isPrimary,
+        label: `時段${index}`,
         isSplit: false,
         seg1StartH: '09',
         seg1StartM: '00',
@@ -845,16 +908,22 @@
       });
     }
 
+    function renumberTemplateLabels() {
+      state.templates.forEach((t, i) => {
+        t.label = `時段${i + 1}`;
+      });
+    }
+
     function initTemplates() {
-      state.templates = [createDefaultTemplate(true, 0)];
+      state.templates = [createDefaultTemplate(1)];
       refreshTemplateColors();
       state.selectedTemplateId = state.templates[0].id;
       renderTemplates();
     }
 
     function addTemplate() {
-      const idx = state.templates.filter(t => !t.isPrimary).length + 1;
-      state.templates.push(createDefaultTemplate(false, idx));
+      state.templates.push(createDefaultTemplate(state.templates.length + 1));
+      renumberTemplateLabels();
       refreshTemplateColors();
       renderTemplates();
       hideStep2Errors();
@@ -871,19 +940,12 @@
         state.selectedTemplateId = state.templates[0]?.id || 'ERASE';
       }
 
-      renumberSecondaryLabels();
+      renumberTemplateLabels();
       refreshTemplateColors();
       renderTemplates();
       renderTemplatePalette();
       renderStep3Calendar();
       hideStep2Errors();
-    }
-
-    function renumberSecondaryLabels() {
-      let n = 1;
-      state.templates.forEach(t => {
-        if (!t.isPrimary) t.label = `次上班時段${n++}`;
-      });
     }
 
     function timeOptionsHour(selected) {
@@ -896,25 +958,27 @@
     }
 
     function timeOptionsMinute(selected) {
-      return ['00', '30'].map(v => `<option value="${v}" ${selected === v ? 'selected' : ''}>${v}</option>`).join('');
+      return ['00', '30']
+        .map(v => `<option value="${v}" ${selected === v ? 'selected' : ''}>${v}</option>`)
+        .join('');
     }
 
     function renderTemplates() {
       const wrap = document.getElementById('templateList');
       wrap.innerHTML = '';
 
-      state.templates.forEach((tpl) => {
+      state.templates.forEach((tpl, index) => {
         const box = document.createElement('div');
         box.className = 'template-box';
         box.innerHTML = `
           <div class="template-head">
             <div class="template-name">${tpl.label}</div>
-            <div class="row">
-              <label style="font-weight:800;">
+            <div class="template-actions">
+              <label class="split-check">
                 <input type="checkbox" ${tpl.isSplit ? 'checked' : ''} onchange="toggleSplit('${tpl.id}', this.checked)">
-                兩段班
+                <span>兩段班</span>
               </label>
-              ${tpl.isPrimary ? '' : `<button class="btn-danger" onclick="removeTemplate('${tpl.id}')">刪除</button>`}
+              ${state.templates.length === 1 ? '' : `<button class="btn-danger" onclick="removeTemplate('${tpl.id}')">刪除</button>`}
             </div>
           </div>
 
