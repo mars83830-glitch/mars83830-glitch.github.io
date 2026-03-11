@@ -25,14 +25,21 @@
     html, body{
       margin:0;
       padding:0;
+      width:100%;
+      max-width:100%;
+      overflow-x:hidden;
       background:var(--bg);
       color:var(--text);
       font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;
     }
 
+    body{
+      min-height:100vh;
+    }
+
     .app{
       width:100%;
-      max-width:100%;
+      max-width:100vw;
       min-height:100vh;
       overflow-x:hidden;
     }
@@ -75,6 +82,7 @@
       font-size:14px;
       font-weight:900;
       padding:12px 4px;
+      min-width:0;
     }
 
     .step-tab.active{
@@ -84,6 +92,9 @@
 
     .page{
       padding:14px 12px 28px;
+      width:100%;
+      max-width:100%;
+      overflow-x:hidden;
     }
 
     .card{
@@ -93,6 +104,8 @@
       padding:16px 14px;
       margin-bottom:14px;
       overflow:hidden;
+      width:100%;
+      max-width:100%;
     }
 
     .section-title{
@@ -120,6 +133,8 @@
       gap:10px;
       flex-wrap:wrap;
       align-items:center;
+      width:100%;
+      min-width:0;
     }
 
     .field{
@@ -128,12 +143,15 @@
       gap:6px;
       min-width:78px;
       flex:1;
+      min-width:0;
     }
 
     .field label{
       font-size:13px;
       color:var(--muted);
       font-weight:800;
+      line-height:1.35;
+      word-break:break-word;
     }
 
     select, button{
@@ -143,6 +161,11 @@
       background:#fff;
       padding:0 10px;
       font-size:15px;
+      min-width:0;
+    }
+
+    select{
+      width:100%;
     }
 
     button{
@@ -173,6 +196,7 @@
       gap:10px;
       flex-wrap:wrap;
       margin-top:14px;
+      width:100%;
     }
 
     .hidden{ display:none !important; }
@@ -184,6 +208,8 @@
       padding:14px;
       margin-bottom:14px;
       box-shadow:0 4px 14px rgba(0,0,0,.04);
+      width:100%;
+      max-width:100%;
     }
 
     .template-head{
@@ -195,6 +221,7 @@
       margin-bottom:12px;
       padding-bottom:10px;
       border-bottom:1px solid #e8edf5;
+      width:100%;
     }
 
     .template-name{
@@ -208,6 +235,8 @@
       border:1px dashed #d8deea;
       border-radius:14px;
       background:#f8fafc;
+      width:100%;
+      max-width:100%;
     }
 
     .template-subtitle{
@@ -217,11 +246,30 @@
       margin-bottom:10px;
     }
 
+    .step2-grid{
+      display:grid;
+      grid-template-columns:repeat(4, minmax(0, 1fr));
+      gap:10px;
+      width:100%;
+      min-width:0;
+    }
+
+    .step2-grid .field{
+      min-width:0;
+      width:100%;
+    }
+
+    .step2-grid select{
+      width:100%;
+      min-width:0;
+    }
+
     .calendar-toolbar{
       display:flex;
       align-items:center;
       justify-content:center;
       margin-bottom:10px;
+      width:100%;
     }
 
     .month-title{
@@ -241,6 +289,7 @@
       border-top-right-radius:14px;
       overflow:hidden;
       background:#fff;
+      width:100%;
     }
 
     .week-header div{
@@ -250,6 +299,7 @@
       font-weight:900;
       border-right:1px solid var(--line);
       white-space:nowrap;
+      min-width:0;
     }
 
     .week-header div:last-child{ border-right:none; }
@@ -266,6 +316,7 @@
       overflow:hidden;
       background:#fff;
       width:100%;
+      max-width:100%;
     }
 
     .day-cell{
@@ -304,6 +355,7 @@
       align-items:flex-start;
       justify-content:flex-start;
       min-height:22px;
+      width:100%;
     }
 
     .day-num{
@@ -332,6 +384,7 @@
       gap:2px;
       flex:1;
       text-align:center;
+      width:100%;
     }
 
     .day-shift-text{
@@ -359,6 +412,7 @@
       margin-top:10px;
       font-size:13px;
       color:#4b5563;
+      width:100%;
     }
 
     .legend span{
@@ -386,6 +440,7 @@
       background:#fff1f2;
       border-radius:14px;
       padding:12px;
+      width:100%;
     }
 
     .error-title{
@@ -403,6 +458,7 @@
 
     .palette-wrap{
       margin:12px 0 14px;
+      width:100%;
     }
 
     .palette-title{
@@ -419,6 +475,7 @@
       padding-bottom:4px;
       -webkit-overflow-scrolling:touch;
       align-items:stretch;
+      width:100%;
     }
 
     .template-chip{
@@ -469,7 +526,13 @@
       line-height:1.7;
     }
 
-    @media (max-width:520px){
+    @media (max-width: 900px){
+      .step2-grid{
+        grid-template-columns:repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px){
       .topbar h1{ font-size:21px; }
       .section-title{ font-size:20px; }
       .step-tab{ font-size:12px; padding:10px 2px; }
@@ -480,6 +543,55 @@
       .day-shift-text{ font-size:9px; min-height:34px; }
       .template-chip{ min-width:98px; font-size:11px; min-height:64px; }
       .template-name{ font-size:17px; }
+
+      .step2-grid{
+        grid-template-columns:repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 380px){
+      .step2-grid{
+        gap:8px;
+      }
+
+      .step2-grid .field label{
+        font-size:12px;
+      }
+
+      .step2-grid select{
+        font-size:14px;
+        padding:0 8px;
+      }
+    }
+
+    @media (orientation: landscape) and (max-height: 500px){
+      .topbar{
+        padding:10px 12px 8px;
+      }
+
+      .topbar h1{
+        font-size:20px;
+      }
+
+      .topbar .sub{
+        font-size:12px;
+      }
+
+      .page{
+        padding-top:10px;
+      }
+
+      .card{
+        padding:14px 12px;
+      }
+
+      .section-title{
+        font-size:20px;
+      }
+
+      .step2-grid{
+        grid-template-columns:repeat(4, minmax(0, 1fr));
+      }
     }
   </style>
 </head>
@@ -781,7 +893,7 @@
 
           <div class="template-subblock">
             <div class="template-subtitle">第一段時間</div>
-            <div class="row">
+            <div class="step2-grid">
               <div class="field">
                 <label>開始（時）</label>
                 <select onchange="updateTpl('${tpl.id}','seg1StartH',this.value)">${timeOptionsHour(tpl.seg1StartH)}</select>
@@ -803,7 +915,7 @@
 
           <div class="template-subblock ${tpl.isSplit ? '' : 'hidden'}">
             <div class="template-subtitle">第二段時間</div>
-            <div class="row">
+            <div class="step2-grid">
               <div class="field">
                 <label>開始（時）</label>
                 <select onchange="updateTpl('${tpl.id}','seg2StartH',this.value)">${timeOptionsHour(tpl.seg2StartH)}</select>
