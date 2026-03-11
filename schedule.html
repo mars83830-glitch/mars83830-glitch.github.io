@@ -13,7 +13,6 @@
       --muted:#6b7280;
       --line:#d9dee7;
       --primary:#4b89dc;
-      --primary-dark:#2b6ec7;
       --primary-soft:#dbeafe;
       --green:#16a34a;
       --green-soft:#dcfce7;
@@ -22,7 +21,6 @@
       --sun:#fdecec;
       --sat:#eef4ff;
       --shadow:0 8px 24px rgba(0,0,0,.08);
-      --radius:18px;
     }
 
     *{ box-sizing:border-box; }
@@ -183,7 +181,6 @@
 
     .hidden{ display:none !important; }
 
-    /* step2 */
     .template-box{
       border:1px solid var(--line);
       border-radius:16px;
@@ -212,7 +209,6 @@
       border-top:1px dashed var(--line);
     }
 
-    /* calendar common */
     .calendar-toolbar{
       display:flex;
       align-items:center;
@@ -282,7 +278,7 @@
     .day-cell{
       position:relative;
       min-width:0;
-      aspect-ratio:1 / 1.1;
+      aspect-ratio:1 / 1.22;
       border-right:1px solid var(--line);
       border-bottom:1px solid var(--line);
       background:#fff;
@@ -351,30 +347,31 @@
 
     .day-body{
       margin-top:6px;
-      font-size:11px;
-      line-height:1.35;
+      font-size:10px;
+      line-height:1.25;
       color:#111827;
       min-height:0;
       overflow:hidden;
       word-break:break-word;
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
+      gap:3px;
     }
 
     .time-box{
-      display:inline-block;
-      background:#fff6bf;
-      color:#111827;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
       border-radius:8px;
       padding:2px 5px;
-      font-weight:800;
+      font-weight:900;
       font-size:10px;
-      line-height:1.35;
+      line-height:1.2;
       white-space:pre-line;
       max-width:100%;
-    }
-
-    .time-box.blue{
-      background:#dbeafe;
-      color:#1e3a8a;
+      min-width:54px;
     }
 
     .empty-note{
@@ -405,10 +402,10 @@
       border:1px solid #d1d5db;
     }
 
-    .lg-normal{ background:#fff; }
     .lg-assigned{ background:#f0fbf3; border-color:#8dd8a2 !important; }
     .lg-invalid{ background:#fee2e2; border-color:#dc2626 !important; }
     .lg-current{ background:#dbeafe; border-color:#60a5fa !important; }
+    .lg-erase{ background:#fff; border-color:#f59e0b !important; }
 
     .error-box{
       margin-top:12px;
@@ -431,7 +428,6 @@
       line-height:1.5;
     }
 
-    /* step3 template palette */
     .palette-wrap{
       margin:12px 0 14px;
     }
@@ -449,6 +445,7 @@
       overflow-x:auto;
       padding-bottom:4px;
       -webkit-overflow-scrolling:touch;
+      align-items:stretch;
     }
 
     .template-chip{
@@ -462,15 +459,24 @@
       text-align:center;
       font-size:12px;
       font-weight:900;
-      line-height:1.45;
+      line-height:1.35;
       white-space:pre-line;
       color:#334155;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:68px;
     }
 
     .template-chip.active{
-      background:var(--primary-soft);
-      border-color:#60a5fa;
-      color:#1d4ed8;
+      outline:3px solid #60a5fa;
+      outline-offset:-3px;
+    }
+
+    .template-chip.erase{
+      color:#b45309;
+      background:#fffbeb;
+      border-color:#fcd34d;
     }
 
     .current-template{
@@ -484,7 +490,6 @@
       color:#1d4ed8;
     }
 
-    /* step4 */
     .confirm-tip{
       margin-bottom:10px;
       color:#6b7280;
@@ -500,8 +505,8 @@
       .week-header div{ font-size:11px; padding:8px 2px; }
       .day-num{ font-size:14px; }
       .day-body{ font-size:10px; }
-      .time-box{ font-size:9px; padding:2px 4px; }
-      .template-chip{ min-width:98px; font-size:11px; }
+      .time-box{ font-size:9px; padding:2px 4px; min-width:50px; }
+      .template-chip{ min-width:98px; font-size:11px; min-height:64px; }
     }
   </style>
 </head>
@@ -520,7 +525,6 @@
     </div>
 
     <div class="page">
-      <!-- STEP 1 -->
       <div class="card" id="step1">
         <h2 class="section-title">第 1 步｜驗證排班權限</h2>
         <div class="hint">
@@ -533,7 +537,6 @@
         </div>
       </div>
 
-      <!-- STEP 2 -->
       <div class="card hidden" id="step2">
         <h2 class="section-title">第 2 步｜設定上班時段模板</h2>
         <div class="hint">
@@ -553,7 +556,6 @@
         </div>
       </div>
 
-      <!-- STEP 3 -->
       <div class="card hidden" id="step3">
         <h2 class="section-title">第 3 步｜選時段後點日期</h2>
 
@@ -584,6 +586,7 @@
         <div class="legend">
           <span><i class="lg-current"></i>目前選中時段</span>
           <span><i class="lg-assigned"></i>已套用日期</span>
+          <span><i class="lg-erase"></i>休假/清除</span>
         </div>
 
         <div class="footer-actions">
@@ -592,7 +595,6 @@
         </div>
       </div>
 
-      <!-- STEP 4 -->
       <div class="card hidden" id="step4">
         <h2 class="section-title">第 4 步｜最後確認與規則檢查</h2>
         <div class="confirm-tip">
@@ -637,11 +639,20 @@
   </div>
 
   <script>
+    const TEMPLATE_COLORS = [
+      { bg:'#fff6bf', color:'#111827', border:'#facc15' },
+      { bg:'#dbeafe', color:'#1e3a8a', border:'#60a5fa' },
+      { bg:'#fde68a', color:'#78350f', border:'#f59e0b' },
+      { bg:'#fce7f3', color:'#9d174d', border:'#f472b6' },
+      { bg:'#dcfce7', color:'#166534', border:'#4ade80' },
+      { bg:'#ede9fe', color:'#5b21b6', border:'#8b5cf6' }
+    ];
+
     const state = {
       step: 1,
       templates: [],
       selectedTemplateId: '',
-      assignedDays: {},        // dateKey -> tplId
+      assignedDays: {},
       step4InvalidDates: new Set(),
       viewYear: 0,
       viewMonth: 0,
@@ -722,12 +733,22 @@
         seg2StartH: '17',
         seg2StartM: '00',
         seg2EndH: '21',
-        seg2EndM: '00'
+        seg2EndM: '00',
+        colorIndex: 0
       };
+    }
+
+    function refreshTemplateColors() {
+      let idx = 0;
+      state.templates.forEach(t => {
+        t.colorIndex = idx % TEMPLATE_COLORS.length;
+        idx++;
+      });
     }
 
     function initTemplates() {
       state.templates = [createDefaultTemplate(true, 0)];
+      refreshTemplateColors();
       state.selectedTemplateId = state.templates[0].id;
       renderTemplates();
     }
@@ -735,6 +756,7 @@
     function addTemplate() {
       const idx = state.templates.filter(t => !t.isPrimary).length + 1;
       state.templates.push(createDefaultTemplate(false, idx));
+      refreshTemplateColors();
       renderTemplates();
     }
 
@@ -751,10 +773,11 @@
       });
 
       if (state.selectedTemplateId === id) {
-        state.selectedTemplateId = state.templates[0]?.id || '';
+        state.selectedTemplateId = state.templates[0]?.id || 'ERASE';
       }
 
       renumberSecondaryLabels();
+      refreshTemplateColors();
       renderTemplates();
       renderTemplatePalette();
       renderStep3Calendar();
@@ -764,10 +787,7 @@
     function renumberSecondaryLabels() {
       let n = 1;
       state.templates.forEach(t => {
-        if (!t.isPrimary) {
-          t.label = `次上班時段${n}`;
-          n++;
-        }
+        if (!t.isPrimary) t.label = `次上班時段${n++}`;
       });
     }
 
@@ -884,10 +904,16 @@
       }
     }
 
+    function compactTime(h1, m1, h2, m2) {
+      const start = m1 === '00' ? h1 : `${h1}/`;
+      const end = m2 === '00' ? h2 : `${h2}/`;
+      return `${start}-${end}`;
+    }
+
     function formatTimeOnly(tpl) {
-      const s1 = `${tpl.seg1StartH}:${tpl.seg1StartM}-${tpl.seg1EndH}:${tpl.seg1EndM}`;
+      const s1 = compactTime(tpl.seg1StartH, tpl.seg1StartM, tpl.seg1EndH, tpl.seg1EndM);
       if (!tpl.isSplit) return s1;
-      const s2 = `${tpl.seg2StartH}:${tpl.seg2StartM}-${tpl.seg2EndH}:${tpl.seg2EndM}`;
+      const s2 = compactTime(tpl.seg2StartH, tpl.seg2StartM, tpl.seg2EndH, tpl.seg2EndM);
       return `${s1}\n${s2}`;
     }
 
@@ -896,6 +922,10 @@
       if (!tpl.isSplit) return s1;
       const s2 = `${tpl.seg2StartH}:${tpl.seg2StartM}-${tpl.seg2EndH}:${tpl.seg2EndM}`;
       return `${s1} / ${s2}`;
+    }
+
+    function getTplColor(tpl) {
+      return TEMPLATE_COLORS[tpl.colorIndex % TEMPLATE_COLORS.length];
     }
 
     function prepareStep3() {
@@ -914,7 +944,11 @@
 
       state.templates.forEach(tpl => {
         const btn = document.createElement('button');
+        const c = getTplColor(tpl);
         btn.className = 'template-chip' + (state.selectedTemplateId === tpl.id ? ' active' : '');
+        btn.style.background = c.bg;
+        btn.style.color = c.color;
+        btn.style.borderColor = c.border;
         btn.innerHTML = formatTimeOnly(tpl).replaceAll('\n', '<br>');
         btn.onclick = () => {
           state.selectedTemplateId = tpl.id;
@@ -923,10 +957,23 @@
         wrap.appendChild(btn);
       });
 
-      const currentTpl = state.templates.find(t => t.id === state.selectedTemplateId);
-      currentText.innerHTML = currentTpl
-        ? `目前選中：<b>${formatTimeInline(currentTpl)}</b>`
-        : `目前選中：<b>尚未選擇</b>`;
+      const eraseBtn = document.createElement('button');
+      eraseBtn.className = 'template-chip erase' + (state.selectedTemplateId === 'ERASE' ? ' active' : '');
+      eraseBtn.innerHTML = `休假<br>清除`;
+      eraseBtn.onclick = () => {
+        state.selectedTemplateId = 'ERASE';
+        renderTemplatePalette();
+      };
+      wrap.appendChild(eraseBtn);
+
+      if (state.selectedTemplateId === 'ERASE') {
+        currentText.innerHTML = `目前選中：<b>休假 / 清除</b>`;
+      } else {
+        const currentTpl = state.templates.find(t => t.id === state.selectedTemplateId);
+        currentText.innerHTML = currentTpl
+          ? `目前選中：<b>${formatTimeInline(currentTpl)}</b>`
+          : `目前選中：<b>尚未選擇</b>`;
+      }
     }
 
     function renderStep3Calendar() {
@@ -954,7 +1001,11 @@
         else if (weekday === 0) numCls += ' sun';
         else if (weekday === 6) numCls += ' sat';
 
-        const boxClass = assignedTpl && state.selectedTemplateId === assignedTpl.id ? 'time-box blue' : 'time-box';
+        let bodyHtml = `<span class="empty-note">未排班</span>`;
+        if (assignedTpl) {
+          const color = getTplColor(assignedTpl);
+          bodyHtml = `<span class="time-box" style="background:${color.bg};color:${color.color};border:1px solid ${color.border};">${formatTimeOnly(assignedTpl)}</span>`;
+        }
 
         cell.innerHTML = `
           <div class="day-top">
@@ -962,11 +1013,7 @@
             ${c.outside ? '' : `<div class="mini-check ${assignedTpl ? 'checked' : ''}"></div>`}
           </div>
           <div class="day-body">
-            ${c.outside ? '' : (
-              assignedTpl
-                ? `<span class="${boxClass}">${formatTimeOnly(assignedTpl)}</span>`
-                : `<span class="empty-note">未排班</span>`
-            )}
+            ${c.outside ? '' : bodyHtml}
           </div>
         `;
 
@@ -980,7 +1027,13 @@
 
     function assignDate(dateKey) {
       if (!state.selectedTemplateId) return;
-      state.assignedDays[dateKey] = state.selectedTemplateId;
+
+      if (state.selectedTemplateId === 'ERASE') {
+        delete state.assignedDays[dateKey];
+      } else {
+        state.assignedDays[dateKey] = state.selectedTemplateId;
+      }
+
       renderStep3Calendar();
     }
 
@@ -1032,17 +1085,19 @@
         else if (weekday === 0) numCls += ' sun';
         else if (weekday === 6) numCls += ' sat';
 
+        let bodyHtml = `<span class="empty-note">休假</span>`;
+        if (assignedTpl) {
+          const color = getTplColor(assignedTpl);
+          bodyHtml = `<span class="time-box" style="background:${color.bg};color:${color.color};border:1px solid ${color.border};">${formatTimeOnly(assignedTpl)}</span>`;
+        }
+
         cell.innerHTML = `
           <div class="day-top">
             <div class="${numCls}">${c.day}</div>
             ${c.outside ? '' : `<div class="mini-check ${assignedTpl ? 'checked' : ''}"></div>`}
           </div>
           <div class="day-body">
-            ${c.outside ? '' : (
-              assignedTpl
-                ? `<span class="time-box">${formatTimeOnly(assignedTpl)}</span>`
-                : `<span class="empty-note">未排班</span>`
-            )}
+            ${c.outside ? '' : bodyHtml}
           </div>
         `;
 
@@ -1072,8 +1127,9 @@
     }
 
     function getTemplateEndMinutes(tpl) {
-      if (tpl.isSplit) return timeToMinutes(tpl.seg2EndH, tpl.seg2EndM);
-      return timeToMinutes(tpl.seg1EndH, tpl.seg1EndM);
+      return tpl.isSplit
+        ? timeToMinutes(tpl.seg2EndH, tpl.seg2EndM)
+        : timeToMinutes(tpl.seg1EndH, tpl.seg1EndM);
     }
 
     function getAssignedDatesSorted() {
@@ -1092,7 +1148,6 @@
         return errors;
       }
 
-      // 規則 1：最多連上 5 天
       let streak = 0;
       let streakDates = [];
       let prevDate = null;
@@ -1124,7 +1179,6 @@
         prevDate = current;
       });
 
-      // 規則 2：前後班至少間隔 11 小時
       for (let i = 1; i < dates.length; i++) {
         const prevDateKey = dates[i - 1];
         const currDateKey = dates[i];
