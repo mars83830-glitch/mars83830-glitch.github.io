@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>桃園營運處｜排班系統</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    :root{
+      --bg:#f6f7fb;
+      --card:#ffffff;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --line:#e5e7eb;
+      --primary:#2563eb;
+      --danger:#dc2626;
+      --ok:#16a34a;
+      --shadow:0 10px 24px rgba(0,0,0,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;
+    }
+    .wrap{
+      max-width:900px;
+      margin:0 auto;
+      padding:20px 14px 40px;
+    }
+    .title{
+      font-size:28px;
+      font-weight:800;
+      margin:8px 0 6px;
+    }
+    .sub{
+      color:var(--muted);
+      font-size:15px;
+      margin-bottom:18px;
+      line-height:1.6;
+    }
+    .card{
+      background:var(--card);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:18px;
+      margin-bottom:16px;
+    }
+    .stepbar{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:8px;
+      margin-bottom:16px;
+    }
+    .step{
+      border-radius:14px;
+      padding:10px 8px;
+      text-align:center;
+      background:#e5e7eb;
+      color:#4b5563;
+      font-size:14px;
+      font-weight:700;
+    }
+    .step.active{
+      background:var(--primary);
+      color:#fff;
+    }
+    .step.done{
+      background:#bfdbfe;
+      color:#1d4ed8;
+    }
+    .section-title{
+      font-size:22px;
+      font-weight:800;
+      margin:0 0 12px;
+    }
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width:110px;
+      flex:1;
+    }
+    .field label{
+      font-size:14px;
+      color:var(--muted);
+      font-weight:700;
+    }
+    select, button, input[type="text"]{
+      height:44px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:0 12px;
+      font-size:16px;
+      background:#fff;
+    }
+    button{
+      cursor:pointer;
+      font-weight:800;
+    }
+    .btn-primary{
+      background:var(--primary);
+      color:#fff;
+      border:none;
+    }
+    .btn-secondary{
+      background:#fff;
+      color:var(--text);
+    }
+    .btn-danger{
+      background:#fff;
+      color:var(--danger);
+      border:1px solid #fecaca;
+    }
+    .hidden{display:none !important}
+    .hint{
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.6;
+    }
+    .ok{
+      color:var(--ok);
+      font-weight:700;
+    }
+    .err{
+      color:var(--danger);
+      font-weight:700;
+    }
+    .template-box{
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:14px;
+      margin-bottom:12px;
+      background:#fcfcfd;
+    }
+    .template-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom:10px;
+      flex-wrap:wrap;
+    }
+    .template-name{
+      font-size:18px;
+      font-weight:800;
+    }
+    .split-area{
+      margin-top:10px;
+      padding-top:10px;
+      border-top:1px dashed var(--line);
+    }
+    .calendar-wrap{
+      overflow-x:auto;
+      padding-bottom:8px;
+    }
+    table.calendar{
+      border-collapse:collapse;
+      min-width:860px;
+      width:100%;
+      table-layout:fixed;
+    }
+    .calendar th,.calendar td{
+      border:1px solid #d1d5db;
+      text-align:center;
+      padding:8px 4px;
+      min-width:52px;
+    }
+    .calendar th{
+      background:#f8fafc;
+      font-weight:800;
+    }
+    .sun{background:#fde7e7 !important;}
+    .sat{background:#eef2ff !important;}
+    .selected{
+      background:#dcfce7 !important;
+    }
+    .invalid{
+      background:#fee2e2 !important;
+      border:2px solid #dc2626 !important;
+    }
+    .error-box{
+      margin-top:12px;
+      border:1px solid #fecaca;
+      background:#fff1f2;
+      border-radius:14px;
+      padding:12px;
+    }
+    .error-item{
+      color:#991b1b;
+      margin:4px 0;
+      font-size:14px;
+      line-height:1.5;
+    }
+    .day-row{
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px;
+      margin-bottom:10px;
+      background:#fff;
+    }
+    .day-row.invalid{
+      background:#fff1f2 !important;
+    }
+    .footer-actions{
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+      margin-top:16px;
+      flex-wrap:wrap;
+    }
+    .status{
+      margin-top:10px;
+      font-size:14px;
+      line-height:1.6;
+      white-space:pre-wrap;
+    }
+    @media (max-width:640px){
+      .title{font-size:24px}
+      .section-title{font-size:20px}
+      .step{font-size:12px;padding:8px 4px}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="title">桃園營運處｜排班系統</div>
+    <div class="sub">第一版前台骨架。先把流程與畫面搭起來，再一步一步接 GAS 與規則檢查。</div>
+
+    <div class="stepbar">
+      <div class="step active" id="stepBadge1">1 驗證權限</div>
+      <div class="step" id="stepBadge2">2 設定時段</div>
+      <div class="step" id="stepBadge3">3 勾選日期</div>
+      <div class="step" id="stepBadge4">4 確認送出</div>
+    </div>
+
+    <div class="card" id="step1">
+      <div class="section-title">第 1 步｜驗證排班權限</div>
+      <div class="hint">目前先做前台骨架。這裡之後會接 LIFF 抓 UID，再去 GAS 比對是否可排班。</div>
+      <div class="status" id="authStatus">尚未驗證</div>
+      <div class="footer-actions">
+        <button class="btn-primary" onclick="goStep(2)">先看下一步畫面</button>
+      </div>
+    </div>
+
+    <div class="card hidden" id="step2">
+      <div class="section-title">第 2 步｜設定上班時段模板</div>
+      <div class="hint">固定有主上班時段。下方可新增次上班時段；每一組都可勾選兩段班。</div>
+
+      <div id="templateList"></div>
+
+      <div class="footer-actions">
+        <button class="btn-secondary" onclick="addTemplate()">＋ 新增次上班時段</button>
+      </div>
+
+      <div class="footer-actions">
+        <button class="btn-secondary" onclick="goStep(1)">上一步</button>
+        <button class="btn-primary" onclick="goStep(3)">下一步</button>
+      </div>
+    </div>
+
+    <div class="card hidden" id="step3">
+      <div class="section-title">第 3 步｜勾選下個月上班日</div>
+      <div class="hint">這裡先做日曆畫面。之後會加上固定「週日到週六」週期檢查與最多連上 5 天規則。</div>
+
+      <div class="calendar-wrap">
+        <table class="calendar" id="calendarTable"></table>
+      </div>
+
+      <div class="error-box hidden" id="step3Errors">
+        <div class="error-item">目前這裡預留給規則錯誤顯示。</div>
+      </div>
+
+      <div class="footer-actions">
+        <button class="btn-secondary" onclick="goStep(2)">上一步</button>
+        <button class="btn-primary" onclick="buildStep4()">下一步</button>
+      </div>
+    </div>
+
+    <div class="card hidden" id="step4">
+      <div class="section-title">第 4 步｜逐日確認班段</div>
+      <div class="hint">第 3 步有勾選的日期，這裡會自動帶入主上班時段，並可改選其它時段模板。</div>
+
+      <div id="dayAssignList"></div>
+
+      <div class="error-box hidden" id="step4Errors">
+        <div class="error-item">目前這裡預留給 11 小時間隔檢查錯誤顯示。</div>
+      </div>
+
+      <div class="footer-actions">
+        <button class="btn-secondary" onclick="goStep(3)">上一步</button>
+        <button class="btn-primary" onclick="fakeSubmit()">送出測試</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      step: 1,
+      templates: [],
+      selectedDays: new Set(),
+      dayAssignments: {}
+    };
+
+    function createDefaultTemplate(isPrimary = false, index = 0) {
+      return {
+        id: 'tpl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+        label: isPrimary ? '主上班時段' : `次上班時段${index}`,
+        isPrimary,
+        isSplit: false,
+        seg1StartH: '09',
+        seg1StartM: '00',
+        seg1EndH: '18',
+        seg1EndM: '00',
+        seg2StartH: '17',
+        seg2StartM: '00',
+        seg2EndH: '21',
+        seg2EndM: '00'
+      };
+    }
+
+    function initTemplates() {
+      state.templates = [createDefaultTemplate(true, 0)];
+      renderTemplates();
+    }
+
+    function addTemplate() {
+      const idx = state.templates.filter(t => !t.isPrimary).length + 1;
+      state.templates.push(createDefaultTemplate(false, idx));
+      renderTemplates();
+    }
+
+    function removeTemplate(id) {
+      state.templates = state.templates.filter(t => t.id !== id);
+      renumberSecondaryLabels();
+      renderTemplates();
+    }
+
+    function renumberSecondaryLabels() {
+      let n = 1;
+      state.templates.forEach(t => {
+        if (!t.isPrimary) {
+          t.label = `次上班時段${n}`;
+          n++;
+        }
+      });
+    }
+
+    function timeOptionsHour(selected) {
+      let html = '';
+      for (let i = 0; i <= 23; i++) {
+        const v = String(i).padStart(2, '0');
+        html += `<option value="${v}" ${selected === v ? 'selected' : ''}>${v}</option>`;
+      }
+      return html;
+    }
+
+    function timeOptionsMinute(selected) {
+      const arr = ['00', '30'];
+      return arr.map(v => `<option value="${v}" ${selected === v ? 'selected' : ''}>${v}</option>`).join('');
+    }
+
+    function renderTemplates() {
+      const wrap = document.getElementById('templateList');
+      wrap.innerHTML = '';
+
+      state.templates.forEach((tpl) => {
+        const box = document.createElement('div');
+        box.className = 'template-box';
+
+        box.innerHTML = `
+          <div class="template-head">
+            <div class="template-name">${tpl.label}</div>
+            <div class="row">
+              <label style="font-weight:700;">
+                <input type="checkbox" ${tpl.isSplit ? 'checked' : ''} onchange="toggleSplit('${tpl.id}', this.checked)">
+                兩段班
+              </label>
+              ${tpl.isPrimary ? '' : `<button class="btn-danger" onclick="removeTemplate('${tpl.id}')">刪除</button>`}
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label>第一段開始（時）</label>
+              <select onchange="updateTpl('${tpl.id}','seg1StartH',this.value)">${timeOptionsHour(tpl.seg1StartH)}</select>
+            </div>
+            <div class="field">
+              <label>第一段開始（分）</label>
+              <select onchange="updateTpl('${tpl.id}','seg1StartM',this.value)">${timeOptionsMinute(tpl.seg1StartM)}</select>
+            </div>
+            <div class="field">
+              <label>第一段結束（時）</label>
+              <select onchange="updateTpl('${tpl.id}','seg1EndH',this.value)">${timeOptionsHour(tpl.seg1EndH)}</select>
+            </div>
+            <div class="field">
+              <label>第一段結束（分）</label>
+              <select onchange="updateTpl('${tpl.id}','seg1EndM',this.value)">${timeOptionsMinute(tpl.seg1EndM)}</select>
+            </div>
+          </div>
+
+          <div class="split-area ${tpl.isSplit ? '' : 'hidden'}" id="split_${tpl.id}">
+            <div class="row">
+              <div class="field">
+                <label>第二段開始（時）</label>
+                <select onchange="updateTpl('${tpl.id}','seg2StartH',this.value)">${timeOptionsHour(tpl.seg2StartH)}</select>
+              </div>
+              <div class="field">
+                <label>第二段開始（分）</label>
+                <select onchange="updateTpl('${tpl.id}','seg2StartM',this.value)">${timeOptionsMinute(tpl.seg2StartM)}</select>
+              </div>
+              <div class="field">
+                <label>第二段結束（時）</label>
+                <select onchange="updateTpl('${tpl.id}','seg2EndH',this.value)">${timeOptionsHour(tpl.seg2EndH)}</select>
+              </div>
+              <div class="field">
+                <label>第二段結束（分）</label>
+                <select onchange="updateTpl('${tpl.id}','seg2EndM',this.value)">${timeOptionsMinute(tpl.seg2EndM)}</select>
+              </div>
+            </div>
+          </div>
+        `;
+        wrap.appendChild(box);
+      });
+    }
+
+    function updateTpl(id, key, value) {
+      const tpl = state.templates.find(t => t.id === id);
+      if (!tpl) return;
+      tpl[key] = value;
+    }
+
+    function toggleSplit(id, checked) {
+      const tpl = state.templates.find(t => t.id === id);
+      if (!tpl) return;
+      tpl.isSplit = checked;
+      renderTemplates();
+    }
+
+    function goStep(step) {
+      state.step = step;
+      [1,2,3,4].forEach(n => {
+        document.getElementById('step' + n).classList.toggle('hidden', n !== step);
+        const badge = document.getElementById('stepBadge' + n);
+        badge.classList.remove('active', 'done');
+        if (n < step) badge.classList.add('done');
+        if (n === step) badge.classList.add('active');
+      });
+    }
+
+    function getNextMonthInfo() {
+      const now = new Date();
+      let y = now.getFullYear();
+      let m = now.getMonth() + 1;
+      if (m === 12) {
+        y += 1;
+        m = 0;
+      }
+      const first = new Date(y, m, 1);
+      const last = new Date(y, m + 1, 0);
+      return { year: y, month: m + 1, days: last.getDate() };
+    }
+
+    function renderCalendar() {
+      const info = getNextMonthInfo();
+      const table = document.getElementById('calendarTable');
+      const weekNames = ['日','一','二','三','四','五','六'];
+
+      let head1 = '<tr>';
+      let head2 = '<tr>';
+      let body = '<tr>';
+
+      for (let d = 1; d <= info.days; d++) {
+        const dt = new Date(info.year, info.month - 1, d);
+        const w = dt.getDay();
+        const cls = w === 0 ? 'sun' : w === 6 ? 'sat' : '';
+        const dateKey = `${info.year}-${String(info.month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        head1 += `<th class="${cls}">${d}</th>`;
+        head2 += `<th class="${cls}">${weekNames[w]}</th>`;
+        body += `
+          <td class="${state.selectedDays.has(dateKey) ? 'selected' : ''}" id="cell_${dateKey}">
+            <input type="checkbox" ${state.selectedDays.has(dateKey) ? 'checked' : ''} onchange="toggleDay('${dateKey}', this.checked)">
+          </td>
+        `;
+      }
+
+      head1 += '</tr>';
+      head2 += '</tr>';
+      body += '</tr>';
+      table.innerHTML = head1 + head2 + body;
+    }
+
+    function toggleDay(dateKey, checked) {
+      if (checked) state.selectedDays.add(dateKey);
+      else state.selectedDays.delete(dateKey);
+      renderCalendar();
+    }
+
+    function formatTemplateLabel(tpl) {
+      const s1 = `${tpl.seg1StartH}:${tpl.seg1StartM}-${tpl.seg1EndH}:${tpl.seg1EndM}`;
+      if (!tpl.isSplit) return `${tpl.label}｜${s1}`;
+      const s2 = `${tpl.seg2StartH}:${tpl.seg2StartM}-${tpl.seg2EndH}:${tpl.seg2EndM}`;
+      return `${tpl.label}｜${s1} / ${s2}`;
+    }
+
+    function buildStep4() {
+      const days = Array.from(state.selectedDays).sort();
+      const wrap = document.getElementById('dayAssignList');
+      wrap.innerHTML = '';
+
+      const primary = state.templates.find(t => t.isPrimary) || state.templates[0];
+      days.forEach(dateKey => {
+        if (!state.dayAssignments[dateKey]) {
+          state.dayAssignments[dateKey] = primary.id;
+        }
+        const row = document.createElement('div');
+        row.className = 'day-row';
+        row.innerHTML = `
+          <div class="row">
+            <div style="font-weight:800;font-size:18px;min-width:120px;">${dateKey}</div>
+            <div class="field" style="flex:2;">
+              <label>班段選擇</label>
+              <select onchange="changeDayAssignment('${dateKey}', this.value)">
+                ${state.templates.map(t => `
+                  <option value="${t.id}" ${state.dayAssignments[dateKey] === t.id ? 'selected' : ''}>
+                    ${formatTemplateLabel(t)}
+                  </option>
+                `).join('')}
+              </select>
+            </div>
+          </div>
+        `;
+        wrap.appendChild(row);
+      });
+
+      goStep(4);
+    }
+
+    function changeDayAssignment(dateKey, tplId) {
+      state.dayAssignments[dateKey] = tplId;
+    }
+
+    function fakeSubmit() {
+      const days = Object.keys(state.dayAssignments).sort();
+      let txt = '目前為前台骨架測試\\n\\n';
+      txt += '已選上班日：\\n';
+      days.forEach(d => {
+        const tpl = state.templates.find(t => t.id === state.dayAssignments[d]);
+        txt += `${d} → ${tpl ? formatTemplateLabel(tpl) : ''}\\n`;
+      });
+      alert(txt);
+    }
+
+    window.onload = function() {
+      initTemplates();
+      renderCalendar();
+    };
+  </script>
+</body>
+</html>
