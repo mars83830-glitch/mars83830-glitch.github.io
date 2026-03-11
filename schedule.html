@@ -178,11 +178,12 @@
     .hidden{ display:none !important; }
 
     .template-box{
-      border:1px solid var(--line);
-      border-radius:16px;
-      background:#fcfcfd;
+      border:1px solid #d7ddea;
+      border-radius:18px;
+      background:linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
       padding:14px;
-      margin-bottom:12px;
+      margin-bottom:14px;
+      box-shadow:0 4px 14px rgba(0,0,0,.04);
     }
 
     .template-head{
@@ -191,7 +192,9 @@
       align-items:center;
       gap:10px;
       flex-wrap:wrap;
-      margin-bottom:10px;
+      margin-bottom:12px;
+      padding-bottom:10px;
+      border-bottom:1px solid #e8edf5;
     }
 
     .template-name{
@@ -199,10 +202,19 @@
       font-weight:900;
     }
 
-    .split-area{
-      margin-top:10px;
-      padding-top:10px;
-      border-top:1px dashed var(--line);
+    .template-subblock{
+      margin-top:12px;
+      padding:12px;
+      border:1px dashed #d8deea;
+      border-radius:14px;
+      background:#f8fafc;
+    }
+
+    .template-subtitle{
+      font-size:14px;
+      font-weight:900;
+      color:#374151;
+      margin-bottom:10px;
     }
 
     .calendar-toolbar{
@@ -467,6 +479,7 @@
       .day-body{ font-size:10px; }
       .day-shift-text{ font-size:9px; min-height:34px; }
       .template-chip{ min-width:98px; font-size:11px; min-height:64px; }
+      .template-name{ font-size:17px; }
     }
   </style>
 </head>
@@ -480,8 +493,8 @@
     <div class="step-tabs">
       <button class="step-tab active" id="stepBadge1">1 驗證</button>
       <button class="step-tab" id="stepBadge2">2 時段</button>
-      <button class="step-tab" id="stepBadge3">3 日期</button>
-      <button class="step-tab" id="stepBadge4">4 確認</button>
+      <button class="step-tab" id="stepBadge3">3 排班</button>
+      <button class="step-tab" id="stepBadge4">4 送出</button>
     </div>
 
     <div class="page">
@@ -523,10 +536,14 @@
       </div>
 
       <div class="card hidden" id="step3">
-        <h2 class="section-title">第 3 步｜選時段後點日期</h2>
+        <h2 class="section-title">第 3 步｜排班與檢查</h2>
+        <div class="confirm-tip">
+          先選上班時段，再點下方日期套用。<br>
+          若有規則錯誤，日期會標紅；你可以直接在這一頁修正。
+        </div>
 
         <div class="palette-wrap">
-          <div class="palette-title">先選上班時段，再點月曆日期套用</div>
+          <div class="palette-title">選擇要套用的班段</div>
           <div class="template-palette" id="templatePalette"></div>
           <div class="current-template" id="currentTemplateText"></div>
         </div>
@@ -549,58 +566,35 @@
 
         <div class="legend">
           <span><i class="lg-current"></i>目前選中時段</span>
-          <span><i class="lg-assigned"></i>已套用日期</span>
+          <span><i class="lg-assigned"></i>已排班</span>
+          <span><i class="lg-invalid"></i>規則錯誤</span>
           <span><i class="lg-erase"></i>休假/清除</span>
+        </div>
+
+        <div class="error-box hidden" id="step3Errors">
+          <div class="error-title">檢查結果</div>
+          <div id="step3ErrorList"></div>
         </div>
 
         <div class="footer-actions">
           <button class="btn-secondary" onclick="goStep(2)">上一步</button>
+          <button class="btn-secondary" onclick="runScheduleValidationOnly()">重新檢查</button>
           <button class="btn-primary" onclick="prepareStep4()">下一步</button>
         </div>
       </div>
 
       <div class="card hidden" id="step4">
-        <h2 class="section-title">第 4 步｜最後確認與規則檢查</h2>
-        <div class="confirm-tip">
-          這一步可直接修正。<br>
-          若有錯誤，日期會標紅；你可以直接重新選時段再點日期修正。
+        <h2 class="section-title">第 4 步｜最後送出</h2>
+        <div class="hint">
+          目前仍是前台骨架版。<br>
+          這一步先保留成送出測試，之後再接上真正寫入 GAS / Google Sheet。
         </div>
 
-        <div class="palette-wrap">
-          <div class="palette-title">修正用：先選時段，再點下方日期覆蓋</div>
-          <div class="template-palette" id="templatePaletteStep4"></div>
-          <div class="current-template" id="currentTemplateTextStep4"></div>
-        </div>
-
-        <div class="calendar-toolbar">
-          <div class="month-title" id="step4MonthTitle"></div>
-        </div>
-
-        <div class="week-header">
-          <div class="sun">星期日</div>
-          <div>星期一</div>
-          <div>星期二</div>
-          <div>星期三</div>
-          <div>星期四</div>
-          <div>星期五</div>
-          <div class="sat">星期六</div>
-        </div>
-
-        <div class="month-grid" id="step4Grid"></div>
-
-        <div class="legend">
-          <span><i class="lg-assigned"></i>已排班</span>
-          <span><i class="lg-invalid"></i>規則錯誤</span>
-        </div>
-
-        <div class="error-box hidden" id="step4Errors">
-          <div class="error-title">檢查結果</div>
-          <div id="step4ErrorList"></div>
-        </div>
+        <div class="status" id="submitPreview">按下下方按鈕後，會先顯示目前排班結果。</div>
 
         <div class="footer-actions">
           <button class="btn-secondary" onclick="goStep(3)">上一步</button>
-          <button class="btn-primary" onclick="fakeSubmit()">重新檢查 / 送出測試</button>
+          <button class="btn-primary" onclick="fakeSubmit()">送出測試</button>
         </div>
       </div>
     </div>
@@ -621,7 +615,7 @@
       templates: [],
       selectedTemplateId: '',
       assignedDays: {},
-      step4InvalidDates: new Set(),
+      step3InvalidDates: new Set(),
       viewYear: 0,
       viewMonth: 0
     };
@@ -741,10 +735,8 @@
       renumberSecondaryLabels();
       refreshTemplateColors();
       renderTemplates();
-      renderTemplatePalette('templatePalette', 'currentTemplateText');
-      renderTemplatePalette('templatePaletteStep4', 'currentTemplateTextStep4');
+      renderTemplatePalette();
       renderStep3Calendar();
-      renderStep4Calendar();
       hideStep2Errors();
     }
 
@@ -787,41 +779,45 @@
             </div>
           </div>
 
-          <div class="row">
-            <div class="field">
-              <label>第一段開始（時）</label>
-              <select onchange="updateTpl('${tpl.id}','seg1StartH',this.value)">${timeOptionsHour(tpl.seg1StartH)}</select>
-            </div>
-            <div class="field">
-              <label>第一段開始（分）</label>
-              <select onchange="updateTpl('${tpl.id}','seg1StartM',this.value)">${timeOptionsMinute(tpl.seg1StartM)}</select>
-            </div>
-            <div class="field">
-              <label>第一段結束（時）</label>
-              <select onchange="updateTpl('${tpl.id}','seg1EndH',this.value)">${timeOptionsHour(tpl.seg1EndH)}</select>
-            </div>
-            <div class="field">
-              <label>第一段結束（分）</label>
-              <select onchange="updateTpl('${tpl.id}','seg1EndM',this.value)">${timeOptionsMinute(tpl.seg1EndM)}</select>
+          <div class="template-subblock">
+            <div class="template-subtitle">第一段時間</div>
+            <div class="row">
+              <div class="field">
+                <label>開始（時）</label>
+                <select onchange="updateTpl('${tpl.id}','seg1StartH',this.value)">${timeOptionsHour(tpl.seg1StartH)}</select>
+              </div>
+              <div class="field">
+                <label>開始（分）</label>
+                <select onchange="updateTpl('${tpl.id}','seg1StartM',this.value)">${timeOptionsMinute(tpl.seg1StartM)}</select>
+              </div>
+              <div class="field">
+                <label>結束（時）</label>
+                <select onchange="updateTpl('${tpl.id}','seg1EndH',this.value)">${timeOptionsHour(tpl.seg1EndH)}</select>
+              </div>
+              <div class="field">
+                <label>結束（分）</label>
+                <select onchange="updateTpl('${tpl.id}','seg1EndM',this.value)">${timeOptionsMinute(tpl.seg1EndM)}</select>
+              </div>
             </div>
           </div>
 
-          <div class="split-area ${tpl.isSplit ? '' : 'hidden'}">
+          <div class="template-subblock ${tpl.isSplit ? '' : 'hidden'}">
+            <div class="template-subtitle">第二段時間</div>
             <div class="row">
               <div class="field">
-                <label>第二段開始（時）</label>
+                <label>開始（時）</label>
                 <select onchange="updateTpl('${tpl.id}','seg2StartH',this.value)">${timeOptionsHour(tpl.seg2StartH)}</select>
               </div>
               <div class="field">
-                <label>第二段開始（分）</label>
+                <label>開始（分）</label>
                 <select onchange="updateTpl('${tpl.id}','seg2StartM',this.value)">${timeOptionsMinute(tpl.seg2StartM)}</select>
               </div>
               <div class="field">
-                <label>第二段結束（時）</label>
+                <label>結束（時）</label>
                 <select onchange="updateTpl('${tpl.id}','seg2EndH',this.value)">${timeOptionsHour(tpl.seg2EndH)}</select>
               </div>
               <div class="field">
-                <label>第二段結束（分）</label>
+                <label>結束（分）</label>
                 <select onchange="updateTpl('${tpl.id}','seg2EndM',this.value)">${timeOptionsMinute(tpl.seg2EndM)}</select>
               </div>
             </div>
@@ -836,14 +832,17 @@
       document.getElementById('step2ErrorList').innerHTML = '';
     }
 
+    function hideStep3Errors() {
+      document.getElementById('step3Errors').classList.add('hidden');
+      document.getElementById('step3ErrorList').innerHTML = '';
+    }
+
     function updateTpl(id, key, value) {
       const tpl = state.templates.find(t => t.id === id);
       if (!tpl) return;
       tpl[key] = value;
-      renderTemplatePalette('templatePalette', 'currentTemplateText');
-      renderTemplatePalette('templatePaletteStep4', 'currentTemplateTextStep4');
+      renderTemplatePalette();
       renderStep3Calendar();
-      renderStep4Calendar();
       hideStep2Errors();
     }
 
@@ -852,10 +851,8 @@
       if (!tpl) return;
       tpl.isSplit = checked;
       renderTemplates();
-      renderTemplatePalette('templatePalette', 'currentTemplateText');
-      renderTemplatePalette('templatePaletteStep4', 'currentTemplateTextStep4');
+      renderTemplatePalette();
       renderStep3Calendar();
-      renderStep4Calendar();
       hideStep2Errors();
     }
 
@@ -867,12 +864,8 @@
       });
 
       if (step === 3) {
-        renderTemplatePalette('templatePalette', 'currentTemplateText');
+        renderTemplatePalette();
         renderStep3Calendar();
-      }
-      if (step === 4) {
-        renderTemplatePalette('templatePaletteStep4', 'currentTemplateTextStep4');
-        renderStep4Calendar();
       }
     }
 
@@ -898,9 +891,9 @@
       return TEMPLATE_COLORS[tpl.colorIndex % TEMPLATE_COLORS.length];
     }
 
-    function renderTemplatePalette(containerId, textId) {
-      const wrap = document.getElementById(containerId);
-      const currentText = document.getElementById(textId);
+    function renderTemplatePalette() {
+      const wrap = document.getElementById('templatePalette');
+      const currentText = document.getElementById('currentTemplateText');
       if (!wrap || !currentText) return;
 
       wrap.innerHTML = '';
@@ -915,8 +908,7 @@
         btn.innerHTML = formatTimeOnly(tpl).replaceAll('\n', '<br>');
         btn.onclick = () => {
           state.selectedTemplateId = tpl.id;
-          renderTemplatePalette('templatePalette', 'currentTemplateText');
-          renderTemplatePalette('templatePaletteStep4', 'currentTemplateTextStep4');
+          renderTemplatePalette();
         };
         wrap.appendChild(btn);
       });
@@ -926,8 +918,7 @@
       eraseBtn.innerHTML = `休假<br>清除`;
       eraseBtn.onclick = () => {
         state.selectedTemplateId = 'ERASE';
-        renderTemplatePalette('templatePalette', 'currentTemplateText');
-        renderTemplatePalette('templatePaletteStep4', 'currentTemplateTextStep4');
+        renderTemplatePalette();
       };
       wrap.appendChild(eraseBtn);
 
@@ -1012,9 +1003,11 @@
     }
 
     function renderStep3Calendar() {
-      document.getElementById('step3MonthTitle').textContent = monthText(state.viewYear, state.viewMonth);
-
+      const monthTitle = document.getElementById('step3MonthTitle');
       const grid = document.getElementById('step3Grid');
+      if (!monthTitle || !grid) return;
+
+      monthTitle.textContent = monthText(state.viewYear, state.viewMonth);
       const cells = getMonthMatrix(state.viewYear, state.viewMonth);
       grid.innerHTML = '';
 
@@ -1022,75 +1015,7 @@
         const dateKey = toDateKey(c.year, c.month, c.day);
         const weekday = new Date(c.year, c.month - 1, c.day).getDay();
         const assignedTpl = state.templates.find(t => t.id === state.assignedDays[dateKey]);
-
-        const cell = document.createElement('div');
-        let cls = 'day-cell';
-        if (c.outside) cls += ' outside';
-        if (!c.outside && weekday === 0) cls += ' sun-bg';
-        if (!c.outside && weekday === 6) cls += ' sat-bg';
-        cell.className = cls;
-
-        let numCls = 'day-num';
-        if (c.outside) numCls += ' outside';
-        else if (weekday === 0) numCls += ' sun';
-        else if (weekday === 6) numCls += ' sat';
-
-        if (assignedTpl) {
-          const color = getTplColor(assignedTpl);
-          cell.style.background = color.bg;
-        }
-
-        cell.innerHTML = `
-          <div class="day-top">
-            <div class="${numCls}">${c.day}</div>
-          </div>
-          <div class="day-body">
-            ${c.outside ? '' : buildCellBody(assignedTpl)}
-          </div>
-        `;
-
-        if (!c.outside) cell.onclick = () => assignDate(dateKey, false);
-
-        grid.appendChild(cell);
-      });
-    }
-
-    function assignDate(dateKey, fromStep4) {
-      if (!state.selectedTemplateId) return;
-
-      if (state.selectedTemplateId === 'ERASE') {
-        delete state.assignedDays[dateKey];
-      } else {
-        state.assignedDays[dateKey] = state.selectedTemplateId;
-      }
-
-      if (fromStep4) {
-        state.step4InvalidDates = new Set();
-        document.getElementById('step4Errors').classList.add('hidden');
-        renderStep4Calendar();
-      } else {
-        renderStep3Calendar();
-      }
-    }
-
-    function prepareStep4() {
-      state.step4InvalidDates = new Set();
-      document.getElementById('step4Errors').classList.add('hidden');
-      goStep(4);
-    }
-
-    function renderStep4Calendar() {
-      document.getElementById('step4MonthTitle').textContent = monthText(state.viewYear, state.viewMonth);
-
-      const grid = document.getElementById('step4Grid');
-      const cells = getMonthMatrix(state.viewYear, state.viewMonth);
-      grid.innerHTML = '';
-
-      cells.forEach(c => {
-        const dateKey = toDateKey(c.year, c.month, c.day);
-        const weekday = new Date(c.year, c.month - 1, c.day).getDay();
-        const assignedTpl = state.templates.find(t => t.id === state.assignedDays[dateKey]);
-        const isInvalid = state.step4InvalidDates.has(dateKey);
+        const isInvalid = state.step3InvalidDates.has(dateKey);
 
         const cell = document.createElement('div');
         let cls = 'day-cell';
@@ -1119,10 +1044,24 @@
           </div>
         `;
 
-        if (!c.outside) cell.onclick = () => assignDate(dateKey, true);
+        if (!c.outside) cell.onclick = () => assignDate(dateKey);
 
         grid.appendChild(cell);
       });
+    }
+
+    function assignDate(dateKey) {
+      if (!state.selectedTemplateId) return;
+
+      if (state.selectedTemplateId === 'ERASE') {
+        delete state.assignedDays[dateKey];
+      } else {
+        state.assignedDays[dateKey] = state.selectedTemplateId;
+      }
+
+      state.step3InvalidDates = new Set();
+      hideStep3Errors();
+      renderStep3Calendar();
     }
 
     function getTemplateStartMinutes(tpl) {
@@ -1139,7 +1078,7 @@
       return Object.keys(state.assignedDays).sort();
     }
 
-    function validateRules() {
+    function validateScheduleRules() {
       const dates = getAssignedDatesSorted();
       const errors = [];
 
@@ -1211,26 +1150,49 @@
       return errors;
     }
 
-    function fakeSubmit() {
-      const errors = validateRules();
-      state.step4InvalidDates = new Set(errors.flatMap(e => e.dates));
+    function applyStep3ValidationResult(errors) {
+      state.step3InvalidDates = new Set(errors.flatMap(e => e.dates));
 
-      const box = document.getElementById('step4Errors');
-      const list = document.getElementById('step4ErrorList');
+      const box = document.getElementById('step3Errors');
+      const list = document.getElementById('step3ErrorList');
 
       if (errors.length > 0) {
         list.innerHTML = errors.map(e => `<div class="error-item">${e.message}</div>`).join('');
         box.classList.remove('hidden');
-        renderStep4Calendar();
-        return;
+      } else {
+        list.innerHTML = '';
+        box.classList.add('hidden');
       }
 
-      box.classList.add('hidden');
-      renderStep4Calendar();
+      renderStep3Calendar();
+    }
 
+    function runScheduleValidationOnly() {
+      const errors = validateScheduleRules();
+      applyStep3ValidationResult(errors);
+    }
+
+    function prepareStep4() {
+      const errors = validateScheduleRules();
+      applyStep3ValidationResult(errors);
+
+      if (errors.length > 0) return;
+
+      const dates = getAssignedDatesSorted();
+      let txt = '目前排班結果：\n\n';
+      dates.forEach(d => {
+        const tpl = state.templates.find(t => t.id === state.assignedDays[d]);
+        txt += `${d} → ${tpl ? formatTimeInline(tpl) : ''}\n`;
+      });
+      document.getElementById('submitPreview').textContent = txt.trim();
+      goStep(4);
+    }
+
+    function fakeSubmit() {
       const dates = getAssignedDatesSorted();
       let txt = '目前為前台骨架測試\n\n';
       txt += '已排班結果：\n';
+
       dates.forEach(d => {
         const tpl = state.templates.find(t => t.id === state.assignedDays[d]);
         txt += `${d} → ${tpl ? formatTimeInline(tpl) : ''}\n`;
@@ -1245,10 +1207,8 @@
       state.viewMonth = base.month;
 
       initTemplates();
-      renderTemplatePalette('templatePalette', 'currentTemplateText');
-      renderTemplatePalette('templatePaletteStep4', 'currentTemplateTextStep4');
+      renderTemplatePalette();
       renderStep3Calendar();
-      renderStep4Calendar();
     };
   </script>
 </body>
