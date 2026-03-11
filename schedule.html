@@ -140,22 +140,21 @@
     .field{
       display:flex;
       flex-direction:column;
-      gap:6px;
-      min-width:78px;
+      gap:4px;
       flex:1;
       min-width:0;
     }
 
     .field label{
-      font-size:13px;
+      font-size:12px;
       color:var(--muted);
       font-weight:800;
-      line-height:1.35;
+      line-height:1.25;
       word-break:break-word;
     }
 
     select, button{
-      height:42px;
+      height:40px;
       border:1px solid var(--line);
       border-radius:12px;
       background:#fff;
@@ -205,8 +204,8 @@
       border:1px solid #d7ddea;
       border-radius:18px;
       background:linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
-      padding:14px;
-      margin-bottom:14px;
+      padding:12px;
+      margin-bottom:12px;
       box-shadow:0 4px 14px rgba(0,0,0,.04);
       width:100%;
       max-width:100%;
@@ -218,38 +217,46 @@
       align-items:center;
       gap:10px;
       flex-wrap:wrap;
-      margin-bottom:12px;
-      padding-bottom:10px;
+      margin-bottom:10px;
+      padding-bottom:8px;
       border-bottom:1px solid #e8edf5;
       width:100%;
     }
 
     .template-name{
-      font-size:18px;
+      font-size:17px;
       font-weight:900;
     }
 
     .template-subblock{
-      margin-top:12px;
-      padding:12px;
-      border:1px dashed #d8deea;
-      border-radius:14px;
+      margin-top:8px;
+      padding:8px 10px;
+      border:1px solid #e7edf7;
+      border-radius:12px;
       background:#f8fafc;
       width:100%;
       max-width:100%;
     }
 
+    .template-subrow{
+      display:grid;
+      grid-template-columns:78px 1fr;
+      gap:8px;
+      align-items:center;
+      width:100%;
+    }
+
     .template-subtitle{
-      font-size:14px;
+      font-size:13px;
       font-weight:900;
       color:#374151;
-      margin-bottom:10px;
+      white-space:nowrap;
     }
 
     .step2-grid{
       display:grid;
       grid-template-columns:repeat(4, minmax(0, 1fr));
-      gap:10px;
+      gap:8px;
       width:100%;
       min-width:0;
     }
@@ -527,8 +534,13 @@
     }
 
     @media (max-width: 900px){
+      .template-subrow{
+        grid-template-columns:1fr;
+        gap:6px;
+      }
+
       .step2-grid{
-        grid-template-columns:repeat(2, minmax(0, 1fr));
+        grid-template-columns:repeat(4, minmax(0, 1fr));
       }
     }
 
@@ -542,20 +554,25 @@
       .day-body{ font-size:10px; }
       .day-shift-text{ font-size:9px; min-height:34px; }
       .template-chip{ min-width:98px; font-size:11px; min-height:64px; }
-      .template-name{ font-size:17px; }
+      .template-name{ font-size:16px; }
+
+      .template-subblock{
+        padding:8px;
+      }
 
       .step2-grid{
         grid-template-columns:repeat(2, minmax(0, 1fr));
+        gap:8px;
       }
     }
 
     @media (max-width: 380px){
       .step2-grid{
-        gap:8px;
+        gap:6px;
       }
 
-      .step2-grid .field label{
-        font-size:12px;
+      .field label{
+        font-size:11px;
       }
 
       .step2-grid select{
@@ -587,6 +604,10 @@
 
       .section-title{
         font-size:20px;
+      }
+
+      .template-subrow{
+        grid-template-columns:70px 1fr;
       }
 
       .step2-grid{
@@ -892,45 +913,49 @@
           </div>
 
           <div class="template-subblock">
-            <div class="template-subtitle">第一段時間</div>
-            <div class="step2-grid">
-              <div class="field">
-                <label>開始（時）</label>
-                <select onchange="updateTpl('${tpl.id}','seg1StartH',this.value)">${timeOptionsHour(tpl.seg1StartH)}</select>
-              </div>
-              <div class="field">
-                <label>開始（分）</label>
-                <select onchange="updateTpl('${tpl.id}','seg1StartM',this.value)">${timeOptionsMinute(tpl.seg1StartM)}</select>
-              </div>
-              <div class="field">
-                <label>結束（時）</label>
-                <select onchange="updateTpl('${tpl.id}','seg1EndH',this.value)">${timeOptionsHour(tpl.seg1EndH)}</select>
-              </div>
-              <div class="field">
-                <label>結束（分）</label>
-                <select onchange="updateTpl('${tpl.id}','seg1EndM',this.value)">${timeOptionsMinute(tpl.seg1EndM)}</select>
+            <div class="template-subrow">
+              <div class="template-subtitle">第一段</div>
+              <div class="step2-grid">
+                <div class="field">
+                  <label>開始（時）</label>
+                  <select onchange="updateTpl('${tpl.id}','seg1StartH',this.value)">${timeOptionsHour(tpl.seg1StartH)}</select>
+                </div>
+                <div class="field">
+                  <label>開始（分）</label>
+                  <select onchange="updateTpl('${tpl.id}','seg1StartM',this.value)">${timeOptionsMinute(tpl.seg1StartM)}</select>
+                </div>
+                <div class="field">
+                  <label>結束（時）</label>
+                  <select onchange="updateTpl('${tpl.id}','seg1EndH',this.value)">${timeOptionsHour(tpl.seg1EndH)}</select>
+                </div>
+                <div class="field">
+                  <label>結束（分）</label>
+                  <select onchange="updateTpl('${tpl.id}','seg1EndM',this.value)">${timeOptionsMinute(tpl.seg1EndM)}</select>
+                </div>
               </div>
             </div>
           </div>
 
           <div class="template-subblock ${tpl.isSplit ? '' : 'hidden'}">
-            <div class="template-subtitle">第二段時間</div>
-            <div class="step2-grid">
-              <div class="field">
-                <label>開始（時）</label>
-                <select onchange="updateTpl('${tpl.id}','seg2StartH',this.value)">${timeOptionsHour(tpl.seg2StartH)}</select>
-              </div>
-              <div class="field">
-                <label>開始（分）</label>
-                <select onchange="updateTpl('${tpl.id}','seg2StartM',this.value)">${timeOptionsMinute(tpl.seg2StartM)}</select>
-              </div>
-              <div class="field">
-                <label>結束（時）</label>
-                <select onchange="updateTpl('${tpl.id}','seg2EndH',this.value)">${timeOptionsHour(tpl.seg2EndH)}</select>
-              </div>
-              <div class="field">
-                <label>結束（分）</label>
-                <select onchange="updateTpl('${tpl.id}','seg2EndM',this.value)">${timeOptionsMinute(tpl.seg2EndM)}</select>
+            <div class="template-subrow">
+              <div class="template-subtitle">第二段</div>
+              <div class="step2-grid">
+                <div class="field">
+                  <label>開始（時）</label>
+                  <select onchange="updateTpl('${tpl.id}','seg2StartH',this.value)">${timeOptionsHour(tpl.seg2StartH)}</select>
+                </div>
+                <div class="field">
+                  <label>開始（分）</label>
+                  <select onchange="updateTpl('${tpl.id}','seg2StartM',this.value)">${timeOptionsMinute(tpl.seg2StartM)}</select>
+                </div>
+                <div class="field">
+                  <label>結束（時）</label>
+                  <select onchange="updateTpl('${tpl.id}','seg2EndH',this.value)">${timeOptionsHour(tpl.seg2EndH)}</select>
+                </div>
+                <div class="field">
+                  <label>結束（分）</label>
+                  <select onchange="updateTpl('${tpl.id}','seg2EndM',this.value)">${timeOptionsMinute(tpl.seg2EndM)}</select>
+                </div>
               </div>
             </div>
           </div>
