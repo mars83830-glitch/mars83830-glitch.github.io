@@ -12,6 +12,7 @@
       --text:#1f2937;
       --muted:#6b7280;
       --line:#d9dee7;
+      --line-soft:#e7edf7;
       --primary:#4b89dc;
       --red:#dc2626;
       --red-soft:#fee2e2;
@@ -47,7 +48,7 @@
     .topbar{
       background:#fff;
       text-align:center;
-      padding:16px 12px 12px;
+      padding:14px 12px 10px;
       box-shadow:0 1px 0 rgba(0,0,0,.05);
     }
 
@@ -56,21 +57,16 @@
       font-size:24px;
       font-weight:900;
       letter-spacing:.5px;
-    }
-
-    .topbar .sub{
-      margin-top:4px;
-      color:#9ca3af;
-      font-size:13px;
+      line-height:1.25;
     }
 
     .step-tabs{
       display:grid;
       grid-template-columns:repeat(4,1fr);
       gap:0;
-      margin:12px 12px 0;
+      margin:10px 12px 0;
       border:1px solid #bfd3f2;
-      border-radius:14px;
+      border-radius:16px;
       overflow:hidden;
       background:#fff;
     }
@@ -79,10 +75,12 @@
       border:none;
       background:#fff;
       color:var(--primary);
-      font-size:14px;
+      font-size:13px;
       font-weight:900;
-      padding:12px 4px;
+      padding:10px 4px;
       min-width:0;
+      height:48px;
+      line-height:1;
     }
 
     .step-tab.active{
@@ -91,7 +89,7 @@
     }
 
     .page{
-      padding:14px 12px 28px;
+      padding:12px 12px 24px;
       width:100%;
       max-width:100%;
       overflow-x:hidden;
@@ -146,11 +144,12 @@
     }
 
     .field label{
-      font-size:12px;
+      font-size:11px;
       color:var(--muted);
       font-weight:800;
-      line-height:1.25;
-      word-break:break-word;
+      line-height:1.2;
+      text-align:center;
+      white-space:nowrap;
     }
 
     select, button{
@@ -228,32 +227,32 @@
       font-weight:900;
     }
 
-    .template-subblock{
-      margin-top:8px;
-      padding:8px 10px;
-      border:1px solid #e7edf7;
-      border-radius:12px;
-      background:#f8fafc;
-      width:100%;
-      max-width:100%;
-    }
-
-    .template-subrow{
+    .template-flat-row{
       display:grid;
-      grid-template-columns:78px 1fr;
-      gap:8px;
+      grid-template-columns:62px 1fr;
+      gap:10px;
       align-items:center;
       width:100%;
+      margin-top:8px;
+      padding:8px 0;
+      border-top:1px solid var(--line-soft);
     }
 
-    .template-subtitle{
+    .template-flat-row:first-of-type{
+      border-top:none;
+      margin-top:0;
+      padding-top:2px;
+    }
+
+    .seg-label{
       font-size:13px;
       font-weight:900;
       color:#374151;
       white-space:nowrap;
+      text-align:left;
     }
 
-    .step2-grid{
+    .flat-time-grid{
       display:grid;
       grid-template-columns:repeat(4, minmax(0, 1fr));
       gap:8px;
@@ -261,14 +260,12 @@
       min-width:0;
     }
 
-    .step2-grid .field{
+    .flat-time-item{
       min-width:0;
-      width:100%;
     }
 
-    .step2-grid select{
+    .flat-time-item select{
       width:100%;
-      min-width:0;
     }
 
     .calendar-toolbar{
@@ -533,21 +530,18 @@
       line-height:1.7;
     }
 
-    @media (max-width: 900px){
-      .template-subrow{
-        grid-template-columns:1fr;
-        gap:6px;
-      }
-
-      .step2-grid{
-        grid-template-columns:repeat(4, minmax(0, 1fr));
-      }
-    }
-
     @media (max-width: 640px){
+      .topbar{
+        padding:12px 12px 8px;
+      }
+
       .topbar h1{ font-size:21px; }
       .section-title{ font-size:20px; }
-      .step-tab{ font-size:12px; padding:10px 2px; }
+      .step-tab{
+        font-size:12px;
+        padding:8px 2px;
+        height:44px;
+      }
       .month-title{ font-size:16px; }
       .week-header div{ font-size:11px; padding:8px 2px; }
       .day-num{ font-size:14px; }
@@ -556,26 +550,43 @@
       .template-chip{ min-width:98px; font-size:11px; min-height:64px; }
       .template-name{ font-size:16px; }
 
-      .template-subblock{
-        padding:8px;
-      }
-
-      .step2-grid{
-        grid-template-columns:repeat(2, minmax(0, 1fr));
+      .template-flat-row{
+        grid-template-columns:54px 1fr;
         gap:8px;
       }
-    }
 
-    @media (max-width: 380px){
-      .step2-grid{
+      .seg-label{
+        font-size:12px;
+      }
+
+      .flat-time-grid{
         gap:6px;
       }
 
       .field label{
-        font-size:11px;
+        font-size:10px;
       }
 
-      .step2-grid select{
+      select, button{
+        height:38px;
+      }
+    }
+
+    @media (max-width: 380px){
+      .template-flat-row{
+        grid-template-columns:50px 1fr;
+        gap:6px;
+      }
+
+      .flat-time-grid{
+        gap:5px;
+      }
+
+      .field label{
+        font-size:10px;
+      }
+
+      select{
         font-size:14px;
         padding:0 8px;
       }
@@ -590,10 +601,6 @@
         font-size:20px;
       }
 
-      .topbar .sub{
-        font-size:12px;
-      }
-
       .page{
         padding-top:10px;
       }
@@ -606,11 +613,11 @@
         font-size:20px;
       }
 
-      .template-subrow{
-        grid-template-columns:70px 1fr;
+      .template-flat-row{
+        grid-template-columns:58px 1fr;
       }
 
-      .step2-grid{
+      .flat-time-grid{
         grid-template-columns:repeat(4, minmax(0, 1fr));
       }
     }
@@ -620,7 +627,6 @@
   <div class="app">
     <div class="topbar">
       <h1>桃園營運處 排班系統</h1>
-      <div class="sub">第一版前台骨架，先把畫面與流程定好</div>
     </div>
 
     <div class="step-tabs">
@@ -912,50 +918,46 @@
             </div>
           </div>
 
-          <div class="template-subblock">
-            <div class="template-subrow">
-              <div class="template-subtitle">第一段</div>
-              <div class="step2-grid">
-                <div class="field">
-                  <label>開始（時）</label>
-                  <select onchange="updateTpl('${tpl.id}','seg1StartH',this.value)">${timeOptionsHour(tpl.seg1StartH)}</select>
-                </div>
-                <div class="field">
-                  <label>開始（分）</label>
-                  <select onchange="updateTpl('${tpl.id}','seg1StartM',this.value)">${timeOptionsMinute(tpl.seg1StartM)}</select>
-                </div>
-                <div class="field">
-                  <label>結束（時）</label>
-                  <select onchange="updateTpl('${tpl.id}','seg1EndH',this.value)">${timeOptionsHour(tpl.seg1EndH)}</select>
-                </div>
-                <div class="field">
-                  <label>結束（分）</label>
-                  <select onchange="updateTpl('${tpl.id}','seg1EndM',this.value)">${timeOptionsMinute(tpl.seg1EndM)}</select>
-                </div>
+          <div class="template-flat-row">
+            <div class="seg-label">第一段</div>
+            <div class="flat-time-grid">
+              <div class="flat-time-item field">
+                <label>開始時</label>
+                <select onchange="updateTpl('${tpl.id}','seg1StartH',this.value)">${timeOptionsHour(tpl.seg1StartH)}</select>
+              </div>
+              <div class="flat-time-item field">
+                <label>開始分</label>
+                <select onchange="updateTpl('${tpl.id}','seg1StartM',this.value)">${timeOptionsMinute(tpl.seg1StartM)}</select>
+              </div>
+              <div class="flat-time-item field">
+                <label>結束時</label>
+                <select onchange="updateTpl('${tpl.id}','seg1EndH',this.value)">${timeOptionsHour(tpl.seg1EndH)}</select>
+              </div>
+              <div class="flat-time-item field">
+                <label>結束分</label>
+                <select onchange="updateTpl('${tpl.id}','seg1EndM',this.value)">${timeOptionsMinute(tpl.seg1EndM)}</select>
               </div>
             </div>
           </div>
 
-          <div class="template-subblock ${tpl.isSplit ? '' : 'hidden'}">
-            <div class="template-subrow">
-              <div class="template-subtitle">第二段</div>
-              <div class="step2-grid">
-                <div class="field">
-                  <label>開始（時）</label>
-                  <select onchange="updateTpl('${tpl.id}','seg2StartH',this.value)">${timeOptionsHour(tpl.seg2StartH)}</select>
-                </div>
-                <div class="field">
-                  <label>開始（分）</label>
-                  <select onchange="updateTpl('${tpl.id}','seg2StartM',this.value)">${timeOptionsMinute(tpl.seg2StartM)}</select>
-                </div>
-                <div class="field">
-                  <label>結束（時）</label>
-                  <select onchange="updateTpl('${tpl.id}','seg2EndH',this.value)">${timeOptionsHour(tpl.seg2EndH)}</select>
-                </div>
-                <div class="field">
-                  <label>結束（分）</label>
-                  <select onchange="updateTpl('${tpl.id}','seg2EndM',this.value)">${timeOptionsMinute(tpl.seg2EndM)}</select>
-                </div>
+          <div class="template-flat-row ${tpl.isSplit ? '' : 'hidden'}">
+            <div class="seg-label">第二段</div>
+            <div class="flat-time-grid">
+              <div class="flat-time-item field">
+                <label>開始時</label>
+                <select onchange="updateTpl('${tpl.id}','seg2StartH',this.value)">${timeOptionsHour(tpl.seg2StartH)}</select>
+              </div>
+              <div class="flat-time-item field">
+                <label>開始分</label>
+                <select onchange="updateTpl('${tpl.id}','seg2StartM',this.value)">${timeOptionsMinute(tpl.seg2StartM)}</select>
+              </div>
+              <div class="flat-time-item field">
+                <label>結束時</label>
+                <select onchange="updateTpl('${tpl.id}','seg2EndH',this.value)">${timeOptionsHour(tpl.seg2EndH)}</select>
+              </div>
+              <div class="flat-time-item field">
+                <label>結束分</label>
+                <select onchange="updateTpl('${tpl.id}','seg2EndM',this.value)">${timeOptionsMinute(tpl.seg2EndM)}</select>
               </div>
             </div>
           </div>
