@@ -13,9 +13,6 @@
       --muted:#6b7280;
       --line:#d9dee7;
       --primary:#4b89dc;
-      --primary-soft:#dbeafe;
-      --green:#16a34a;
-      --green-soft:#dcfce7;
       --red:#dc2626;
       --red-soft:#fee2e2;
       --sun:#fdecec;
@@ -36,7 +33,6 @@
     .app{
       width:100%;
       max-width:100%;
-      margin:0 auto;
       min-height:100vh;
       overflow-x:hidden;
     }
@@ -212,8 +208,7 @@
     .calendar-toolbar{
       display:flex;
       align-items:center;
-      justify-content:space-between;
-      gap:8px;
+      justify-content:center;
       margin-bottom:10px;
     }
 
@@ -223,20 +218,6 @@
       color:var(--primary);
       text-align:center;
       flex:1;
-    }
-
-    .month-nav{
-      width:40px;
-      min-width:40px;
-      height:40px;
-      border:none;
-      border-radius:999px;
-      background:transparent;
-      color:var(--primary);
-      font-size:28px;
-      line-height:1;
-      font-weight:900;
-      padding:0;
     }
 
     .week-header{
@@ -278,7 +259,7 @@
     .day-cell{
       position:relative;
       min-width:0;
-      aspect-ratio:1 / 1.22;
+      aspect-ratio:1 / 1.24;
       border-right:1px solid var(--line);
       border-bottom:1px solid var(--line);
       background:#fff;
@@ -299,11 +280,6 @@
 
     .day-cell.sat-bg{
       background:linear-gradient(0deg, rgba(255,255,255,1) 82%, var(--sat) 82%);
-    }
-
-    .day-cell.assigned{
-      box-shadow:inset 0 0 0 2px #8dd8a2;
-      background:#f0fbf3;
     }
 
     .day-cell.invalid{
@@ -341,37 +317,37 @@
     }
 
     .mini-check.checked{
-      background:var(--green-soft);
+      background:#dcfce7;
       border-color:#7bc896;
     }
 
     .day-body{
       margin-top:6px;
       font-size:10px;
-      line-height:1.25;
+      line-height:1.2;
       color:#111827;
       min-height:0;
       overflow:hidden;
       word-break:break-word;
       display:flex;
       flex-direction:column;
-      align-items:flex-start;
+      align-items:stretch;
       gap:3px;
     }
 
-    .time-box{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
+    .time-fill{
+      width:100%;
+      border-radius:10px;
+      padding:4px 4px;
       text-align:center;
-      border-radius:8px;
-      padding:2px 5px;
       font-weight:900;
       font-size:10px;
       line-height:1.2;
       white-space:pre-line;
-      max-width:100%;
-      min-width:54px;
+      min-height:34px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
     }
 
     .empty-note{
@@ -402,10 +378,10 @@
       border:1px solid #d1d5db;
     }
 
-    .lg-assigned{ background:#f0fbf3; border-color:#8dd8a2 !important; }
+    .lg-assigned{ background:#dcfce7; border-color:#7bc896 !important; }
     .lg-invalid{ background:#fee2e2; border-color:#dc2626 !important; }
     .lg-current{ background:#dbeafe; border-color:#60a5fa !important; }
-    .lg-erase{ background:#fff; border-color:#f59e0b !important; }
+    .lg-erase{ background:#fff7ed; border-color:#f59e0b !important; }
 
     .error-box{
       margin-top:12px;
@@ -454,7 +430,6 @@
       max-width:150px;
       border:2px solid #dbe3ef;
       border-radius:14px;
-      background:#fff;
       padding:10px 10px;
       text-align:center;
       font-size:12px;
@@ -505,7 +480,7 @@
       .week-header div{ font-size:11px; padding:8px 2px; }
       .day-num{ font-size:14px; }
       .day-body{ font-size:10px; }
-      .time-box{ font-size:9px; padding:2px 4px; min-width:50px; }
+      .time-fill{ font-size:9px; padding:3px; min-height:32px; }
       .template-chip{ min-width:98px; font-size:11px; min-height:64px; }
     }
   </style>
@@ -566,9 +541,7 @@
         </div>
 
         <div class="calendar-toolbar">
-          <button class="month-nav" onclick="changeMonth(-1)">‹</button>
           <div class="month-title" id="step3MonthTitle"></div>
-          <button class="month-nav" onclick="changeMonth(1)">›</button>
         </div>
 
         <div class="week-header">
@@ -598,14 +571,18 @@
       <div class="card hidden" id="step4">
         <h2 class="section-title">第 4 步｜最後確認與規則檢查</h2>
         <div class="confirm-tip">
-          這一步只做確認。<br>
-          會檢查最多連上 5 天，以及相鄰兩個上班日之間是否至少間隔 11 小時。
+          這一步可直接修正。<br>
+          若有錯誤，日期會標紅；你可以直接重新選時段再點日期修正。
+        </div>
+
+        <div class="palette-wrap">
+          <div class="palette-title">修正用：先選時段，再點下方日期覆蓋</div>
+          <div class="template-palette" id="templatePaletteStep4"></div>
+          <div class="current-template" id="currentTemplateTextStep4"></div>
         </div>
 
         <div class="calendar-toolbar">
-          <button class="month-nav" onclick="changeMonthStep4(-1)">‹</button>
           <div class="month-title" id="step4MonthTitle"></div>
-          <button class="month-nav" onclick="changeMonthStep4(1)">›</button>
         </div>
 
         <div class="week-header">
@@ -632,7 +609,7 @@
 
         <div class="footer-actions">
           <button class="btn-secondary" onclick="goStep(3)">上一步</button>
-          <button class="btn-primary" onclick="fakeSubmit()">送出測試</button>
+          <button class="btn-primary" onclick="fakeSubmit()">重新檢查 / 送出測試</button>
         </div>
       </div>
     </div>
@@ -655,9 +632,7 @@
       assignedDays: {},
       step4InvalidDates: new Set(),
       viewYear: 0,
-      viewMonth: 0,
-      step4Year: 0,
-      step4Month: 0
+      viewMonth: 0
     };
 
     function pad2(n) {
@@ -761,15 +736,10 @@
     }
 
     function removeTemplate(id) {
-      const removing = state.templates.find(t => t.id === id);
-      if (!removing) return;
-
       state.templates = state.templates.filter(t => t.id !== id);
 
       Object.keys(state.assignedDays).forEach(dateKey => {
-        if (state.assignedDays[dateKey] === id) {
-          delete state.assignedDays[dateKey];
-        }
+        if (state.assignedDays[dateKey] === id) delete state.assignedDays[dateKey];
       });
 
       if (state.selectedTemplateId === id) {
@@ -779,7 +749,8 @@
       renumberSecondaryLabels();
       refreshTemplateColors();
       renderTemplates();
-      renderTemplatePalette();
+      renderTemplatePalette('templatePalette', 'currentTemplateText');
+      renderTemplatePalette('templatePaletteStep4', 'currentTemplateTextStep4');
       renderStep3Calendar();
       renderStep4Calendar();
     }
@@ -871,7 +842,8 @@
       const tpl = state.templates.find(t => t.id === id);
       if (!tpl) return;
       tpl[key] = value;
-      renderTemplatePalette();
+      renderTemplatePalette('templatePalette', 'currentTemplateText');
+      renderTemplatePalette('templatePaletteStep4', 'currentTemplateTextStep4');
       renderStep3Calendar();
       renderStep4Calendar();
     }
@@ -881,25 +853,25 @@
       if (!tpl) return;
       tpl.isSplit = checked;
       renderTemplates();
-      renderTemplatePalette();
+      renderTemplatePalette('templatePalette', 'currentTemplateText');
+      renderTemplatePalette('templatePaletteStep4', 'currentTemplateTextStep4');
       renderStep3Calendar();
       renderStep4Calendar();
     }
 
     function goStep(step) {
       state.step = step;
-
       [1,2,3,4].forEach(n => {
         document.getElementById('step' + n).classList.toggle('hidden', n !== step);
         document.getElementById('stepBadge' + n).classList.toggle('active', n === step);
       });
 
       if (step === 3) {
-        renderTemplatePalette();
+        renderTemplatePalette('templatePalette', 'currentTemplateText');
         renderStep3Calendar();
       }
-
       if (step === 4) {
+        renderTemplatePalette('templatePaletteStep4', 'currentTemplateTextStep4');
         renderStep4Calendar();
       }
     }
@@ -928,18 +900,11 @@
       return TEMPLATE_COLORS[tpl.colorIndex % TEMPLATE_COLORS.length];
     }
 
-    function prepareStep3() {
-      if (!state.selectedTemplateId && state.templates.length > 0) {
-        state.selectedTemplateId = state.templates[0].id;
-      }
-      renderTemplatePalette();
-      renderStep3Calendar();
-      goStep(3);
-    }
+    function renderTemplatePalette(containerId, textId) {
+      const wrap = document.getElementById(containerId);
+      const currentText = document.getElementById(textId);
+      if (!wrap || !currentText) return;
 
-    function renderTemplatePalette() {
-      const wrap = document.getElementById('templatePalette');
-      const currentText = document.getElementById('currentTemplateText');
       wrap.innerHTML = '';
 
       state.templates.forEach(tpl => {
@@ -952,7 +917,8 @@
         btn.innerHTML = formatTimeOnly(tpl).replaceAll('\n', '<br>');
         btn.onclick = () => {
           state.selectedTemplateId = tpl.id;
-          renderTemplatePalette();
+          renderTemplatePalette('templatePalette', 'currentTemplateText');
+          renderTemplatePalette('templatePaletteStep4', 'currentTemplateTextStep4');
         };
         wrap.appendChild(btn);
       });
@@ -962,7 +928,8 @@
       eraseBtn.innerHTML = `休假<br>清除`;
       eraseBtn.onclick = () => {
         state.selectedTemplateId = 'ERASE';
-        renderTemplatePalette();
+        renderTemplatePalette('templatePalette', 'currentTemplateText');
+        renderTemplatePalette('templatePaletteStep4', 'currentTemplateTextStep4');
       };
       wrap.appendChild(eraseBtn);
 
@@ -974,6 +941,19 @@
           ? `目前選中：<b>${formatTimeInline(currentTpl)}</b>`
           : `目前選中：<b>尚未選擇</b>`;
       }
+    }
+
+    function prepareStep3() {
+      if (!state.selectedTemplateId && state.templates.length > 0) {
+        state.selectedTemplateId = state.templates[0].id;
+      }
+      goStep(3);
+    }
+
+    function buildCellBody(assignedTpl) {
+      if (!assignedTpl) return `<span class="empty-note">休假</span>`;
+      const color = getTplColor(assignedTpl);
+      return `<div class="time-fill" style="background:${color.bg};color:${color.color};border:1px solid ${color.border};">${formatTimeOnly(assignedTpl)}</div>`;
     }
 
     function renderStep3Calendar() {
@@ -993,7 +973,6 @@
         if (c.outside) cls += ' outside';
         if (!c.outside && weekday === 0) cls += ' sun-bg';
         if (!c.outside && weekday === 6) cls += ' sat-bg';
-        if (!c.outside && assignedTpl) cls += ' assigned';
         cell.className = cls;
 
         let numCls = 'day-num';
@@ -1001,10 +980,9 @@
         else if (weekday === 0) numCls += ' sun';
         else if (weekday === 6) numCls += ' sat';
 
-        let bodyHtml = `<span class="empty-note">未排班</span>`;
         if (assignedTpl) {
           const color = getTplColor(assignedTpl);
-          bodyHtml = `<span class="time-box" style="background:${color.bg};color:${color.color};border:1px solid ${color.border};">${formatTimeOnly(assignedTpl)}</span>`;
+          cell.style.background = color.bg;
         }
 
         cell.innerHTML = `
@@ -1013,19 +991,17 @@
             ${c.outside ? '' : `<div class="mini-check ${assignedTpl ? 'checked' : ''}"></div>`}
           </div>
           <div class="day-body">
-            ${c.outside ? '' : bodyHtml}
+            ${c.outside ? '' : buildCellBody(assignedTpl)}
           </div>
         `;
 
-        if (!c.outside) {
-          cell.onclick = () => assignDate(dateKey);
-        }
+        if (!c.outside) cell.onclick = () => assignDate(dateKey, false);
 
         grid.appendChild(cell);
       });
     }
 
-    function assignDate(dateKey) {
+    function assignDate(dateKey, fromStep4) {
       if (!state.selectedTemplateId) return;
 
       if (state.selectedTemplateId === 'ERASE') {
@@ -1034,35 +1010,26 @@
         state.assignedDays[dateKey] = state.selectedTemplateId;
       }
 
-      renderStep3Calendar();
-    }
-
-    function changeMonth(delta) {
-      state.viewMonth += delta;
-      if (state.viewMonth < 1) {
-        state.viewMonth = 12;
-        state.viewYear -= 1;
+      if (fromStep4) {
+        state.step4InvalidDates = new Set();
+        document.getElementById('step4Errors').classList.add('hidden');
+        renderStep4Calendar();
+      } else {
+        renderStep3Calendar();
       }
-      if (state.viewMonth > 12) {
-        state.viewMonth = 1;
-        state.viewYear += 1;
-      }
-      renderStep3Calendar();
     }
 
     function prepareStep4() {
-      state.step4Year = state.viewYear;
-      state.step4Month = state.viewMonth;
       state.step4InvalidDates = new Set();
+      document.getElementById('step4Errors').classList.add('hidden');
       goStep(4);
-      renderStep4Calendar();
     }
 
     function renderStep4Calendar() {
-      document.getElementById('step4MonthTitle').textContent = monthText(state.step4Year, state.step4Month);
+      document.getElementById('step4MonthTitle').textContent = monthText(state.viewYear, state.viewMonth);
 
       const grid = document.getElementById('step4Grid');
-      const cells = getMonthMatrix(state.step4Year, state.step4Month);
+      const cells = getMonthMatrix(state.viewYear, state.viewMonth);
       grid.innerHTML = '';
 
       cells.forEach(c => {
@@ -1076,7 +1043,6 @@
         if (c.outside) cls += ' outside';
         if (!c.outside && weekday === 0) cls += ' sun-bg';
         if (!c.outside && weekday === 6) cls += ' sat-bg';
-        if (!c.outside && assignedTpl) cls += ' assigned';
         if (!c.outside && isInvalid) cls += ' invalid';
         cell.className = cls;
 
@@ -1085,10 +1051,9 @@
         else if (weekday === 0) numCls += ' sun';
         else if (weekday === 6) numCls += ' sat';
 
-        let bodyHtml = `<span class="empty-note">休假</span>`;
-        if (assignedTpl) {
+        if (assignedTpl && !isInvalid) {
           const color = getTplColor(assignedTpl);
-          bodyHtml = `<span class="time-box" style="background:${color.bg};color:${color.color};border:1px solid ${color.border};">${formatTimeOnly(assignedTpl)}</span>`;
+          cell.style.background = color.bg;
         }
 
         cell.innerHTML = `
@@ -1097,25 +1062,14 @@
             ${c.outside ? '' : `<div class="mini-check ${assignedTpl ? 'checked' : ''}"></div>`}
           </div>
           <div class="day-body">
-            ${c.outside ? '' : bodyHtml}
+            ${c.outside ? '' : buildCellBody(assignedTpl)}
           </div>
         `;
 
+        if (!c.outside) cell.onclick = () => assignDate(dateKey, true);
+
         grid.appendChild(cell);
       });
-    }
-
-    function changeMonthStep4(delta) {
-      state.step4Month += delta;
-      if (state.step4Month < 1) {
-        state.step4Month = 12;
-        state.step4Year -= 1;
-      }
-      if (state.step4Month > 12) {
-        state.step4Month = 1;
-        state.step4Year += 1;
-      }
-      renderStep4Calendar();
     }
 
     function timeToMinutes(h, m) {
@@ -1240,11 +1194,10 @@
       const base = getNextMonthBase();
       state.viewYear = base.year;
       state.viewMonth = base.month;
-      state.step4Year = base.year;
-      state.step4Month = base.month;
 
       initTemplates();
-      renderTemplatePalette();
+      renderTemplatePalette('templatePalette', 'currentTemplateText');
+      renderTemplatePalette('templatePaletteStep4', 'currentTemplateTextStep4');
       renderStep3Calendar();
       renderStep4Calendar();
     };
