@@ -603,17 +603,9 @@
       .day-shift-text{ font-size:9px; min-height:34px; }
       .template-name{ font-size:16px; }
 
-      .template-head{
-        gap:8px;
-      }
-
-      .template-actions{
-        gap:6px;
-      }
-
-      .split-check{
-        font-size:13px;
-      }
+      .template-head{ gap:8px; }
+      .template-actions{ gap:6px; }
+      .split-check{ font-size:13px; }
 
       .template-actions .btn-danger{
         height:36px;
@@ -625,21 +617,11 @@
         gap:8px;
       }
 
-      .seg-label{
-        font-size:12px;
-      }
+      .seg-label{ font-size:12px; }
+      .flat-time-grid{ gap:6px; }
+      .field label{ font-size:10px; }
 
-      .flat-time-grid{
-        gap:6px;
-      }
-
-      .field label{
-        font-size:10px;
-      }
-
-      select, button{
-        height:38px;
-      }
+      select, button{ height:38px; }
 
       .template-chip{
         padding:7px 10px;
@@ -650,26 +632,16 @@
     }
 
     @media (max-width: 380px){
-      .template-actions{
-        gap:5px;
-      }
-
-      .split-check{
-        font-size:12px;
-      }
+      .template-actions{ gap:5px; }
+      .split-check{ font-size:12px; }
 
       .template-flat-row{
         grid-template-columns:50px 1fr;
         gap:6px;
       }
 
-      .flat-time-grid{
-        gap:5px;
-      }
-
-      .field label{
-        font-size:10px;
-      }
+      .flat-time-grid{ gap:5px; }
+      .field label{ font-size:10px; }
 
       select{
         font-size:14px;
@@ -687,21 +659,13 @@
         padding:10px 12px 8px;
       }
 
-      .topbar h1{
-        font-size:20px;
-      }
+      .topbar h1{ font-size:20px; }
 
-      .page{
-        padding-top:10px;
-      }
+      .page{ padding-top:10px; }
 
-      .card{
-        padding:14px 12px;
-      }
+      .card{ padding:14px 12px; }
 
-      .section-title{
-        font-size:20px;
-      }
+      .section-title{ font-size:20px; }
 
       .template-flat-row{
         grid-template-columns:58px 1fr;
@@ -1171,6 +1135,22 @@
       return Number.isInteger(h) ? `${h} 小時` : `${h.toFixed(1)} 小時`;
     }
 
+    function getTemplateWindowMinutes(tpl) {
+      const start1 = timeToMinutes(tpl.seg1StartH, tpl.seg1StartM);
+      const end1 = timeToMinutes(tpl.seg1EndH, tpl.seg1EndM);
+
+      if (!tpl.isSplit) {
+        const endAbs = end1 > start1 ? end1 : end1 + 24 * 60;
+        return { startAbs: start1, endAbs };
+      }
+
+      const start2 = timeToMinutes(tpl.seg2StartH, tpl.seg2StartM);
+      const end2 = timeToMinutes(tpl.seg2EndH, tpl.seg2EndM);
+      const end2Abs = end2 > start2 ? end2 : end2 + 24 * 60;
+
+      return { startAbs: start1, endAbs: end2Abs };
+    }
+
     function validateTemplateList() {
       const errors = [];
 
@@ -1289,20 +1269,6 @@
       renderStep3Calendar();
     }
 
-    function getTemplateStartMinutes(tpl) {
-      return timeToMinutes(tpl.seg1StartH, tpl.seg1StartM);
-    }
-
-    function getTemplateEndMinutes(tpl) {
-      const start = getTemplateStartMinutes(tpl);
-      const end = tpl.isSplit
-        ? timeToMinutes(tpl.seg2EndH, tpl.seg2EndM)
-        : timeToMinutes(tpl.seg1EndH, tpl.seg1EndM);
-
-      if (end > start) return end;
-      return end + 24 * 60;
-    }
-
     function getAssignedDatesSorted() {
       return Object.keys(state.assignedDays).sort();
     }
@@ -1357,14 +1323,17 @@
         const currTpl = state.templates.find(t => t.id === state.assignedDays[currDateKey]);
         if (!prevTpl || !currTpl) continue;
 
-        const prevDt = new Date(prevDateKey + 'T00:00:00');
-        const currDt = new Date(currDateKey + 'T00:00:00');
-        const diffDays = (currDt - prevDt) / 86400000;
+        const prevDateBase = new Date(prevDateKey + 'T00:00:00');
+        const currDateBase = new Date(currDateKey + 'T00:00:00');
+        const diffDays = (currDateBase - prevDateBase) / 86400000;
 
         if (diffDays === 1) {
-          const prevEnd = getTemplateEndMinutes(prevTpl);
-          const currStart = getTemplateStartMinutes(currTpl);
-          const restMinutes = (24 * 60 - (prevEnd % (24 * 60))) + currStart;
+          const prevWindow = getTemplateWindowMinutes(prevTpl);
+          const currWindow = getTemplateWindowMinutes(currTpl);
+
+          const prevEndAbs = prevWindow.endAbs;
+          const currStartAbs = 24 * 60 + currWindow.startAbs;
+          const restMinutes = currStartAbs - prevEndAbs;
 
           if (restMinutes < 660) {
             const hours = (restMinutes / 60).toFixed(1);
