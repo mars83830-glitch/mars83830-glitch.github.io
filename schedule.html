@@ -290,9 +290,9 @@
     .day-top{
       display:flex;
       align-items:flex-start;
-      justify-content:space-between;
+      justify-content:flex-start;
       gap:4px;
-      min-height:24px;
+      min-height:22px;
     }
 
     .day-num{
@@ -306,21 +306,6 @@
     .day-num.sat{ color:#2563eb; }
     .day-num.outside{ color:#c9ced7; }
 
-    .mini-check{
-      width:18px;
-      height:18px;
-      border-radius:6px;
-      border:2px solid #9ca3af;
-      background:#fff;
-      flex-shrink:0;
-      margin-top:1px;
-    }
-
-    .mini-check.checked{
-      background:#dcfce7;
-      border-color:#7bc896;
-    }
-
     .day-body{
       margin-top:6px;
       font-size:10px;
@@ -333,6 +318,7 @@
       flex-direction:column;
       align-items:stretch;
       gap:3px;
+      flex:1;
     }
 
     .time-fill{
@@ -344,7 +330,7 @@
       font-size:10px;
       line-height:1.2;
       white-space:pre-line;
-      min-height:34px;
+      min-height:40px;
       display:flex;
       align-items:center;
       justify-content:center;
@@ -399,6 +385,27 @@
 
     .error-item{
       color:#991b1b;
+      margin:4px 0;
+      font-size:14px;
+      line-height:1.5;
+    }
+
+    .ok-box{
+      margin-top:12px;
+      border:1px solid #bbf7d0;
+      background:#f0fdf4;
+      border-radius:14px;
+      padding:12px;
+    }
+
+    .ok-title{
+      color:#166534;
+      font-weight:900;
+      margin-bottom:6px;
+    }
+
+    .ok-item{
+      color:#166534;
       margin:4px 0;
       font-size:14px;
       line-height:1.5;
@@ -480,7 +487,7 @@
       .week-header div{ font-size:11px; padding:8px 2px; }
       .day-num{ font-size:14px; }
       .day-body{ font-size:10px; }
-      .time-fill{ font-size:9px; padding:3px; min-height:32px; }
+      .time-fill{ font-size:9px; padding:3px; min-height:38px; }
       .template-chip{ min-width:98px; font-size:11px; min-height:64px; }
     }
   </style>
@@ -516,12 +523,24 @@
         <h2 class="section-title">第 2 步｜設定上班時段模板</h2>
         <div class="hint">
           固定有 1 組主上班時段。<br>
-          次上班時段可新增、可刪除；每組都可以設定兩段班。
+          次上班時段可新增、可刪除；每組都可以設定兩段班。<br>
+          進入下一步前，會先檢查每組模板是否合法，且單日總工時不得超過 12 小時。
         </div>
 
         <div id="templateList"></div>
 
+        <div class="ok-box hidden" id="step2OkBox">
+          <div class="ok-title">模板檢查結果</div>
+          <div id="step2OkList"></div>
+        </div>
+
+        <div class="error-box hidden" id="step2Errors">
+          <div class="error-title">模板檢查結果</div>
+          <div id="step2ErrorList"></div>
+        </div>
+
         <div class="footer-actions">
+          <button class="btn-secondary" onclick="runStep2Validation(false)">檢查模板</button>
           <button class="btn-secondary" onclick="addTemplate()">＋ 新增次上班時段</button>
         </div>
 
@@ -733,6 +752,7 @@
       state.templates.push(createDefaultTemplate(false, idx));
       refreshTemplateColors();
       renderTemplates();
+      hideStep2ValidationBoxes();
     }
 
     function removeTemplate(id) {
@@ -753,6 +773,7 @@
       renderTemplatePalette('templatePaletteStep4', 'currentTemplateTextStep4');
       renderStep3Calendar();
       renderStep4Calendar();
+      hideStep2ValidationBoxes();
     }
 
     function renumberSecondaryLabels() {
@@ -838,6 +859,13 @@
       });
     }
 
+    function hideStep2ValidationBoxes() {
+      document.getElementById('step2Errors').classList.add('hidden');
+      document.getElementById('step2OkBox').classList.add('hidden');
+      document.getElementById('step2ErrorList').innerHTML = '';
+      document.getElementById('step2OkList').innerHTML = '';
+    }
+
     function updateTpl(id, key, value) {
       const tpl = state.templates.find(t => t.id === id);
       if (!tpl) return;
@@ -846,6 +874,7 @@
       renderTemplatePalette('templatePaletteStep4', 'currentTemplateTextStep4');
       renderStep3Calendar();
       renderStep4Calendar();
+      hideStep2ValidationBoxes();
     }
 
     function toggleSplit(id, checked) {
@@ -857,6 +886,7 @@
       renderTemplatePalette('templatePaletteStep4', 'currentTemplateTextStep4');
       renderStep3Calendar();
       renderStep4Calendar();
+      hideStep2ValidationBoxes();
     }
 
     function goStep(step) {
@@ -877,8 +907,8 @@
     }
 
     function compactTime(h1, m1, h2, m2) {
-      const start = m1 === '00' ? h1 : `${h1}/`;
-      const end = m2 === '00' ? h2 : `${h2}/`;
+      const start = m1 === '00' ? h1 : `${h1}:${m1}`;
+      const end = m2 === '00' ? h2 : `${h2}:${m2}`;
       return `${start}-${end}`;
     }
 
@@ -943,11 +973,92 @@
       }
     }
 
-    function prepareStep3() {
-      if (!state.selectedTemplateId && state.templates.length > 0) {
-        state.selectedTemplateId = state.templates[0].id;
+    function timeToMinutes(h, m) {
+      return Number(h) * 60 + Number(m);
+    }
+
+    function calcSegmentMinutes(startH, startM, endH, endM) {
+      return timeToMinutes(endH, endM) - timeToMinutes(startH, startM);
+    }
+
+    function formatMinutesToHourText(minutes) {
+      const h = minutes / 60;
+      return Number.isInteger(h) ? `${h} 小時` : `${h.toFixed(1)} 小時`;
+    }
+
+    function validateTemplateList() {
+      const errors = [];
+      const oks = [];
+
+      state.templates.forEach(tpl => {
+        const seg1 = calcSegmentMinutes(tpl.seg1StartH, tpl.seg1StartM, tpl.seg1EndH, tpl.seg1EndM);
+
+        if (seg1 <= 0) {
+          errors.push(`${tpl.label}：第一段結束時間必須晚於開始時間。`);
+          return;
+        }
+
+        let totalMinutes = seg1;
+
+        if (tpl.isSplit) {
+          const seg2 = calcSegmentMinutes(tpl.seg2StartH, tpl.seg2StartM, tpl.seg2EndH, tpl.seg2EndM);
+
+          if (seg2 <= 0) {
+            errors.push(`${tpl.label}：第二段結束時間必須晚於開始時間。`);
+            return;
+          }
+
+          totalMinutes += seg2;
+        }
+
+        if (totalMinutes > 720) {
+          errors.push(`${tpl.label}：總工時 ${formatMinutesToHourText(totalMinutes)}，超過 12 小時，不能進入下一步。`);
+          return;
+        }
+
+        oks.push(`${tpl.label}：${formatTimeInline(tpl)}｜總工時 ${formatMinutesToHourText(totalMinutes)}`);
+      });
+
+      return { errors, oks };
+    }
+
+    function runStep2Validation(goNext) {
+      const result = validateTemplateList();
+      const errorBox = document.getElementById('step2Errors');
+      const errorList = document.getElementById('step2ErrorList');
+      const okBox = document.getElementById('step2OkBox');
+      const okList = document.getElementById('step2OkList');
+
+      errorList.innerHTML = '';
+      okList.innerHTML = '';
+
+      if (result.oks.length > 0) {
+        okList.innerHTML = result.oks.map(t => `<div class="ok-item">${t}</div>`).join('');
+        okBox.classList.remove('hidden');
+      } else {
+        okBox.classList.add('hidden');
       }
-      goStep(3);
+
+      if (result.errors.length > 0) {
+        errorList.innerHTML = result.errors.map(t => `<div class="error-item">${t}</div>`).join('');
+        errorBox.classList.remove('hidden');
+        return false;
+      } else {
+        errorBox.classList.add('hidden');
+      }
+
+      if (goNext) {
+        if (!state.selectedTemplateId && state.templates.length > 0) {
+          state.selectedTemplateId = state.templates[0].id;
+        }
+        goStep(3);
+      }
+
+      return true;
+    }
+
+    function prepareStep3() {
+      runStep2Validation(true);
     }
 
     function buildCellBody(assignedTpl) {
@@ -988,7 +1099,6 @@
         cell.innerHTML = `
           <div class="day-top">
             <div class="${numCls}">${c.day}</div>
-            ${c.outside ? '' : `<div class="mini-check ${assignedTpl ? 'checked' : ''}"></div>`}
           </div>
           <div class="day-body">
             ${c.outside ? '' : buildCellBody(assignedTpl)}
@@ -1059,7 +1169,6 @@
         cell.innerHTML = `
           <div class="day-top">
             <div class="${numCls}">${c.day}</div>
-            ${c.outside ? '' : `<div class="mini-check ${assignedTpl ? 'checked' : ''}"></div>`}
           </div>
           <div class="day-body">
             ${c.outside ? '' : buildCellBody(assignedTpl)}
@@ -1070,10 +1179,6 @@
 
         grid.appendChild(cell);
       });
-    }
-
-    function timeToMinutes(h, m) {
-      return Number(h) * 60 + Number(m);
     }
 
     function getTemplateStartMinutes(tpl) {
