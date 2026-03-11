@@ -34,9 +34,7 @@
       font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;
     }
 
-    body{
-      min-height:100vh;
-    }
+    body{ min-height:100vh; }
 
     .app{
       width:100%;
@@ -162,9 +160,7 @@
       min-width:0;
     }
 
-    select{
-      width:100%;
-    }
+    select{ width:100%; }
 
     button{
       cursor:pointer;
@@ -497,9 +493,14 @@
       line-height:1.5;
     }
 
-    .palette-wrap{
+    .palette-frame{
       margin:12px 0 14px;
       width:100%;
+      border:1px solid #d9e5f6;
+      border-radius:16px;
+      background:#f8fbff;
+      padding:12px;
+      overflow:hidden;
     }
 
     .palette-title{
@@ -513,29 +514,45 @@
       display:flex;
       gap:8px;
       overflow-x:auto;
-      padding-bottom:4px;
+      overflow-y:hidden;
+      padding-bottom:6px;
       -webkit-overflow-scrolling:touch;
-      align-items:stretch;
+      align-items:center;
       width:100%;
+      scrollbar-width:auto;
+    }
+
+    .template-palette::-webkit-scrollbar{
+      height:8px;
+    }
+
+    .template-palette::-webkit-scrollbar-track{
+      background:#e9eef7;
+      border-radius:999px;
+    }
+
+    .template-palette::-webkit-scrollbar-thumb{
+      background:#bdd1ef;
+      border-radius:999px;
     }
 
     .template-chip{
       flex:0 0 auto;
-      min-width:108px;
-      max-width:150px;
+      min-width:auto;
+      max-width:none;
       border:2px solid #dbe3ef;
       border-radius:14px;
-      padding:10px 10px;
+      padding:8px 12px;
       text-align:center;
       font-size:12px;
       font-weight:900;
-      line-height:1.35;
+      line-height:1.2;
       white-space:pre-line;
       color:#334155;
-      display:flex;
+      display:inline-flex;
       align-items:center;
       justify-content:center;
-      min-height:68px;
+      min-height:44px;
     }
 
     .template-chip.active{
@@ -584,7 +601,6 @@
       .day-num{ font-size:14px; }
       .day-body{ font-size:10px; }
       .day-shift-text{ font-size:9px; min-height:34px; }
-      .template-chip{ min-width:98px; font-size:11px; min-height:64px; }
       .template-name{ font-size:16px; }
 
       .template-head{
@@ -624,13 +640,16 @@
       select, button{
         height:38px;
       }
+
+      .template-chip{
+        padding:7px 10px;
+        font-size:11px;
+        min-height:40px;
+        border-radius:12px;
+      }
     }
 
     @media (max-width: 380px){
-      .template-head{
-        align-items:flex-start;
-      }
-
       .template-actions{
         gap:5px;
       }
@@ -655,6 +674,11 @@
       select{
         font-size:14px;
         padding:0 8px;
+      }
+
+      .template-chip{
+        padding:6px 9px;
+        font-size:10px;
       }
     }
 
@@ -681,10 +705,6 @@
 
       .template-flat-row{
         grid-template-columns:58px 1fr;
-      }
-
-      .flat-time-grid{
-        grid-template-columns:repeat(4, minmax(0, 1fr));
       }
     }
   </style>
@@ -745,7 +765,7 @@
           若有規則錯誤，日期會標紅；你可以直接在這一頁修正。
         </div>
 
-        <div class="palette-wrap">
+        <div class="palette-frame">
           <div class="palette-title">選擇要套用的班段</div>
           <div class="template-palette" id="templatePalette"></div>
           <div class="current-template" id="currentTemplateText"></div>
@@ -850,7 +870,6 @@
       const first = new Date(year, month - 1, 1);
       const lastDate = new Date(year, month, 0).getDate();
       const startWeekday = first.getDay();
-
       const prevLastDate = new Date(year, month - 1, 0).getDate();
       const cells = [];
 
@@ -888,13 +907,13 @@
         id: 'tpl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
         label: `時段${index}`,
         isSplit: false,
-        seg1StartH: '09',
+        seg1StartH: '00',
         seg1StartM: '00',
-        seg1EndH: '18',
+        seg1EndH: '00',
         seg1EndM: '00',
-        seg2StartH: '17',
+        seg2StartH: '00',
         seg2StartM: '00',
-        seg2EndH: '21',
+        seg2EndH: '00',
         seg2EndM: '00',
         colorIndex: 0
       };
@@ -967,7 +986,7 @@
       const wrap = document.getElementById('templateList');
       wrap.innerHTML = '';
 
-      state.templates.forEach((tpl, index) => {
+      state.templates.forEach((tpl) => {
         const box = document.createElement('div');
         box.className = 'template-box';
         box.innerHTML = `
@@ -1118,7 +1137,7 @@
 
       const eraseBtn = document.createElement('button');
       eraseBtn.className = 'template-chip erase' + (state.selectedTemplateId === 'ERASE' ? ' active' : '');
-      eraseBtn.innerHTML = `休假<br>清除`;
+      eraseBtn.innerHTML = `休假/清除`;
       eraseBtn.onclick = () => {
         state.selectedTemplateId = 'ERASE';
         renderTemplatePalette();
@@ -1140,7 +1159,11 @@
     }
 
     function calcSegmentMinutes(startH, startM, endH, endM) {
-      return timeToMinutes(endH, endM) - timeToMinutes(startH, startM);
+      const start = timeToMinutes(startH, startM);
+      const end = timeToMinutes(endH, endM);
+      if (start === end) return 0;
+      if (end > start) return end - start;
+      return (24 * 60 - start) + end;
     }
 
     function formatMinutesToHourText(minutes) {
@@ -1155,7 +1178,7 @@
         const seg1 = calcSegmentMinutes(tpl.seg1StartH, tpl.seg1StartM, tpl.seg1EndH, tpl.seg1EndM);
 
         if (seg1 <= 0) {
-          errors.push(`${tpl.label}：第一段結束時間必須晚於開始時間。`);
+          errors.push(`${tpl.label}：第一段工時不可為 0 小時。`);
           return;
         }
 
@@ -1165,7 +1188,7 @@
           const seg2 = calcSegmentMinutes(tpl.seg2StartH, tpl.seg2StartM, tpl.seg2EndH, tpl.seg2EndM);
 
           if (seg2 <= 0) {
-            errors.push(`${tpl.label}：第二段結束時間必須晚於開始時間。`);
+            errors.push(`${tpl.label}：第二段工時不可為 0 小時。`);
             return;
           }
 
@@ -1248,7 +1271,6 @@
         `;
 
         if (!c.outside) cell.onclick = () => assignDate(dateKey);
-
         grid.appendChild(cell);
       });
     }
@@ -1272,9 +1294,13 @@
     }
 
     function getTemplateEndMinutes(tpl) {
-      return tpl.isSplit
+      const start = getTemplateStartMinutes(tpl);
+      const end = tpl.isSplit
         ? timeToMinutes(tpl.seg2EndH, tpl.seg2EndM)
         : timeToMinutes(tpl.seg1EndH, tpl.seg1EndM);
+
+      if (end > start) return end;
+      return end + 24 * 60;
     }
 
     function getAssignedDatesSorted() {
@@ -1338,7 +1364,7 @@
         if (diffDays === 1) {
           const prevEnd = getTemplateEndMinutes(prevTpl);
           const currStart = getTemplateStartMinutes(currTpl);
-          const restMinutes = (24 * 60 - prevEnd) + currStart;
+          const restMinutes = (24 * 60 - (prevEnd % (24 * 60))) + currStart;
 
           if (restMinutes < 660) {
             const hours = (restMinutes / 60).toFixed(1);
