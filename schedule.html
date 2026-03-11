@@ -7,186 +7,358 @@
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     :root{
-      --bg:#f6f7fb;
+      --bg:#eef1f5;
       --card:#ffffff;
       --text:#1f2937;
       --muted:#6b7280;
-      --line:#e5e7eb;
-      --primary:#2563eb;
+      --line:#d8dee8;
+      --primary:#4b89dc;
+      --primary-dark:#2d6dc4;
+      --selected:#dbeafe;
+      --selected-border:#60a5fa;
       --danger:#dc2626;
+      --danger-bg:#fee2e2;
       --ok:#16a34a;
-      --shadow:0 10px 24px rgba(0,0,0,.08);
-      --radius:18px;
+      --sun:#fdeaea;
+      --sat:#eef3ff;
+      --shadow:0 8px 22px rgba(0,0,0,.08);
+      --radius:16px;
     }
+
     *{box-sizing:border-box}
+
     body{
       margin:0;
+      font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;
       background:var(--bg);
       color:var(--text);
-      font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;
     }
-    .wrap{
-      max-width:900px;
+
+    .app{
+      max-width:860px;
       margin:0 auto;
-      padding:20px 14px 40px;
+      min-height:100vh;
+      background:var(--bg);
     }
-    .title{
-      font-size:28px;
+
+    .topbar{
+      background:#fff;
+      padding:18px 16px 12px;
+      text-align:center;
+      box-shadow:0 1px 0 rgba(0,0,0,.05);
+    }
+
+    .topbar h1{
+      margin:0;
+      font-size:22px;
       font-weight:800;
-      margin:8px 0 6px;
     }
-    .sub{
-      color:var(--muted);
-      font-size:15px;
-      margin-bottom:18px;
-      line-height:1.6;
+
+    .topbar .sub{
+      margin-top:4px;
+      color:#9ca3af;
+      font-size:13px;
     }
+
+    .step-tabs{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:0;
+      margin:14px 12px 0;
+      border-radius:12px;
+      overflow:hidden;
+      border:1px solid #b8d0f3;
+    }
+
+    .step-tab{
+      border:none;
+      background:#fff;
+      color:var(--primary);
+      padding:12px 6px;
+      font-size:14px;
+      font-weight:800;
+    }
+
+    .step-tab.active{
+      background:var(--primary);
+      color:#fff;
+    }
+
+    .page{
+      padding:14px 12px 30px;
+    }
+
     .card{
       background:var(--card);
       border-radius:var(--radius);
       box-shadow:var(--shadow);
-      padding:18px;
-      margin-bottom:16px;
+      padding:16px;
+      margin-bottom:14px;
     }
-    .stepbar{
-      display:grid;
-      grid-template-columns:repeat(4,1fr);
-      gap:8px;
-      margin-bottom:16px;
-    }
-    .step{
-      border-radius:14px;
-      padding:10px 8px;
-      text-align:center;
-      background:#e5e7eb;
-      color:#4b5563;
-      font-size:14px;
-      font-weight:700;
-    }
-    .step.active{
-      background:var(--primary);
-      color:#fff;
-    }
-    .step.done{
-      background:#bfdbfe;
-      color:#1d4ed8;
-    }
+
     .section-title{
+      margin:0 0 10px;
       font-size:22px;
-      font-weight:800;
-      margin:0 0 12px;
+      font-weight:900;
     }
+
+    .hint{
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.7;
+    }
+
+    .status{
+      margin-top:10px;
+      font-size:14px;
+      line-height:1.7;
+      white-space:pre-wrap;
+    }
+
     .row{
       display:flex;
       gap:10px;
       flex-wrap:wrap;
       align-items:center;
     }
+
     .field{
       display:flex;
       flex-direction:column;
       gap:6px;
-      min-width:110px;
+      min-width:90px;
       flex:1;
     }
+
     .field label{
-      font-size:14px;
+      font-size:13px;
       color:var(--muted);
-      font-weight:700;
-    }
-    select, button, input[type="text"]{
-      height:44px;
-      border:1px solid var(--line);
-      border-radius:12px;
-      padding:0 12px;
-      font-size:16px;
-      background:#fff;
-    }
-    button{
-      cursor:pointer;
       font-weight:800;
     }
+
+    select, button{
+      height:42px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:#fff;
+      padding:0 10px;
+      font-size:15px;
+    }
+
+    button{
+      cursor:pointer;
+      font-weight:900;
+    }
+
     .btn-primary{
       background:var(--primary);
       color:#fff;
       border:none;
     }
+
     .btn-secondary{
       background:#fff;
-      color:var(--text);
+      color:#111827;
     }
+
     .btn-danger{
       background:#fff;
       color:var(--danger);
       border:1px solid #fecaca;
     }
-    .hidden{display:none !important}
-    .hint{
-      color:var(--muted);
-      font-size:14px;
-      line-height:1.6;
+
+    .footer-actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:14px;
     }
-    .ok{
-      color:var(--ok);
-      font-weight:700;
-    }
-    .err{
-      color:var(--danger);
-      font-weight:700;
-    }
+
+    .hidden{display:none !important;}
+
     .template-box{
       border:1px solid var(--line);
-      border-radius:16px;
+      border-radius:14px;
+      background:#fcfcfd;
       padding:14px;
       margin-bottom:12px;
-      background:#fcfcfd;
     }
+
     .template-head{
       display:flex;
       justify-content:space-between;
       align-items:center;
       gap:10px;
-      margin-bottom:10px;
       flex-wrap:wrap;
+      margin-bottom:10px;
     }
+
     .template-name{
       font-size:18px;
-      font-weight:800;
+      font-weight:900;
     }
+
     .split-area{
       margin-top:10px;
       padding-top:10px;
       border-top:1px dashed var(--line);
     }
-    .calendar-wrap{
-      overflow-x:auto;
-      padding-bottom:8px;
+
+    .calendar-toolbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      margin-bottom:10px;
+      padding:0 4px;
     }
-    table.calendar{
-      border-collapse:collapse;
-      min-width:860px;
-      width:100%;
-      table-layout:fixed;
-    }
-    .calendar th,.calendar td{
-      border:1px solid #d1d5db;
+
+    .month-title{
+      font-size:18px;
+      font-weight:900;
+      color:var(--primary);
+      min-width:140px;
       text-align:center;
-      padding:8px 4px;
-      min-width:52px;
     }
-    .calendar th{
-      background:#f8fafc;
+
+    .month-nav{
+      width:42px;
+      height:42px;
+      border-radius:50%;
+      border:none;
+      background:transparent;
+      color:var(--primary);
+      font-size:28px;
+      line-height:1;
+      font-weight:700;
+    }
+
+    .week-header{
+      display:grid;
+      grid-template-columns:repeat(7,1fr);
+      gap:0;
+      margin-bottom:0;
+      border:1px solid var(--line);
+      border-bottom:none;
+      overflow:hidden;
+      border-top-left-radius:14px;
+      border-top-right-radius:14px;
+      background:#fff;
+    }
+
+    .week-header div{
+      text-align:center;
+      padding:10px 4px;
+      font-weight:900;
+      font-size:14px;
+      border-right:1px solid var(--line);
+    }
+
+    .week-header div:last-child{border-right:none;}
+    .week-header .sun{color:#b91c1c;}
+    .week-header .sat{color:#1d4ed8;}
+
+    .month-grid{
+      display:grid;
+      grid-template-columns:repeat(7,1fr);
+      border-left:1px solid var(--line);
+      border-top:1px solid var(--line);
+      background:#fff;
+      border-bottom-left-radius:14px;
+      border-bottom-right-radius:14px;
+      overflow:hidden;
+    }
+
+    .day-cell{
+      min-height:110px;
+      border-right:1px solid var(--line);
+      border-bottom:1px solid var(--line);
+      padding:6px;
+      background:#fff;
+      position:relative;
+      transition:.15s;
+    }
+
+    .day-cell.outside{
+      background:#f3f4f6;
+      color:#c2c7d0;
+    }
+
+    .day-cell.sun-bg{
+      background:linear-gradient(0deg, rgba(255,255,255,1) 82%, var(--sun) 82%);
+    }
+
+    .day-cell.sat-bg{
+      background:linear-gradient(0deg, rgba(255,255,255,1) 82%, var(--sat) 82%);
+    }
+
+    .day-cell.selected{
+      background:#effaf2;
+      box-shadow:inset 0 0 0 2px #7dd3a7;
+    }
+
+    .day-cell.invalid{
+      background:var(--danger-bg) !important;
+      box-shadow:inset 0 0 0 2px var(--danger);
+    }
+
+    .day-top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:6px;
+      gap:6px;
+    }
+
+    .day-num{
+      font-size:16px;
       font-weight:800;
+      color:#6b7280;
     }
-    .sun{background:#fde7e7 !important;}
-    .sat{background:#eef2ff !important;}
-    .selected{
-      background:#dcfce7 !important;
+
+    .day-num.sun{color:#c2410c;}
+    .day-num.sat{color:#2563eb;}
+    .day-num.outside{color:#c7ccd5;}
+
+    .day-check{
+      transform:scale(1.15);
     }
-    .invalid{
-      background:#fee2e2 !important;
-      border:2px solid #dc2626 !important;
+
+    .day-body{
+      font-size:12px;
+      line-height:1.45;
+      color:#111827;
+      white-space:pre-line;
     }
+
+    .tag-main{
+      display:inline-block;
+      background:#fff6bf;
+      color:#111827;
+      padding:2px 6px;
+      border-radius:8px;
+      font-size:12px;
+      font-weight:800;
+      margin-bottom:4px;
+    }
+
+    .tag-sub{
+      display:inline-block;
+      background:#dbeafe;
+      color:#1e3a8a;
+      padding:2px 6px;
+      border-radius:8px;
+      font-size:12px;
+      font-weight:800;
+      margin-bottom:4px;
+    }
+
+    .empty-note{
+      color:#9ca3af;
+      font-size:12px;
+    }
+
     .error-box{
       margin-top:12px;
       border:1px solid #fecaca;
@@ -194,110 +366,221 @@
       border-radius:14px;
       padding:12px;
     }
+
+    .error-title{
+      color:#991b1b;
+      font-weight:900;
+      margin-bottom:6px;
+    }
+
     .error-item{
       color:#991b1b;
       margin:4px 0;
       font-size:14px;
       line-height:1.5;
     }
-    .day-row{
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:12px;
-      margin-bottom:10px;
-      background:#fff;
-    }
-    .day-row.invalid{
-      background:#fff1f2 !important;
-    }
-    .footer-actions{
+
+    .legend{
       display:flex;
       gap:10px;
-      justify-content:flex-end;
-      margin-top:16px;
       flex-wrap:wrap;
+      margin-top:8px;
+      font-size:13px;
+      color:#4b5563;
     }
-    .status{
-      margin-top:10px;
-      font-size:14px;
-      line-height:1.6;
-      white-space:pre-wrap;
+
+    .legend span{
+      display:inline-flex;
+      align-items:center;
+      gap:5px;
     }
-    @media (max-width:640px){
-      .title{font-size:24px}
-      .section-title{font-size:20px}
-      .step{font-size:12px;padding:8px 4px}
+
+    .legend i{
+      width:14px;
+      height:14px;
+      border-radius:4px;
+      display:inline-block;
+      border:1px solid #d1d5db;
+    }
+
+    .legend .lg-selected{ background:#effaf2; border-color:#7dd3a7; }
+    .legend .lg-invalid{ background:#fee2e2; border-color:#dc2626; }
+    .legend .lg-normal{ background:#fff; }
+
+    .assign-panel{
+      margin-top:12px;
+      border-top:1px dashed var(--line);
+      padding-top:10px;
+    }
+
+    .assign-panel label{
+      display:block;
+      margin-bottom:6px;
+      font-size:12px;
+      color:var(--muted);
+      font-weight:800;
+    }
+
+    .assign-panel select{
+      width:100%;
+      height:38px;
+      font-size:13px;
+    }
+
+    @media (max-width:700px){
+      .day-cell{
+        min-height:100px;
+        padding:5px;
+      }
+      .day-body{
+        font-size:11px;
+      }
+      .month-title{
+        font-size:16px;
+      }
+      .step-tab{
+        font-size:12px;
+        padding:10px 4px;
+      }
+    }
+
+    @media (max-width:520px){
+      .topbar h1{
+        font-size:20px;
+      }
+      .section-title{
+        font-size:20px;
+      }
+      .day-cell{
+        min-height:92px;
+      }
+      .day-num{
+        font-size:15px;
+      }
+      .assign-panel select{
+        font-size:12px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="title">桃園營運處｜排班系統</div>
-    <div class="sub">第一版前台骨架。先把流程與畫面搭起來，再一步一步接 GAS 與規則檢查。</div>
-
-    <div class="stepbar">
-      <div class="step active" id="stepBadge1">1 驗證權限</div>
-      <div class="step" id="stepBadge2">2 設定時段</div>
-      <div class="step" id="stepBadge3">3 勾選日期</div>
-      <div class="step" id="stepBadge4">4 確認送出</div>
+  <div class="app">
+    <div class="topbar">
+      <h1>桃園營運處 排班系統</h1>
+      <div class="sub">第一版前台骨架，先把畫面與流程定好</div>
     </div>
 
-    <div class="card" id="step1">
-      <div class="section-title">第 1 步｜驗證排班權限</div>
-      <div class="hint">目前先做前台骨架。這裡之後會接 LIFF 抓 UID，再去 GAS 比對是否可排班。</div>
-      <div class="status" id="authStatus">尚未驗證</div>
-      <div class="footer-actions">
-        <button class="btn-primary" onclick="goStep(2)">先看下一步畫面</button>
-      </div>
+    <div class="step-tabs">
+      <button class="step-tab active" id="stepBadge1">1 驗證</button>
+      <button class="step-tab" id="stepBadge2">2 時段</button>
+      <button class="step-tab" id="stepBadge3">3 日期</button>
+      <button class="step-tab" id="stepBadge4">4 確認</button>
     </div>
 
-    <div class="card hidden" id="step2">
-      <div class="section-title">第 2 步｜設定上班時段模板</div>
-      <div class="hint">固定有主上班時段。下方可新增次上班時段；每一組都可勾選兩段班。</div>
-
-      <div id="templateList"></div>
-
-      <div class="footer-actions">
-        <button class="btn-secondary" onclick="addTemplate()">＋ 新增次上班時段</button>
+    <div class="page">
+      <!-- STEP 1 -->
+      <div class="card" id="step1">
+        <h2 class="section-title">第 1 步｜驗證排班權限</h2>
+        <div class="hint">
+          目前先保留前台骨架。<br>
+          下一步會接上 LIFF 抓 UID，再去 GAS 檢查這個人是否有排班權限。
+        </div>
+        <div class="status" id="authStatus">尚未驗證</div>
+        <div class="footer-actions">
+          <button class="btn-primary" onclick="goStep(2)">先看下一步畫面</button>
+        </div>
       </div>
 
-      <div class="footer-actions">
-        <button class="btn-secondary" onclick="goStep(1)">上一步</button>
-        <button class="btn-primary" onclick="goStep(3)">下一步</button>
-      </div>
-    </div>
+      <!-- STEP 2 -->
+      <div class="card hidden" id="step2">
+        <h2 class="section-title">第 2 步｜設定上班時段模板</h2>
+        <div class="hint">
+          固定有 1 組主上班時段。<br>
+          次上班時段可新增、可刪除；每組時段都可以勾選兩段班。
+        </div>
 
-    <div class="card hidden" id="step3">
-      <div class="section-title">第 3 步｜勾選下個月上班日</div>
-      <div class="hint">這裡先做日曆畫面。之後會加上固定「週日到週六」週期檢查與最多連上 5 天規則。</div>
+        <div id="templateList"></div>
 
-      <div class="calendar-wrap">
-        <table class="calendar" id="calendarTable"></table>
-      </div>
+        <div class="footer-actions">
+          <button class="btn-secondary" onclick="addTemplate()">＋ 新增次上班時段</button>
+        </div>
 
-      <div class="error-box hidden" id="step3Errors">
-        <div class="error-item">目前這裡預留給規則錯誤顯示。</div>
-      </div>
-
-      <div class="footer-actions">
-        <button class="btn-secondary" onclick="goStep(2)">上一步</button>
-        <button class="btn-primary" onclick="buildStep4()">下一步</button>
-      </div>
-    </div>
-
-    <div class="card hidden" id="step4">
-      <div class="section-title">第 4 步｜逐日確認班段</div>
-      <div class="hint">第 3 步有勾選的日期，這裡會自動帶入主上班時段，並可改選其它時段模板。</div>
-
-      <div id="dayAssignList"></div>
-
-      <div class="error-box hidden" id="step4Errors">
-        <div class="error-item">目前這裡預留給 11 小時間隔檢查錯誤顯示。</div>
+        <div class="footer-actions">
+          <button class="btn-secondary" onclick="goStep(1)">上一步</button>
+          <button class="btn-primary" onclick="goStep(3)">下一步</button>
+        </div>
       </div>
 
-      <div class="footer-actions">
-        <button class="btn-secondary" onclick="goStep(3)">上一步</button>
-        <button class="btn-primary" onclick="fakeSubmit()">送出測試</button>
+      <!-- STEP 3 -->
+      <div class="card hidden" id="step3">
+        <h2 class="section-title">第 3 步｜勾選下個月上班日</h2>
+
+        <div class="calendar-toolbar">
+          <button class="month-nav" onclick="changeMonth(-1)">‹</button>
+          <div class="month-title" id="step3MonthTitle"></div>
+          <button class="month-nav" onclick="changeMonth(1)">›</button>
+        </div>
+
+        <div class="week-header">
+          <div class="sun">星期日</div>
+          <div>星期一</div>
+          <div>星期二</div>
+          <div>星期三</div>
+          <div>星期四</div>
+          <div>星期五</div>
+          <div class="sat">星期六</div>
+        </div>
+
+        <div class="month-grid" id="step3Grid"></div>
+
+        <div class="legend">
+          <span><i class="lg-normal"></i>未選</span>
+          <span><i class="lg-selected"></i>已選上班</span>
+          <span><i class="lg-invalid"></i>規則錯誤</span>
+        </div>
+
+        <div class="error-box hidden" id="step3Errors">
+          <div class="error-title">排班規則檢查結果</div>
+          <div id="step3ErrorList"></div>
+        </div>
+
+        <div class="footer-actions">
+          <button class="btn-secondary" onclick="goStep(2)">上一步</button>
+          <button class="btn-primary" onclick="validateStep3AndGo()">下一步</button>
+        </div>
+      </div>
+
+      <!-- STEP 4 -->
+      <div class="card hidden" id="step4">
+        <h2 class="section-title">第 4 步｜逐日確認班段</h2>
+
+        <div class="calendar-toolbar">
+          <button class="month-nav" onclick="changeMonthStep4(-1)">‹</button>
+          <div class="month-title" id="step4MonthTitle"></div>
+          <button class="month-nav" onclick="changeMonthStep4(1)">›</button>
+        </div>
+
+        <div class="week-header">
+          <div class="sun">星期日</div>
+          <div>星期一</div>
+          <div>星期二</div>
+          <div>星期三</div>
+          <div>星期四</div>
+          <div>星期五</div>
+          <div class="sat">星期六</div>
+        </div>
+
+        <div class="month-grid" id="step4Grid"></div>
+
+        <div class="error-box hidden" id="step4Errors">
+          <div class="error-title">班段檢查結果</div>
+          <div id="step4ErrorList"></div>
+        </div>
+
+        <div class="footer-actions">
+          <button class="btn-secondary" onclick="goStep(3)">上一步</button>
+          <button class="btn-primary" onclick="fakeSubmit()">送出測試</button>
+        </div>
       </div>
     </div>
   </div>
@@ -307,8 +590,74 @@
       step: 1,
       templates: [],
       selectedDays: new Set(),
-      dayAssignments: {}
+      dayAssignments: {},
+      step3InvalidDates: new Set(),
+      step4InvalidDates: new Set(),
+      viewYear: 0,
+      viewMonth: 0,
+      step4Year: 0,
+      step4Month: 0
     };
+
+    function pad2(n) {
+      return String(n).padStart(2, '0');
+    }
+
+    function toDateKey(y, m, d) {
+      return `${y}-${pad2(m)}-${pad2(d)}`;
+    }
+
+    function getNextMonthBase() {
+      const now = new Date();
+      let y = now.getFullYear();
+      let m = now.getMonth() + 2;
+      if (m === 13) {
+        y += 1;
+        m = 1;
+      }
+      return { year: y, month: m };
+    }
+
+    function monthText(y, m) {
+      return `${m}月 ${y}`;
+    }
+
+    function getMonthMatrix(year, month) {
+      const first = new Date(year, month - 1, 1);
+      const lastDate = new Date(year, month, 0).getDate();
+      const startWeekday = first.getDay();
+
+      const prevLastDate = new Date(year, month - 1, 0).getDate();
+      const cells = [];
+
+      for (let i = startWeekday - 1; i >= 0; i--) {
+        const d = prevLastDate - i;
+        let py = year;
+        let pm = month - 1;
+        if (pm === 0) {
+          py--;
+          pm = 12;
+        }
+        cells.push({ year: py, month: pm, day: d, outside: true });
+      }
+
+      for (let d = 1; d <= lastDate; d++) {
+        cells.push({ year, month, day: d, outside: false });
+      }
+
+      let nextDay = 1;
+      while (cells.length % 7 !== 0) {
+        let ny = year;
+        let nm = month + 1;
+        if (nm === 13) {
+          ny++;
+          nm = 1;
+        }
+        cells.push({ year: ny, month: nm, day: nextDay++, outside: true });
+      }
+
+      return cells;
+    }
 
     function createDefaultTemplate(isPrimary = false, index = 0) {
       return {
@@ -342,6 +691,7 @@
       state.templates = state.templates.filter(t => t.id !== id);
       renumberSecondaryLabels();
       renderTemplates();
+      renderStep4Calendar();
     }
 
     function renumberSecondaryLabels() {
@@ -357,15 +707,14 @@
     function timeOptionsHour(selected) {
       let html = '';
       for (let i = 0; i <= 23; i++) {
-        const v = String(i).padStart(2, '0');
+        const v = pad2(i);
         html += `<option value="${v}" ${selected === v ? 'selected' : ''}>${v}</option>`;
       }
       return html;
     }
 
     function timeOptionsMinute(selected) {
-      const arr = ['00', '30'];
-      return arr.map(v => `<option value="${v}" ${selected === v ? 'selected' : ''}>${v}</option>`).join('');
+      return ['00', '30'].map(v => `<option value="${v}" ${selected === v ? 'selected' : ''}>${v}</option>`).join('');
     }
 
     function renderTemplates() {
@@ -375,12 +724,11 @@
       state.templates.forEach((tpl) => {
         const box = document.createElement('div');
         box.className = 'template-box';
-
         box.innerHTML = `
           <div class="template-head">
             <div class="template-name">${tpl.label}</div>
             <div class="row">
-              <label style="font-weight:700;">
+              <label style="font-weight:800;">
                 <input type="checkbox" ${tpl.isSplit ? 'checked' : ''} onchange="toggleSplit('${tpl.id}', this.checked)">
                 兩段班
               </label>
@@ -407,7 +755,7 @@
             </div>
           </div>
 
-          <div class="split-area ${tpl.isSplit ? '' : 'hidden'}" id="split_${tpl.id}">
+          <div class="split-area ${tpl.isSplit ? '' : 'hidden'}">
             <div class="row">
               <div class="field">
                 <label>第二段開始（時）</label>
@@ -436,6 +784,7 @@
       const tpl = state.templates.find(t => t.id === id);
       if (!tpl) return;
       tpl[key] = value;
+      renderStep4Calendar();
     }
 
     function toggleSplit(id, checked) {
@@ -443,6 +792,7 @@
       if (!tpl) return;
       tpl.isSplit = checked;
       renderTemplates();
+      renderStep4Calendar();
     }
 
     function goStep(step) {
@@ -450,58 +800,11 @@
       [1,2,3,4].forEach(n => {
         document.getElementById('step' + n).classList.toggle('hidden', n !== step);
         const badge = document.getElementById('stepBadge' + n);
-        badge.classList.remove('active', 'done');
-        if (n < step) badge.classList.add('done');
-        if (n === step) badge.classList.add('active');
+        badge.classList.toggle('active', n === step);
       });
-    }
 
-    function getNextMonthInfo() {
-      const now = new Date();
-      let y = now.getFullYear();
-      let m = now.getMonth() + 1;
-      if (m === 12) {
-        y += 1;
-        m = 0;
-      }
-      const first = new Date(y, m, 1);
-      const last = new Date(y, m + 1, 0);
-      return { year: y, month: m + 1, days: last.getDate() };
-    }
-
-    function renderCalendar() {
-      const info = getNextMonthInfo();
-      const table = document.getElementById('calendarTable');
-      const weekNames = ['日','一','二','三','四','五','六'];
-
-      let head1 = '<tr>';
-      let head2 = '<tr>';
-      let body = '<tr>';
-
-      for (let d = 1; d <= info.days; d++) {
-        const dt = new Date(info.year, info.month - 1, d);
-        const w = dt.getDay();
-        const cls = w === 0 ? 'sun' : w === 6 ? 'sat' : '';
-        const dateKey = `${info.year}-${String(info.month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-        head1 += `<th class="${cls}">${d}</th>`;
-        head2 += `<th class="${cls}">${weekNames[w]}</th>`;
-        body += `
-          <td class="${state.selectedDays.has(dateKey) ? 'selected' : ''}" id="cell_${dateKey}">
-            <input type="checkbox" ${state.selectedDays.has(dateKey) ? 'checked' : ''} onchange="toggleDay('${dateKey}', this.checked)">
-          </td>
-        `;
-      }
-
-      head1 += '</tr>';
-      head2 += '</tr>';
-      body += '</tr>';
-      table.innerHTML = head1 + head2 + body;
-    }
-
-    function toggleDay(dateKey, checked) {
-      if (checked) state.selectedDays.add(dateKey);
-      else state.selectedDays.delete(dateKey);
-      renderCalendar();
+      if (step === 3) renderStep3Calendar();
+      if (step === 4) renderStep4Calendar();
     }
 
     function formatTemplateLabel(tpl) {
@@ -511,57 +814,316 @@
       return `${tpl.label}｜${s1} / ${s2}`;
     }
 
-    function buildStep4() {
-      const days = Array.from(state.selectedDays).sort();
-      const wrap = document.getElementById('dayAssignList');
-      wrap.innerHTML = '';
+    function formatTemplateShort(tpl) {
+      if (!tpl) return '';
+      const s1 = `${tpl.seg1StartH}:${tpl.seg1StartM}-${tpl.seg1EndH}:${tpl.seg1EndM}`;
+      if (!tpl.isSplit) return `${tpl.label}\n${s1}`;
+      const s2 = `${tpl.seg2StartH}:${tpl.seg2StartM}-${tpl.seg2EndH}:${tpl.seg2EndM}`;
+      return `${tpl.label}\n${s1}\n${s2}`;
+    }
+
+    function toggleDay(dateKey, checked) {
+      if (checked) {
+        state.selectedDays.add(dateKey);
+      } else {
+        state.selectedDays.delete(dateKey);
+        delete state.dayAssignments[dateKey];
+      }
+      renderStep3Calendar();
+    }
+
+    function renderStep3Calendar() {
+      const title = document.getElementById('step3MonthTitle');
+      title.textContent = monthText(state.viewYear, state.viewMonth);
+
+      const grid = document.getElementById('step3Grid');
+      const cells = getMonthMatrix(state.viewYear, state.viewMonth);
+      grid.innerHTML = '';
+
+      cells.forEach(c => {
+        const dateKey = toDateKey(c.year, c.month, c.day);
+        const weekday = new Date(c.year, c.month - 1, c.day).getDay();
+        const isSelected = state.selectedDays.has(dateKey);
+        const isInvalid = state.step3InvalidDates.has(dateKey);
+
+        const cell = document.createElement('div');
+        let cls = 'day-cell';
+        if (c.outside) cls += ' outside';
+        if (!c.outside && weekday === 0) cls += ' sun-bg';
+        if (!c.outside && weekday === 6) cls += ' sat-bg';
+        if (!c.outside && isSelected) cls += ' selected';
+        if (!c.outside && isInvalid) cls += ' invalid';
+        cell.className = cls;
+
+        let numCls = 'day-num';
+        if (c.outside) numCls += ' outside';
+        else if (weekday === 0) numCls += ' sun';
+        else if (weekday === 6) numCls += ' sat';
+
+        cell.innerHTML = `
+          <div class="day-top">
+            <div class="${numCls}">${c.day}</div>
+            ${c.outside ? '' : `<input class="day-check" type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleDay('${dateKey}', this.checked)">`}
+          </div>
+          <div class="day-body">
+            ${c.outside ? '' : (isSelected ? `<span class="tag-main">已選上班</span>` : `<span class="empty-note">未選</span>`)}
+          </div>
+        `;
+        grid.appendChild(cell);
+      });
+    }
+
+    function changeMonth(delta) {
+      state.viewMonth += delta;
+      if (state.viewMonth < 1) {
+        state.viewMonth = 12;
+        state.viewYear -= 1;
+      }
+      if (state.viewMonth > 12) {
+        state.viewMonth = 1;
+        state.viewYear += 1;
+      }
+      renderStep3Calendar();
+    }
+
+    function validateStep3AndGo() {
+      const errors = validateStep3Rules();
+      state.step3InvalidDates = new Set(errors.flatMap(e => e.dates));
+
+      const box = document.getElementById('step3Errors');
+      const list = document.getElementById('step3ErrorList');
+
+      if (errors.length > 0) {
+        list.innerHTML = errors.map(e => `<div class="error-item">${e.message}</div>`).join('');
+        box.classList.remove('hidden');
+        renderStep3Calendar();
+        return;
+      }
+
+      box.classList.add('hidden');
 
       const primary = state.templates.find(t => t.isPrimary) || state.templates[0];
-      days.forEach(dateKey => {
+      Array.from(state.selectedDays).forEach(dateKey => {
         if (!state.dayAssignments[dateKey]) {
           state.dayAssignments[dateKey] = primary.id;
         }
-        const row = document.createElement('div');
-        row.className = 'day-row';
-        row.innerHTML = `
-          <div class="row">
-            <div style="font-weight:800;font-size:18px;min-width:120px;">${dateKey}</div>
-            <div class="field" style="flex:2;">
-              <label>班段選擇</label>
-              <select onchange="changeDayAssignment('${dateKey}', this.value)">
-                ${state.templates.map(t => `
-                  <option value="${t.id}" ${state.dayAssignments[dateKey] === t.id ? 'selected' : ''}>
-                    ${formatTemplateLabel(t)}
-                  </option>
-                `).join('')}
-              </select>
-            </div>
-          </div>
-        `;
-        wrap.appendChild(row);
       });
 
+      state.step4Year = state.viewYear;
+      state.step4Month = state.viewMonth;
       goStep(4);
+    }
+
+    function validateStep3Rules() {
+      const selected = Array.from(state.selectedDays).sort();
+      const errors = [];
+
+      if (selected.length === 0) {
+        errors.push({
+          dates: [],
+          message: '請先勾選至少 1 天上班日。'
+        });
+        return errors;
+      }
+
+      let streak = 0;
+      let streakDates = [];
+      let prevDate = null;
+
+      selected.forEach(dateKey => {
+        const current = new Date(dateKey + 'T00:00:00');
+
+        if (!prevDate) {
+          streak = 1;
+          streakDates = [dateKey];
+        } else {
+          const diff = (current - prevDate) / 86400000;
+          if (diff === 1) {
+            streak++;
+            streakDates.push(dateKey);
+          } else {
+            streak = 1;
+            streakDates = [dateKey];
+          }
+        }
+
+        if (streak >= 6) {
+          errors.push({
+            dates: [...streakDates],
+            message: `${streakDates[0]} ～ ${streakDates[streakDates.length - 1]} 形成連續上班 ${streak} 天，超過最多連上 5 天規則。`
+          });
+        }
+
+        prevDate = current;
+      });
+
+      return errors;
+    }
+
+    function renderStep4Calendar() {
+      const title = document.getElementById('step4MonthTitle');
+      title.textContent = monthText(state.step4Year, state.step4Month);
+
+      const grid = document.getElementById('step4Grid');
+      const cells = getMonthMatrix(state.step4Year, state.step4Month);
+      grid.innerHTML = '';
+
+      cells.forEach(c => {
+        const dateKey = toDateKey(c.year, c.month, c.day);
+        const weekday = new Date(c.year, c.month - 1, c.day).getDay();
+        const isSelected = state.selectedDays.has(dateKey);
+        const isInvalid = state.step4InvalidDates.has(dateKey);
+
+        const cell = document.createElement('div');
+        let cls = 'day-cell';
+        if (c.outside) cls += ' outside';
+        if (!c.outside && weekday === 0) cls += ' sun-bg';
+        if (!c.outside && weekday === 6) cls += ' sat-bg';
+        if (!c.outside && isInvalid) cls += ' invalid';
+        if (!c.outside && isSelected) cls += ' selected';
+        cell.className = cls;
+
+        let numCls = 'day-num';
+        if (c.outside) numCls += ' outside';
+        else if (weekday === 0) numCls += ' sun';
+        else if (weekday === 6) numCls += ' sat';
+
+        const tpl = state.templates.find(t => t.id === state.dayAssignments[dateKey]);
+        const bodyHtml = c.outside
+          ? ''
+          : isSelected
+            ? `
+              <span class="tag-main">已排班</span>
+              <div>${formatTemplateShort(tpl).replaceAll('\n', '<br>')}</div>
+              <div class="assign-panel">
+                <label>更換時段</label>
+                <select onchange="changeDayAssignment('${dateKey}', this.value)">
+                  ${state.templates.map(t => `
+                    <option value="${t.id}" ${state.dayAssignments[dateKey] === t.id ? 'selected' : ''}>
+                      ${formatTemplateLabel(t)}
+                    </option>
+                  `).join('')}
+                </select>
+              </div>
+            `
+            : `<span class="empty-note">未排班</span>`;
+
+        cell.innerHTML = `
+          <div class="day-top">
+            <div class="${numCls}">${c.day}</div>
+          </div>
+          <div class="day-body">${bodyHtml}</div>
+        `;
+        grid.appendChild(cell);
+      });
+    }
+
+    function changeMonthStep4(delta) {
+      state.step4Month += delta;
+      if (state.step4Month < 1) {
+        state.step4Month = 12;
+        state.step4Year -= 1;
+      }
+      if (state.step4Month > 12) {
+        state.step4Month = 1;
+        state.step4Year += 1;
+      }
+      renderStep4Calendar();
     }
 
     function changeDayAssignment(dateKey, tplId) {
       state.dayAssignments[dateKey] = tplId;
+      renderStep4Calendar();
     }
 
     function fakeSubmit() {
-      const days = Object.keys(state.dayAssignments).sort();
-      let txt = '目前為前台骨架測試\\n\\n';
-      txt += '已選上班日：\\n';
+      const errors = validateStep4Rules();
+      state.step4InvalidDates = new Set(errors.flatMap(e => e.dates));
+
+      const box = document.getElementById('step4Errors');
+      const list = document.getElementById('step4ErrorList');
+
+      if (errors.length > 0) {
+        list.innerHTML = errors.map(e => `<div class="error-item">${e.message}</div>`).join('');
+        box.classList.remove('hidden');
+        renderStep4Calendar();
+        return;
+      }
+
+      box.classList.add('hidden');
+
+      const days = Object.keys(state.dayAssignments)
+        .filter(d => state.selectedDays.has(d))
+        .sort();
+
+      let txt = '目前為前台骨架測試\n\n';
+      txt += '已選上班日：\n';
       days.forEach(d => {
         const tpl = state.templates.find(t => t.id === state.dayAssignments[d]);
-        txt += `${d} → ${tpl ? formatTemplateLabel(tpl) : ''}\\n`;
+        txt += `${d} → ${tpl ? formatTemplateLabel(tpl) : ''}\n`;
       });
+
       alert(txt);
     }
 
+    function timeToMinutes(h, m) {
+      return Number(h) * 60 + Number(m);
+    }
+
+    function getTemplateStartMinutes(tpl) {
+      return timeToMinutes(tpl.seg1StartH, tpl.seg1StartM);
+    }
+
+    function getTemplateEndMinutes(tpl) {
+      if (tpl.isSplit) return timeToMinutes(tpl.seg2EndH, tpl.seg2EndM);
+      return timeToMinutes(tpl.seg1EndH, tpl.seg1EndM);
+    }
+
+    function validateStep4Rules() {
+      const selected = Array.from(state.selectedDays).sort();
+      const errors = [];
+
+      for (let i = 1; i < selected.length; i++) {
+        const prevDate = selected[i - 1];
+        const currDate = selected[i];
+
+        const prevTpl = state.templates.find(t => t.id === state.dayAssignments[prevDate]);
+        const currTpl = state.templates.find(t => t.id === state.dayAssignments[currDate]);
+
+        if (!prevTpl || !currTpl) continue;
+
+        const prevEnd = getTemplateEndMinutes(prevTpl);
+        const currStart = getTemplateStartMinutes(currTpl);
+
+        const prevDt = new Date(prevDate + 'T00:00:00');
+        const currDt = new Date(currDate + 'T00:00:00');
+        const diffDays = (currDt - prevDt) / 86400000;
+
+        if (diffDays === 1) {
+          const restMinutes = (24 * 60 - prevEnd) + currStart;
+          if (restMinutes < 660) {
+            const restHours = (restMinutes / 60).toFixed(1);
+            errors.push({
+              dates: [currDate],
+              message: `${currDate} 與前一天排班間隔僅 ${restHours} 小時，未達 11 小時。`
+            });
+          }
+        }
+      }
+
+      return errors;
+    }
+
     window.onload = function() {
+      const base = getNextMonthBase();
+      state.viewYear = base.year;
+      state.viewMonth = base.month;
+      state.step4Year = base.year;
+      state.step4Month = base.month;
+
       initTemplates();
-      renderCalendar();
+      renderStep3Calendar();
+      renderStep4Calendar();
     };
   </script>
 </body>
