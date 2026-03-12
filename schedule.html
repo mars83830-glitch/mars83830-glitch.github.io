@@ -1046,7 +1046,8 @@
     }
 
     function formatShortTime(h, m) {
-      return m === '00' ? h : `${h}!`;
+      const hh = String(Number(h));
+      return m === '00' ? hh : `${hh}!`;
     }
 
     function formatTimeOnly(tpl) {
