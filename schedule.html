@@ -16,8 +16,13 @@
       --primary:#4b89dc;
       --red:#dc2626;
       --red-soft:#fee2e2;
+      --green:#15803d;
+      --green-soft:#f0fdf4;
+      --green-line:#bbf7d0;
       --sun:#fdecec;
       --sat:#eef4ff;
+      --holiday:#b91c1c;
+      --holiday-soft:#fff1f2;
       --shadow:0 8px 24px rgba(0,0,0,.08);
     }
 
@@ -359,7 +364,7 @@
     .day-cell{
       position:relative;
       min-width:0;
-      aspect-ratio:1 / 1.24;
+      aspect-ratio:1 / 1.30;
       border-right:1px solid var(--line);
       border-bottom:1px solid var(--line);
       background:#fff;
@@ -391,7 +396,7 @@
       display:flex;
       align-items:flex-start;
       justify-content:flex-start;
-      min-height:22px;
+      min-height:20px;
       width:100%;
     }
 
@@ -407,7 +412,7 @@
     .day-num.outside{ color:#c9ced7; }
 
     .day-body{
-      margin-top:6px;
+      margin-top:4px;
       font-size:10px;
       line-height:1.15;
       color:#111827;
@@ -418,10 +423,38 @@
       flex-direction:column;
       align-items:center;
       justify-content:flex-start;
-      gap:2px;
+      gap:3px;
       flex:1;
       text-align:center;
       width:100%;
+    }
+
+    .holiday-tag{
+      width:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:16px;
+      font-size:9px;
+      line-height:1.1;
+      font-weight:900;
+      color:var(--holiday);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .holiday-tag .pill{
+      display:inline-block;
+      max-width:100%;
+      padding:2px 6px;
+      border-radius:999px;
+      background:var(--holiday-soft);
+      color:var(--holiday);
+      border:1px solid #fecdd3;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
     }
 
     .day-shift-text{
@@ -434,7 +467,8 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      min-height:36px;
+      min-height:34px;
+      padding:0 1px;
     }
 
     .empty-note{
@@ -491,6 +525,22 @@
       margin:4px 0;
       font-size:14px;
       line-height:1.5;
+    }
+
+    .success-box{
+      margin-top:12px;
+      border:1px solid var(--green-line);
+      background:var(--green-soft);
+      border-radius:14px;
+      padding:12px;
+      width:100%;
+    }
+
+    .success-item{
+      color:var(--green);
+      font-size:14px;
+      line-height:1.5;
+      font-weight:900;
     }
 
     .palette-frame{
@@ -597,7 +647,8 @@
       .week-header div{ font-size:11px; padding:8px 2px; }
       .day-num{ font-size:14px; }
       .day-body{ font-size:10px; }
-      .day-shift-text{ font-size:9px; min-height:34px; }
+      .holiday-tag{ font-size:8px; min-height:15px; }
+      .day-shift-text{ font-size:9px; min-height:32px; }
       .template-name{ font-size:16px; }
 
       .template-head{ gap:8px; }
@@ -648,17 +699,6 @@
       .template-chip{
         padding:6px 9px;
         font-size:10px;
-      }
-    }
-
-    @media (orientation: landscape) and (max-height: 500px){
-      .topbar{ padding:10px 12px 8px; }
-      .topbar h1{ font-size:20px; }
-      .page{ padding-top:10px; }
-      .card{ padding:14px 12px; }
-      .section-title{ font-size:20px; }
-      .template-flat-row{
-        grid-template-columns:58px 1fr;
       }
     }
   </style>
@@ -742,10 +782,13 @@
         <div class="month-grid" id="step3Grid"></div>
 
         <div class="legend">
-          <span><i class="lg-current"></i>目前選中時段</span>
           <span><i class="lg-assigned"></i>已排班</span>
           <span><i class="lg-invalid"></i>規則錯誤</span>
           <span><i class="lg-erase"></i>休假/清除</span>
+        </div>
+
+        <div class="success-box hidden" id="step3SuccessBox">
+          <div class="success-item">符合排班規則，可進行下一步</div>
         </div>
 
         <div class="error-box hidden" id="step3Errors">
@@ -786,6 +829,32 @@
       { bg:'#dcfce7', color:'#166534', border:'#4ade80' },
       { bg:'#ede9fe', color:'#5b21b6', border:'#8b5cf6' }
     ];
+
+    const HOLIDAYS_2026 = {
+      '2026-01-01': '元旦',
+      '2026-02-16': '春節',
+      '2026-02-17': '春節',
+      '2026-02-18': '春節',
+      '2026-02-19': '春節',
+      '2026-02-20': '春節',
+      '2026-02-27': '和平紀念日補假',
+      '2026-02-28': '和平紀念日',
+      '2026-04-03': '兒童節補假',
+      '2026-04-04': '兒童節',
+      '2026-04-05': '清明節',
+      '2026-04-06': '清明節補假',
+      '2026-05-01': '勞動節',
+      '2026-06-19': '端午節',
+      '2026-09-25': '中秋節',
+      '2026-09-28': '教師節',
+      '2026-10-09': '國慶日補假',
+      '2026-10-10': '國慶日',
+      '2026-10-24': '台灣聯合國日',
+      '2026-10-25': '台灣光復節',
+      '2026-10-26': '光復節補假',
+      '2026-12-25': '行憲紀念日',
+      '2026-12-28': '全國客家日'
+    };
 
     const state = {
       step: 1,
@@ -1013,6 +1082,14 @@
       document.getElementById('step3ErrorList').innerHTML = '';
     }
 
+    function hideStep3Success() {
+      document.getElementById('step3SuccessBox').classList.add('hidden');
+    }
+
+    function showStep3Success() {
+      document.getElementById('step3SuccessBox').classList.remove('hidden');
+    }
+
     function updateTpl(id, key, value) {
       const tpl = state.templates.find(t => t.id === id);
       if (!tpl) return;
@@ -1177,9 +1254,6 @@
           let start2Abs = start2Raw;
           while (start2Abs < end1Abs) start2Abs += 24 * 60;
 
-          let end2Abs = end2Raw;
-          while (end2Abs <= start2Abs) end2Abs += 24 * 60;
-
           const breakMinutes = start2Abs - end1Abs;
           if (breakMinutes < 120) {
             errors.push(`${tpl.label}：兩段班中間休息需至少 2 小時，目前僅 ${formatMinutesToHourText(breakMinutes)}。`);
@@ -1217,9 +1291,20 @@
       goStep(3);
     }
 
-    function buildCellBody(assignedTpl) {
-      if (!assignedTpl) return `<span class="empty-note">休假</span>`;
-      return `<div class="day-shift-text">${formatTimeOnly(assignedTpl)}</div>`;
+    function buildHolidayTag(dateKey, outside) {
+      if (outside) return '';
+      const name = HOLIDAYS_2026[dateKey];
+      if (!name) return '';
+      return `<div class="holiday-tag"><span class="pill">${name}</span></div>`;
+    }
+
+    function buildCellBody(dateKey, assignedTpl, outside) {
+      if (outside) return '';
+      const holidayHtml = buildHolidayTag(dateKey, outside);
+      const shiftHtml = assignedTpl
+        ? `<div class="day-shift-text">${formatTimeOnly(assignedTpl)}</div>`
+        : `<span class="empty-note">休假</span>`;
+      return `${holidayHtml}${shiftHtml}`;
     }
 
     function renderStep3Calendar() {
@@ -1260,7 +1345,7 @@
             <div class="${numCls}">${c.day}</div>
           </div>
           <div class="day-body">
-            ${c.outside ? '' : buildCellBody(assignedTpl)}
+            ${buildCellBody(dateKey, assignedTpl, c.outside)}
           </div>
         `;
 
@@ -1280,6 +1365,7 @@
 
       state.step3InvalidDates = new Set();
       hideStep3Errors();
+      hideStep3Success();
       renderStep3Calendar();
     }
 
@@ -1365,15 +1451,17 @@
     function applyStep3ValidationResult(errors) {
       state.step3InvalidDates = new Set(errors.flatMap(e => e.dates));
 
-      const box = document.getElementById('step3Errors');
-      const list = document.getElementById('step3ErrorList');
+      const errorBox = document.getElementById('step3Errors');
+      const errorList = document.getElementById('step3ErrorList');
 
       if (errors.length > 0) {
-        list.innerHTML = errors.map(e => `<div class="error-item">${e.message}</div>`).join('');
-        box.classList.remove('hidden');
+        hideStep3Success();
+        errorList.innerHTML = errors.map(e => `<div class="error-item">${e.message}</div>`).join('');
+        errorBox.classList.remove('hidden');
       } else {
-        list.innerHTML = '';
-        box.classList.add('hidden');
+        errorList.innerHTML = '';
+        errorBox.classList.add('hidden');
+        showStep3Success();
       }
 
       renderStep3Calendar();
