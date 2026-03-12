@@ -585,10 +585,7 @@
     }
 
     @media (max-width: 640px){
-      .topbar{
-        padding:12px 12px 8px;
-      }
-
+      .topbar{ padding:12px 12px 8px; }
       .topbar h1{ font-size:21px; }
       .section-title{ font-size:20px; }
       .step-tab{
@@ -655,18 +652,11 @@
     }
 
     @media (orientation: landscape) and (max-height: 500px){
-      .topbar{
-        padding:10px 12px 8px;
-      }
-
+      .topbar{ padding:10px 12px 8px; }
       .topbar h1{ font-size:20px; }
-
       .page{ padding-top:10px; }
-
       .card{ padding:14px 12px; }
-
       .section-title{ font-size:20px; }
-
       .template-flat-row{
         grid-template-columns:58px 1fr;
       }
@@ -1130,6 +1120,10 @@
       return (24 * 60 - start) + end;
     }
 
+    function absoluteEndFromStart(startMin, endMin) {
+      return endMin > startMin ? endMin : endMin + 24 * 60;
+    }
+
     function formatMinutesToHourText(minutes) {
       const h = minutes / 60;
       return Number.isInteger(h) ? `${h} 小時` : `${h.toFixed(1)} 小時`;
@@ -1137,24 +1131,28 @@
 
     function getTemplateWindowMinutes(tpl) {
       const start1 = timeToMinutes(tpl.seg1StartH, tpl.seg1StartM);
-      const end1 = timeToMinutes(tpl.seg1EndH, tpl.seg1EndM);
+      const end1 = absoluteEndFromStart(start1, timeToMinutes(tpl.seg1EndH, tpl.seg1EndM));
 
       if (!tpl.isSplit) {
-        const endAbs = end1 > start1 ? end1 : end1 + 24 * 60;
-        return { startAbs: start1, endAbs };
+        return { firstStart: start1, lastEnd: end1 };
       }
 
-      const start2 = timeToMinutes(tpl.seg2StartH, tpl.seg2StartM);
-      const end2 = timeToMinutes(tpl.seg2EndH, tpl.seg2EndM);
-      const end2Abs = end2 > start2 ? end2 : end2 + 24 * 60;
+      const start2Raw = timeToMinutes(tpl.seg2StartH, tpl.seg2StartM);
+      let start2 = start2Raw;
+      while (start2 < end1) start2 += 24 * 60;
 
-      return { startAbs: start1, endAbs: end2Abs };
+      let end2 = timeToMinutes(tpl.seg2EndH, tpl.seg2EndM);
+      while (end2 <= start2) end2 += 24 * 60;
+
+      return { firstStart: start1, lastEnd: end2 };
     }
 
     function validateTemplateList() {
       const errors = [];
 
       state.templates.forEach(tpl => {
+        const start1 = timeToMinutes(tpl.seg1StartH, tpl.seg1StartM);
+        const end1Raw = timeToMinutes(tpl.seg1EndH, tpl.seg1EndM);
         const seg1 = calcSegmentMinutes(tpl.seg1StartH, tpl.seg1StartM, tpl.seg1EndH, tpl.seg1EndM);
 
         if (seg1 <= 0) {
@@ -1163,8 +1161,11 @@
         }
 
         let totalMinutes = seg1;
+        const end1Abs = absoluteEndFromStart(start1, end1Raw);
 
         if (tpl.isSplit) {
+          const start2Raw = timeToMinutes(tpl.seg2StartH, tpl.seg2StartM);
+          const end2Raw = timeToMinutes(tpl.seg2EndH, tpl.seg2EndM);
           const seg2 = calcSegmentMinutes(tpl.seg2StartH, tpl.seg2StartM, tpl.seg2EndH, tpl.seg2EndM);
 
           if (seg2 <= 0) {
@@ -1172,7 +1173,19 @@
             return;
           }
 
-          totalMinutes += seg2;
+          let start2Abs = start2Raw;
+          while (start2Abs < end1Abs) start2Abs += 24 * 60;
+
+          let end2Abs = end2Raw;
+          while (end2Abs <= start2Abs) end2Abs += 24 * 60;
+
+          const breakMinutes = start2Abs - end1Abs;
+          if (breakMinutes < 120) {
+            errors.push(`${tpl.label}：兩段班中間休息需至少 2 小時，目前僅 ${formatMinutesToHourText(breakMinutes)}。`);
+            return;
+          }
+
+          totalMinutes = seg1 + seg2;
         }
 
         if (totalMinutes > 720) {
@@ -1331,8 +1344,8 @@
           const prevWindow = getTemplateWindowMinutes(prevTpl);
           const currWindow = getTemplateWindowMinutes(currTpl);
 
-          const prevEndAbs = prevWindow.endAbs;
-          const currStartAbs = 24 * 60 + currWindow.startAbs;
+          const prevEndAbs = prevWindow.lastEnd;
+          const currStartAbs = 24 * 60 + currWindow.firstStart;
           const restMinutes = currStartAbs - prevEndAbs;
 
           if (restMinutes < 660) {
