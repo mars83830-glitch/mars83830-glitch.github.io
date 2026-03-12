@@ -22,9 +22,8 @@
       --sun:#fdecec;
       --sat:#eef4ff;
       --holiday-red:#c2410c;
-      --holiday-soft:#fff5f5;
-      --holiday-border:#f5b4b4;
-      --holiday-top:#f7dede;
+      --holiday-soft:#fff4f4;
+      --holiday-top:#f8dede;
       --shadow:0 8px 24px rgba(0,0,0,.08);
     }
 
@@ -337,7 +336,7 @@
     }
 
     .week-header div{
-      height:56px;
+      height:52px;
       display:flex;
       align-items:center;
       justify-content:center;
@@ -368,11 +367,11 @@
     .day-cell{
       position:relative;
       min-width:0;
-      min-height:108px;
+      height:118px;
       border-right:1px solid var(--line);
       border-bottom:1px solid var(--line);
       background:#fff;
-      padding:6px 5px 5px;
+      padding:5px 5px 6px;
       display:flex;
       flex-direction:column;
       justify-content:flex-start;
@@ -391,11 +390,24 @@
       background:linear-gradient(0deg, rgba(255,255,255,1) 82%, var(--sat) 82%);
     }
 
-    .day-cell.holiday-bg{
-      background:
-        linear-gradient(180deg, var(--holiday-top) 0 18px, transparent 18px 100%),
-        var(--holiday-soft);
-      box-shadow:inset 0 0 0 1px var(--holiday-border);
+    .day-cell.holiday-bg::before{
+      content:"";
+      position:absolute;
+      top:0;
+      left:0;
+      right:0;
+      height:18px;
+      background:var(--holiday-top);
+      pointer-events:none;
+    }
+
+    .day-cell.holiday-bg::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:var(--holiday-soft);
+      opacity:.55;
+      pointer-events:none;
     }
 
     .day-cell.invalid{
@@ -403,11 +415,16 @@
       background:var(--red-soft) !important;
     }
 
+    .day-cell > *{
+      position:relative;
+      z-index:1;
+    }
+
     .day-top{
       display:flex;
       align-items:flex-start;
       justify-content:flex-start;
-      min-height:24px;
+      min-height:22px;
       width:100%;
     }
 
@@ -424,7 +441,7 @@
     .day-num.outside{ color:#c9ced7; }
 
     .day-body{
-      margin-top:10px;
+      margin-top:6px;
       font-size:10px;
       line-height:1.15;
       color:#111827;
@@ -485,7 +502,7 @@
     }
 
     .lg-invalid{ background:#fee2e2; border-color:#dc2626 !important; }
-    .lg-holiday{ background:#fff5f5; border-color:#f5b4b4 !important; }
+    .lg-holiday{ background:#fff4f4; border-color:#e7b2b2 !important; }
     .lg-erase{ background:#fffbeb; border-color:#f59e0b !important; }
 
     .error-box{
@@ -628,7 +645,7 @@
       }
       .month-title{ font-size:16px; }
       .week-header div{
-        height:50px;
+        height:48px;
         font-size:11px;
       }
       .day-num{ font-size:14px; }
@@ -663,7 +680,7 @@
       }
 
       .day-cell{
-        min-height:98px;
+        height:108px;
       }
     }
 
@@ -1276,9 +1293,7 @@
           const color = getTplColor(assignedTpl);
           cell.style.background = color.bg;
           if (isHoliday) {
-            cell.style.background =
-              `linear-gradient(180deg, var(--holiday-top) 0 18px, transparent 18px 100%), ${color.bg}`;
-            cell.style.boxShadow = `inset 0 0 0 1px var(--holiday-border)`;
+            cell.style.background = `linear-gradient(180deg, var(--holiday-top) 0 18px, transparent 18px 100%), ${color.bg}`;
           }
         }
 
