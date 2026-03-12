@@ -22,8 +22,9 @@
       --sun:#fdecec;
       --sat:#eef4ff;
       --holiday-red:#c2410c;
-      --holiday-soft:#fff7f7;
-      --holiday-top:#ffe5e5;
+      --holiday-soft:#fff5f5;
+      --holiday-border:#f5b4b4;
+      --holiday-top:#f7dede;
       --shadow:0 8px 24px rgba(0,0,0,.08);
     }
 
@@ -325,19 +326,22 @@
 
     .week-header{
       display:grid;
-      grid-template-columns:repeat(7,1fr);
+      grid-template-columns:repeat(7, minmax(0, 1fr));
+      width:100%;
       border:1px solid var(--line);
       border-bottom:none;
       border-top-left-radius:14px;
       border-top-right-radius:14px;
       overflow:hidden;
       background:#fff;
-      width:100%;
     }
 
     .week-header div{
+      height:56px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
       text-align:center;
-      padding:10px 2px;
       font-size:12px;
       font-weight:900;
       border-right:1px solid var(--line);
@@ -352,24 +356,23 @@
     .month-grid{
       display:grid;
       grid-template-columns:repeat(7, minmax(0, 1fr));
+      width:100%;
       border-left:1px solid var(--line);
       border-top:1px solid var(--line);
       border-bottom-left-radius:14px;
       border-bottom-right-radius:14px;
       overflow:hidden;
       background:#fff;
-      width:100%;
-      max-width:100%;
     }
 
     .day-cell{
       position:relative;
       min-width:0;
-      aspect-ratio:1 / 1.28;
+      min-height:108px;
       border-right:1px solid var(--line);
       border-bottom:1px solid var(--line);
       background:#fff;
-      padding:5px;
+      padding:6px 5px 5px;
       display:flex;
       flex-direction:column;
       justify-content:flex-start;
@@ -389,7 +392,10 @@
     }
 
     .day-cell.holiday-bg{
-      background:linear-gradient(0deg, rgba(255,255,255,1) 80%, var(--holiday-top) 80%);
+      background:
+        linear-gradient(180deg, var(--holiday-top) 0 18px, transparent 18px 100%),
+        var(--holiday-soft);
+      box-shadow:inset 0 0 0 1px var(--holiday-border);
     }
 
     .day-cell.invalid{
@@ -401,7 +407,7 @@
       display:flex;
       align-items:flex-start;
       justify-content:flex-start;
-      min-height:22px;
+      min-height:24px;
       width:100%;
     }
 
@@ -418,7 +424,7 @@
     .day-num.outside{ color:#c9ced7; }
 
     .day-body{
-      margin-top:6px;
+      margin-top:10px;
       font-size:10px;
       line-height:1.15;
       color:#111827;
@@ -478,10 +484,9 @@
       border:1px solid #d1d5db;
     }
 
-    .lg-assigned{ background:#dcfce7; border-color:#7bc896 !important; }
     .lg-invalid{ background:#fee2e2; border-color:#dc2626 !important; }
-    .lg-erase{ background:#fff7ed; border-color:#f59e0b !important; }
-    .lg-holiday{ background:#fff7f7; border-color:#f5b4b4 !important; }
+    .lg-holiday{ background:#fff5f5; border-color:#f5b4b4 !important; }
+    .lg-erase{ background:#fffbeb; border-color:#f59e0b !important; }
 
     .error-box{
       margin-top:12px;
@@ -622,9 +627,11 @@
         height:44px;
       }
       .month-title{ font-size:16px; }
-      .week-header div{ font-size:11px; padding:8px 2px; }
+      .week-header div{
+        height:50px;
+        font-size:11px;
+      }
       .day-num{ font-size:14px; }
-      .day-body{ font-size:10px; }
       .day-shift-text{ font-size:9px; min-height:32px; }
       .template-name{ font-size:16px; }
 
@@ -653,6 +660,10 @@
         font-size:11px;
         min-height:40px;
         border-radius:12px;
+      }
+
+      .day-cell{
+        min-height:98px;
       }
     }
 
@@ -759,7 +770,6 @@
         <div class="month-grid" id="step3Grid"></div>
 
         <div class="legend">
-          <span><i class="lg-assigned"></i>已排班</span>
           <span><i class="lg-invalid"></i>規則錯誤</span>
           <span><i class="lg-holiday"></i>國定假日</span>
           <span><i class="lg-erase"></i>休假/清除</span>
@@ -800,29 +810,10 @@
 
   <script>
     const HOLIDAYS_2026 = new Set([
-      '2026-01-01',
-      '2026-02-16',
-      '2026-02-17',
-      '2026-02-18',
-      '2026-02-19',
-      '2026-02-20',
-      '2026-02-27',
-      '2026-02-28',
-      '2026-04-03',
-      '2026-04-04',
-      '2026-04-05',
-      '2026-04-06',
-      '2026-05-01',
-      '2026-06-19',
-      '2026-09-25',
-      '2026-09-28',
-      '2026-10-09',
-      '2026-10-10',
-      '2026-10-24',
-      '2026-10-25',
-      '2026-10-26',
-      '2026-12-25',
-      '2026-12-28'
+      '2026-01-01','2026-02-16','2026-02-17','2026-02-18','2026-02-19','2026-02-20',
+      '2026-02-27','2026-02-28','2026-04-03','2026-04-04','2026-04-05','2026-04-06',
+      '2026-05-01','2026-06-19','2026-09-25','2026-09-28','2026-10-09','2026-10-10',
+      '2026-10-24','2026-10-25','2026-10-26','2026-12-25','2026-12-28'
     ]);
 
     const TEMPLATE_COLORS = [
@@ -844,30 +835,20 @@
       viewMonth: 0
     };
 
-    function pad2(n) {
-      return String(n).padStart(2, '0');
-    }
-
-    function toDateKey(y, m, d) {
-      return `${y}-${pad2(m)}-${pad2(d)}`;
-    }
+    function pad2(n){ return String(n).padStart(2,'0'); }
+    function toDateKey(y,m,d){ return `${y}-${pad2(m)}-${pad2(d)}`; }
 
     function getNextMonthBase() {
       const now = new Date();
       let y = now.getFullYear();
       let m = now.getMonth() + 2;
-      if (m === 13) {
-        y += 1;
-        m = 1;
-      }
-      return { year: y, month: m };
+      if (m === 13) { y += 1; m = 1; }
+      return { year:y, month:m };
     }
 
-    function monthText(y, m) {
-      return `${m}月 ${y}`;
-    }
+    function monthText(y,m){ return `${m}月 ${y}`; }
 
-    function getMonthMatrix(year, month) {
+    function getMonthMatrix(year, month){
       const first = new Date(year, month - 1, 1);
       const lastDate = new Date(year, month, 0).getDate();
       const startWeekday = first.getDay();
@@ -878,49 +859,39 @@
         const d = prevLastDate - i;
         let py = year;
         let pm = month - 1;
-        if (pm === 0) {
-          py--;
-          pm = 12;
-        }
-        cells.push({ year: py, month: pm, day: d, outside: true });
+        if (pm === 0) { py--; pm = 12; }
+        cells.push({ year:py, month:pm, day:d, outside:true });
       }
 
       for (let d = 1; d <= lastDate; d++) {
-        cells.push({ year, month, day: d, outside: false });
+        cells.push({ year, month, day:d, outside:false });
       }
 
       let nextDay = 1;
       while (cells.length % 7 !== 0) {
         let ny = year;
         let nm = month + 1;
-        if (nm === 13) {
-          ny++;
-          nm = 1;
-        }
-        cells.push({ year: ny, month: nm, day: nextDay++, outside: true });
+        if (nm === 13) { ny++; nm = 1; }
+        cells.push({ year:ny, month:nm, day:nextDay++, outside:true });
       }
 
       return cells;
     }
 
-    function createDefaultTemplate(index = 1) {
+    function createDefaultTemplate(index=1){
       return {
-        id: 'tpl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
-        label: `時段${index}`,
-        isSplit: false,
-        seg1StartH: '00',
-        seg1StartM: '00',
-        seg1EndH: '00',
-        seg1EndM: '00',
-        seg2StartH: '00',
-        seg2StartM: '00',
-        seg2EndH: '00',
-        seg2EndM: '00',
-        colorIndex: 0
+        id:'tpl_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+        label:`時段${index}`,
+        isSplit:false,
+        seg1StartH:'00', seg1StartM:'00',
+        seg1EndH:'00', seg1EndM:'00',
+        seg2StartH:'00', seg2StartM:'00',
+        seg2EndH:'00', seg2EndM:'00',
+        colorIndex:0
       };
     }
 
-    function refreshTemplateColors() {
+    function refreshTemplateColors(){
       let idx = 0;
       state.templates.forEach(t => {
         t.colorIndex = idx % TEMPLATE_COLORS.length;
@@ -928,20 +899,18 @@
       });
     }
 
-    function renumberTemplateLabels() {
-      state.templates.forEach((t, i) => {
-        t.label = `時段${i + 1}`;
-      });
+    function renumberTemplateLabels(){
+      state.templates.forEach((t,i)=>{ t.label = `時段${i+1}`; });
     }
 
-    function initTemplates() {
+    function initTemplates(){
       state.templates = [createDefaultTemplate(1)];
       refreshTemplateColors();
       state.selectedTemplateId = state.templates[0].id;
       renderTemplates();
     }
 
-    function addTemplate() {
+    function addTemplate(){
       state.templates.push(createDefaultTemplate(state.templates.length + 1));
       renumberTemplateLabels();
       refreshTemplateColors();
@@ -949,7 +918,7 @@
       hideStep2Errors();
     }
 
-    function removeTemplate(id) {
+    function removeTemplate(id){
       state.templates = state.templates.filter(t => t.id !== id);
 
       Object.keys(state.assignedDays).forEach(dateKey => {
@@ -968,7 +937,7 @@
       hideStep2Errors();
     }
 
-    function timeOptionsHour(selected) {
+    function timeOptionsHour(selected){
       let html = '';
       for (let i = 0; i <= 23; i++) {
         const v = pad2(i);
@@ -977,13 +946,11 @@
       return html;
     }
 
-    function timeOptionsMinute(selected) {
-      return ['00', '30']
-        .map(v => `<option value="${v}" ${selected === v ? 'selected' : ''}>${v}</option>`)
-        .join('');
+    function timeOptionsMinute(selected){
+      return ['00','30'].map(v => `<option value="${v}" ${selected === v ? 'selected' : ''}>${v}</option>`).join('');
     }
 
-    function renderTemplates() {
+    function renderTemplates(){
       const wrap = document.getElementById('templateList');
       wrap.innerHTML = '';
 
@@ -1050,25 +1017,25 @@
       });
     }
 
-    function hideStep2Errors() {
+    function hideStep2Errors(){
       document.getElementById('step2Errors').classList.add('hidden');
       document.getElementById('step2ErrorList').innerHTML = '';
     }
 
-    function hideStep3Errors() {
+    function hideStep3Errors(){
       document.getElementById('step3Errors').classList.add('hidden');
       document.getElementById('step3ErrorList').innerHTML = '';
     }
 
-    function hideStep3Success() {
+    function hideStep3Success(){
       document.getElementById('step3SuccessBox').classList.add('hidden');
     }
 
-    function showStep3Success() {
+    function showStep3Success(){
       document.getElementById('step3SuccessBox').classList.remove('hidden');
     }
 
-    function updateTpl(id, key, value) {
+    function updateTpl(id, key, value){
       const tpl = state.templates.find(t => t.id === id);
       if (!tpl) return;
       tpl[key] = value;
@@ -1077,7 +1044,7 @@
       hideStep2Errors();
     }
 
-    function toggleSplit(id, checked) {
+    function toggleSplit(id, checked){
       const tpl = state.templates.find(t => t.id === id);
       if (!tpl) return;
       tpl.isSplit = checked;
@@ -1087,7 +1054,7 @@
       hideStep2Errors();
     }
 
-    function goStep(step) {
+    function goStep(step){
       state.step = step;
       [1,2,3,4].forEach(n => {
         document.getElementById('step' + n).classList.toggle('hidden', n !== step);
@@ -1100,30 +1067,30 @@
       }
     }
 
-    function formatShortTime(h, m) {
+    function formatShortTime(h, m){
       const hh = String(Number(h));
       return m === '00' ? hh : `${hh}!`;
     }
 
-    function formatTimeOnly(tpl) {
+    function formatTimeOnly(tpl){
       const s1 = `${formatShortTime(tpl.seg1StartH, tpl.seg1StartM)}-${formatShortTime(tpl.seg1EndH, tpl.seg1EndM)}`;
       if (!tpl.isSplit) return s1;
       const s2 = `${formatShortTime(tpl.seg2StartH, tpl.seg2StartM)}-${formatShortTime(tpl.seg2EndH, tpl.seg2EndM)}`;
       return `${s1}\n${s2}`;
     }
 
-    function formatTimeInline(tpl) {
+    function formatTimeInline(tpl){
       const s1 = `${tpl.seg1StartH}:${tpl.seg1StartM}-${tpl.seg1EndH}:${tpl.seg1EndM}`;
       if (!tpl.isSplit) return s1;
       const s2 = `${tpl.seg2StartH}:${tpl.seg2StartM}-${tpl.seg2EndH}:${tpl.seg2EndM}`;
       return `${s1} / ${s2}`;
     }
 
-    function getTplColor(tpl) {
+    function getTplColor(tpl){
       return TEMPLATE_COLORS[tpl.colorIndex % TEMPLATE_COLORS.length];
     }
 
-    function renderTemplatePalette() {
+    function renderTemplatePalette(){
       const wrap = document.getElementById('templatePalette');
       const currentText = document.getElementById('currentTemplateText');
       if (!wrap || !currentText) return;
@@ -1164,11 +1131,11 @@
       }
     }
 
-    function timeToMinutes(h, m) {
+    function timeToMinutes(h, m){
       return Number(h) * 60 + Number(m);
     }
 
-    function calcSegmentMinutes(startH, startM, endH, endM) {
+    function calcSegmentMinutes(startH, startM, endH, endM){
       const start = timeToMinutes(startH, startM);
       const end = timeToMinutes(endH, endM);
       if (start === end) return 0;
@@ -1176,16 +1143,16 @@
       return (24 * 60 - start) + end;
     }
 
-    function absoluteEndFromStart(startMin, endMin) {
+    function absoluteEndFromStart(startMin, endMin){
       return endMin > startMin ? endMin : endMin + 24 * 60;
     }
 
-    function formatMinutesToHourText(minutes) {
+    function formatMinutesToHourText(minutes){
       const h = minutes / 60;
       return Number.isInteger(h) ? `${h} 小時` : `${h.toFixed(1)} 小時`;
     }
 
-    function getTemplateWindowMinutes(tpl) {
+    function getTemplateWindowMinutes(tpl){
       const start1 = timeToMinutes(tpl.seg1StartH, tpl.seg1StartM);
       const end1 = absoluteEndFromStart(start1, timeToMinutes(tpl.seg1EndH, tpl.seg1EndM));
 
@@ -1203,7 +1170,7 @@
       return { firstStart: start1, lastEnd: end2 };
     }
 
-    function validateTemplateList() {
+    function validateTemplateList(){
       const errors = [];
 
       state.templates.forEach(tpl => {
@@ -1248,7 +1215,7 @@
       return errors;
     }
 
-    function prepareStep3() {
+    function prepareStep3(){
       const errors = validateTemplateList();
       const errorBox = document.getElementById('step2Errors');
       const errorList = document.getElementById('step2ErrorList');
@@ -1268,13 +1235,13 @@
       goStep(3);
     }
 
-    function buildCellBody(assignedTpl, outside) {
+    function buildCellBody(assignedTpl, outside){
       if (outside) return '';
       if (!assignedTpl) return `<span class="empty-note">休假</span>`;
       return `<div class="day-shift-text">${formatTimeOnly(assignedTpl)}</div>`;
     }
 
-    function renderStep3Calendar() {
+    function renderStep3Calendar(){
       const monthTitle = document.getElementById('step3MonthTitle');
       const grid = document.getElementById('step3Grid');
       if (!monthTitle || !grid) return;
@@ -1309,7 +1276,9 @@
           const color = getTplColor(assignedTpl);
           cell.style.background = color.bg;
           if (isHoliday) {
-            cell.style.background = `linear-gradient(0deg, ${color.bg} 82%, var(--holiday-top) 82%)`;
+            cell.style.background =
+              `linear-gradient(180deg, var(--holiday-top) 0 18px, transparent 18px 100%), ${color.bg}`;
+            cell.style.boxShadow = `inset 0 0 0 1px var(--holiday-border)`;
           }
         }
 
@@ -1327,7 +1296,7 @@
       });
     }
 
-    function assignDate(dateKey) {
+    function assignDate(dateKey){
       if (!state.selectedTemplateId) return;
 
       if (state.selectedTemplateId === 'ERASE') {
@@ -1342,19 +1311,16 @@
       renderStep3Calendar();
     }
 
-    function getAssignedDatesSorted() {
+    function getAssignedDatesSorted(){
       return Object.keys(state.assignedDays).sort();
     }
 
-    function validateScheduleRules() {
+    function validateScheduleRules(){
       const dates = getAssignedDatesSorted();
       const errors = [];
 
       if (dates.length === 0) {
-        errors.push({
-          dates: [],
-          message: '目前尚未排任何日期。'
-        });
+        errors.push({ dates: [], message: '目前尚未排任何日期。' });
         return errors;
       }
 
@@ -1381,8 +1347,8 @@
 
         if (streak >= 6) {
           errors.push({
-            dates: [...streakDates],
-            message: `${streakDates[0]} ～ ${streakDates[streakDates.length - 1]} 形成連續上班 ${streak} 天，超過最多連上 5 天規則。`
+            dates:[...streakDates],
+            message:`${streakDates[0]} ～ ${streakDates[streakDates.length - 1]} 形成連續上班 ${streak} 天，超過最多連上 5 天規則。`
           });
         }
 
@@ -1411,8 +1377,8 @@
           if (restMinutes < 660) {
             const hours = (restMinutes / 60).toFixed(1);
             errors.push({
-              dates: [currDateKey],
-              message: `${currDateKey} 與前一天排班間隔僅 ${hours} 小時，未達 11 小時。`
+              dates:[currDateKey],
+              message:`${currDateKey} 與前一天排班間隔僅 ${hours} 小時，未達 11 小時。`
             });
           }
         }
@@ -1421,7 +1387,7 @@
       return errors;
     }
 
-    function applyStep3ValidationResult(errors) {
+    function applyStep3ValidationResult(errors){
       state.step3InvalidDates = new Set(errors.flatMap(e => e.dates));
 
       const errorBox = document.getElementById('step3Errors');
@@ -1440,12 +1406,12 @@
       renderStep3Calendar();
     }
 
-    function runScheduleValidationOnly() {
+    function runScheduleValidationOnly(){
       const errors = validateScheduleRules();
       applyStep3ValidationResult(errors);
     }
 
-    function prepareStep4() {
+    function prepareStep4(){
       const errors = validateScheduleRules();
       applyStep3ValidationResult(errors);
 
@@ -1461,7 +1427,7 @@
       goStep(4);
     }
 
-    function fakeSubmit() {
+    function fakeSubmit(){
       const dates = getAssignedDatesSorted();
       let txt = '目前為前台骨架測試\n\n';
       txt += '已排班結果：\n';
@@ -1474,7 +1440,7 @@
       alert(txt);
     }
 
-    window.onload = function() {
+    window.onload = function(){
       const base = getNextMonthBase();
       state.viewYear = base.year;
       state.viewMonth = base.month;
