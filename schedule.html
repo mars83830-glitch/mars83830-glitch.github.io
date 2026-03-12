@@ -117,6 +117,31 @@
       line-height:1.3;
     }
 
+    .section-title-row{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+    }
+
+    .section-title-row .section-title{
+      margin:0;
+    }
+
+    .btn-rule{
+      flex:0 0 auto;
+      height:38px;
+      padding:0 14px;
+      border-radius:12px;
+      border:1px solid #bfd3f2;
+      background:#f8fbff;
+      color:var(--primary);
+      font-size:14px;
+      font-weight:900;
+      white-space:nowrap;
+    }
+
     .hint{
       color:var(--muted);
       font-size:14px;
@@ -621,15 +646,80 @@
       line-height:1.7;
     }
 
+    .modal-backdrop{
+      position:fixed;
+      inset:0;
+      background:rgba(15,23,42,.42);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      z-index:9999;
+    }
+
+    .modal-card{
+      width:100%;
+      max-width:520px;
+      background:#fff;
+      border-radius:22px;
+      box-shadow:0 20px 60px rgba(0,0,0,.22);
+      padding:18px 16px 16px;
+    }
+
+    .modal-title{
+      font-size:22px;
+      font-weight:900;
+      margin:0 0 12px;
+      line-height:1.3;
+    }
+
+    .rule-list{
+      margin:0;
+      padding-left:22px;
+      color:#374151;
+      font-size:15px;
+      line-height:1.8;
+    }
+
+    .rule-list li{
+      margin-bottom:8px;
+    }
+
+    .modal-note{
+      margin-top:10px;
+      color:#6b7280;
+      font-size:13px;
+      line-height:1.7;
+    }
+
+    .modal-actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      margin-top:14px;
+    }
+
     @media (max-width: 640px){
       .topbar{ padding:12px 12px 8px; }
       .topbar h1{ font-size:21px; }
       .section-title{ font-size:20px; }
+
+      .section-title-row{
+        align-items:center;
+      }
+
+      .btn-rule{
+        height:36px;
+        padding:0 12px;
+        font-size:13px;
+      }
+
       .step-tab{
         font-size:12px;
         padding:8px 2px;
         height:44px;
       }
+
       .month-title{ font-size:16px; }
 
       .calendar-table thead th{
@@ -671,6 +761,18 @@
         min-height:40px;
         border-radius:12px;
       }
+
+      .modal-card{
+        padding:16px 14px 14px;
+      }
+
+      .modal-title{
+        font-size:20px;
+      }
+
+      .rule-list{
+        font-size:14px;
+      }
     }
 
     @media (max-width: 380px){
@@ -693,6 +795,11 @@
       .template-chip{
         padding:6px 9px;
         font-size:10px;
+      }
+
+      .btn-rule{
+        padding:0 10px;
+        font-size:12px;
       }
     }
   </style>
@@ -723,10 +830,10 @@
       </div>
 
       <div class="card hidden" id="step2">
-        <h2 class="section-title">第 2 步｜設定上班時段模板</h2>
+        <h2 class="section-title">第 2 步｜設定上班時段</h2>
         <div class="hint">
-          時段可新增、可刪除；每組都可以設定兩段班。<br>
-          進入下一步前，系統會檢查模板是否合法，且單日總工時不得超過 12 小時。
+          設定日常上班時段：<br>
+          時段可新增、刪除；每組都可以設定兩段班。
         </div>
 
         <div id="templateList"></div>
@@ -747,7 +854,11 @@
       </div>
 
       <div class="card hidden" id="step3">
-        <h2 class="section-title">第 3 步｜排班與檢查</h2>
+        <div class="section-title-row">
+          <h2 class="section-title">第 3 步｜排班與檢查</h2>
+          <button class="btn-rule" onclick="openRuleModal()">規則說明</button>
+        </div>
+
         <div class="confirm-tip">
           先選上班時段，再點下方日期套用。<br>
           若有規則錯誤，日期會標紅；你可以直接在這一頁修正。
@@ -805,8 +916,8 @@
       <div class="card hidden" id="step4">
         <h2 class="section-title">第 4 步｜最後送出</h2>
         <div class="hint">
-          目前仍是前台骨架版。<br>
-          這一步先保留成送出測試，之後再接上真正寫入 GAS / Google Sheet。
+          送出前請務必再三確認欲排班日期及時段。<br>
+          送出後若需調整請聯絡啟瑞領班。
         </div>
 
         <div class="status" id="submitPreview">按下下方按鈕後，會先顯示目前排班結果。</div>
@@ -815,6 +926,24 @@
           <button class="btn-secondary" onclick="goStep(3)">上一步</button>
           <button class="btn-primary" onclick="fakeSubmit()">送出測試</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="ruleModal" onclick="closeRuleModalByBackdrop(event)">
+    <div class="modal-card">
+      <h3 class="modal-title">規則說明</h3>
+      <ol class="rule-list">
+        <li>每週（星期日至星期六）須排定至少兩天休假。</li>
+        <li>跨日班別需間隔至少 11 小時之休息時間。</li>
+        <li>至多連續出勤五日。</li>
+        <li>國定假日排班將依實際人力需求做調整。</li>
+      </ol>
+      <div class="modal-note">
+        關閉後可直接回到此頁繼續排班與修正。
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" onclick="closeRuleModal()">回上一步繼續排班</button>
       </div>
     </div>
   </div>
@@ -1176,7 +1305,7 @@
       const end1 = absoluteEndFromStart(start1, timeToMinutes(tpl.seg1EndH, tpl.seg1EndM));
 
       if (!tpl.isSplit) {
-        return { firstStart: start1, lastEnd: end1 };
+        return { firstStart: start1, lastEnd: end1, isCrossDay: end1 >= 24 * 60 };
       }
 
       const start2Raw = timeToMinutes(tpl.seg2StartH, tpl.seg2StartM);
@@ -1186,7 +1315,11 @@
       let end2 = timeToMinutes(tpl.seg2EndH, tpl.seg2EndM);
       while (end2 <= start2) end2 += 24 * 60;
 
-      return { firstStart: start1, lastEnd: end2 };
+      return {
+        firstStart: start1,
+        lastEnd: end2,
+        isCrossDay: end2 >= 24 * 60
+      };
     }
 
     function validateTemplateList(){
@@ -1340,15 +1473,47 @@
       return Object.keys(state.assignedDays).sort();
     }
 
-    function validateScheduleRules(){
-      const dates = getAssignedDatesSorted();
+    function validateWeeklyOffDays(dates){
       const errors = [];
+      if (dates.length === 0) return errors;
 
-      if (dates.length === 0) {
-        errors.push({ dates: [], message: '目前尚未排任何日期。' });
-        return errors;
+      const assignedSet = new Set(dates);
+      const firstDate = new Date(dates[0] + 'T00:00:00');
+      const lastDate = new Date(dates[dates.length - 1] + 'T00:00:00');
+
+      const rangeStart = new Date(firstDate);
+      rangeStart.setDate(rangeStart.getDate() - rangeStart.getDay());
+
+      const rangeEnd = new Date(lastDate);
+      rangeEnd.setDate(rangeEnd.getDate() + (6 - rangeEnd.getDay()));
+
+      for (let weekStart = new Date(rangeStart); weekStart <= rangeEnd; weekStart.setDate(weekStart.getDate() + 7)) {
+        const weekDates = [];
+        let workCount = 0;
+
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(weekStart);
+          d.setDate(weekStart.getDate() + i);
+          const key = toDateKey(d.getFullYear(), d.getMonth() + 1, d.getDate());
+          weekDates.push(key);
+          if (assignedSet.has(key)) workCount++;
+        }
+
+        const offCount = 7 - workCount;
+        if (offCount < 2) {
+          const weekEnd = weekDates[6];
+          errors.push({
+            dates:[...weekDates.filter(k => assignedSet.has(k))],
+            message:`${weekDates[0]} ～ ${weekEnd} 此週休假僅 ${offCount} 天，未達每週至少 2 天休假。`
+          });
+        }
       }
 
+      return errors;
+    }
+
+    function validateMaxConsecutiveDays(dates){
+      const errors = [];
       let streak = 0;
       let streakDates = [];
       let prevDate = null;
@@ -1373,12 +1538,18 @@
         if (streak >= 6) {
           errors.push({
             dates:[...streakDates],
-            message:`${streakDates[0]} ～ ${streakDates[streakDates.length - 1]} 形成連續上班 ${streak} 天，超過最多連上 5 天規則。`
+            message:`${streakDates[0]} ～ ${streakDates[streakDates.length - 1]} 形成連續出勤 ${streak} 天，超過最多 5 天。`
           });
         }
 
         prevDate = current;
       });
+
+      return errors;
+    }
+
+    function validateCrossDayRestRule(dates){
+      const errors = [];
 
       for (let i = 1; i < dates.length; i++) {
         const prevDateKey = dates[i - 1];
@@ -1387,27 +1558,41 @@
         const currTpl = state.templates.find(t => t.id === state.assignedDays[currDateKey]);
         if (!prevTpl || !currTpl) continue;
 
+        const prevWindow = getTemplateWindowMinutes(prevTpl);
+        if (!prevWindow.isCrossDay) continue;
+
         const prevDateBase = new Date(prevDateKey + 'T00:00:00');
         const currDateBase = new Date(currDateKey + 'T00:00:00');
         const diffDays = (currDateBase - prevDateBase) / 86400000;
+        if (diffDays !== 1) continue;
 
-        if (diffDays === 1) {
-          const prevWindow = getTemplateWindowMinutes(prevTpl);
-          const currWindow = getTemplateWindowMinutes(currTpl);
+        const currStartAbs = 24 * 60 + prevWindow.firstStart - prevWindow.firstStart + getTemplateWindowMinutes(currTpl).firstStart;
+        const restMinutes = currStartAbs - prevWindow.lastEnd;
 
-          const prevEndAbs = prevWindow.lastEnd;
-          const currStartAbs = 24 * 60 + currWindow.firstStart;
-          const restMinutes = currStartAbs - prevEndAbs;
-
-          if (restMinutes < 660) {
-            const hours = (restMinutes / 60).toFixed(1);
-            errors.push({
-              dates:[currDateKey],
-              message:`${currDateKey} 與前一天排班間隔僅 ${hours} 小時，未達 11 小時。`
-            });
-          }
+        if (restMinutes < 660) {
+          const hours = (restMinutes / 60).toFixed(1);
+          errors.push({
+            dates:[prevDateKey, currDateKey],
+            message:`${prevDateKey} 為跨日班，至 ${currDateKey} 開班前休息僅 ${hours} 小時，未達 11 小時。`
+          });
         }
       }
+
+      return errors;
+    }
+
+    function validateScheduleRules(){
+      const dates = getAssignedDatesSorted();
+      const errors = [];
+
+      if (dates.length === 0) {
+        errors.push({ dates: [], message: '目前尚未排任何日期。' });
+        return errors;
+      }
+
+      errors.push(...validateWeeklyOffDays(dates));
+      errors.push(...validateMaxConsecutiveDays(dates));
+      errors.push(...validateCrossDayRestRule(dates));
 
       return errors;
     }
@@ -1463,6 +1648,18 @@
       });
 
       alert(txt);
+    }
+
+    function openRuleModal(){
+      document.getElementById('ruleModal').classList.remove('hidden');
+    }
+
+    function closeRuleModal(){
+      document.getElementById('ruleModal').classList.add('hidden');
+    }
+
+    function closeRuleModalByBackdrop(e){
+      if (e.target.id === 'ruleModal') closeRuleModal();
     }
 
     window.onload = function(){
