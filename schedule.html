@@ -155,6 +155,32 @@
       white-space:pre-wrap;
     }
 
+    .auth-box{
+      margin-top:12px;
+      border-radius:14px;
+      padding:12px;
+      font-size:14px;
+      line-height:1.7;
+      white-space:pre-wrap;
+      border:1px solid #e5e7eb;
+      background:#f9fafb;
+      color:#374151;
+    }
+
+    .auth-box.ok{
+      background:#f0fdf4;
+      border-color:#bbf7d0;
+      color:#166534;
+      font-weight:900;
+    }
+
+    .auth-box.err{
+      background:#fff7ed;
+      border-color:#fed7aa;
+      color:#9a3412;
+      font-weight:900;
+    }
+
     .row{
       display:flex;
       gap:10px;
@@ -821,11 +847,13 @@
       <div class="card" id="step1">
         <h2 class="section-title">第 1 步｜驗證排班權限</h2>
         <div class="hint">
-          下一步會接上 LIFF 抓 UID，再去 GAS 檢查這個人是否有排班權限。
+          系統會自動讀取 LINE 身分並檢查排班權限。<br>
+          只有核准人員才能進入下一步。
         </div>
         <div class="status" id="authStatus">尚未驗證</div>
+        <div class="auth-box hidden" id="authBox"></div>
         <div class="footer-actions">
-          <button class="btn-primary" onclick="goStep(2)">先看下一步畫面</button>
+          <button class="btn-primary" onclick="goStepFromAuth()">進入下一步</button>
         </div>
       </div>
 
@@ -916,15 +944,17 @@
       <div class="card hidden" id="step4">
         <h2 class="section-title">第 4 步｜最後送出</h2>
         <div class="hint">
-          送出前請務必再三確認欲排班日期及時段。<br>
-          送出後若需調整請聯絡啟瑞領班。
+          送出前請務必再次確認排班內容。<br>
+          送出後會寫入後台 PT排班資訊 分頁。
         </div>
 
         <div class="status" id="submitPreview">按下下方按鈕後，會先顯示目前排班結果。</div>
 
+        <div class="auth-box hidden" id="submitResultBox"></div>
+
         <div class="footer-actions">
           <button class="btn-secondary" onclick="goStep(3)">上一步</button>
-          <button class="btn-primary" onclick="fakeSubmit()">送出測試</button>
+          <button class="btn-primary" id="submitBtn" onclick="submitSchedule()">正式送出</button>
         </div>
       </div>
     </div>
@@ -949,6 +979,9 @@
   </div>
 
   <script>
+    const LIFF_ID = '2009174277-yJdVzIb0';
+    const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbynmvNtFOWo3_cT9WtPjLCx3iGjp1lP99Q5SOLUba3SbE7oltxPUJc0tX4zI-B_M0vN/exec';
+
     const HOLIDAYS_2026 = new Set([
       '2026-01-01','2026-02-16','2026-02-17','2026-02-18','2026-02-19','2026-02-20',
       '2026-02-27','2026-02-28','2026-04-03','2026-04-04','2026-04-05','2026-04-06',
@@ -972,7 +1005,14 @@
       assignedDays: {},
       step3InvalidDates: new Set(),
       viewYear: 0,
-      viewMonth: 0
+      viewMonth: 0,
+      userId: '',
+      displayName: '',
+      authChecked: false,
+      authAllowed: false,
+      authStatus: '',
+      authEnabled: '',
+      submitBusy: false
     };
 
     function pad2(n){ return String(n).padStart(2,'0'); }
@@ -987,6 +1027,8 @@
     }
 
     function monthText(y,m){ return `${m}月 ${y}`; }
+
+    function monthValue(y,m){ return `${y}-${pad2(m)}`; }
 
     function getMonthMatrix(year, month){
       const first = new Date(year, month - 1, 1);
@@ -1501,10 +1543,9 @@
 
         const offCount = 7 - workCount;
         if (offCount < 2) {
-          const weekEnd = weekDates[6];
           errors.push({
             dates:[...weekDates.filter(k => assignedSet.has(k))],
-            message:`${weekDates[0]} ～ ${weekEnd} 此週休假僅 ${offCount} 天，未達每週至少 2 天休假。`
+            message:`${weekDates[0]} ～ ${weekDates[6]} 此週休假僅 ${offCount} 天，未達每週至少 2 天休假。`
           });
         }
       }
@@ -1566,7 +1607,8 @@
         const diffDays = (currDateBase - prevDateBase) / 86400000;
         if (diffDays !== 1) continue;
 
-        const currStartAbs = 24 * 60 + prevWindow.firstStart - prevWindow.firstStart + getTemplateWindowMinutes(currTpl).firstStart;
+        const currWindow = getTemplateWindowMinutes(currTpl);
+        const currStartAbs = 24 * 60 + currWindow.firstStart;
         const restMinutes = currStartAbs - prevWindow.lastEnd;
 
         if (restMinutes < 660) {
@@ -1621,6 +1663,18 @@
       applyStep3ValidationResult(errors);
     }
 
+    function buildSchedulesPayload(){
+      const dates = getAssignedDatesSorted();
+      return dates.map(d => {
+        const tpl = state.templates.find(t => t.id === state.assignedDays[d]);
+        if (!tpl) return null;
+        return {
+          date: d,
+          shiftText: formatTimeInline(tpl)
+        };
+      }).filter(Boolean);
+    }
+
     function prepareStep4(){
       const errors = validateScheduleRules();
       applyStep3ValidationResult(errors);
@@ -1628,26 +1682,15 @@
       if (errors.length > 0) return;
 
       const dates = getAssignedDatesSorted();
-      let txt = '目前排班結果：\n\n';
+      let txt = `送出人員：${state.displayName || '未登入'}\n月份：${monthValue(state.viewYear, state.viewMonth)}\n\n目前排班結果：\n\n`;
       dates.forEach(d => {
         const tpl = state.templates.find(t => t.id === state.assignedDays[d]);
         txt += `${d} → ${tpl ? formatTimeInline(tpl) : ''}\n`;
       });
       document.getElementById('submitPreview').textContent = txt.trim();
+      document.getElementById('submitResultBox').classList.add('hidden');
+      document.getElementById('submitResultBox').textContent = '';
       goStep(4);
-    }
-
-    function fakeSubmit(){
-      const dates = getAssignedDatesSorted();
-      let txt = '目前為前台骨架測試\n\n';
-      txt += '已排班結果：\n';
-
-      dates.forEach(d => {
-        const tpl = state.templates.find(t => t.id === state.assignedDays[d]);
-        txt += `${d} → ${tpl ? formatTimeInline(tpl) : ''}\n`;
-      });
-
-      alert(txt);
     }
 
     function openRuleModal(){
@@ -1662,7 +1705,178 @@
       if (e.target.id === 'ruleModal') closeRuleModal();
     }
 
-    window.onload = function(){
+    function setAuthStatusText(msg){
+      document.getElementById('authStatus').textContent = msg || '';
+    }
+
+    function showAuthBox(msg, type){
+      const el = document.getElementById('authBox');
+      el.className = `auth-box ${type || ''}`;
+      el.textContent = msg || '';
+      el.classList.remove('hidden');
+    }
+
+    function hideAuthBox(){
+      const el = document.getElementById('authBox');
+      el.className = 'auth-box hidden';
+      el.textContent = '';
+    }
+
+    function showSubmitResult(msg, type){
+      const el = document.getElementById('submitResultBox');
+      el.className = `auth-box ${type || ''}`;
+      el.textContent = msg || '';
+      el.classList.remove('hidden');
+    }
+
+    function setSubmitBusy(busy){
+      state.submitBusy = busy;
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = !!busy;
+      btn.textContent = busy ? '送出中...' : '正式送出';
+    }
+
+    async function postJsonToGas(payload){
+      const res = await fetch(GAS_WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+
+      const text = await res.text();
+      let data = {};
+      try { data = JSON.parse(text); } catch(_) {}
+      return { res, text, data };
+    }
+
+    async function initLiffAndCheckPermission(){
+      try {
+        setAuthStatusText('登入驗證中...');
+        hideAuthBox();
+
+        await liff.init({ liffId: LIFF_ID });
+
+        if (!liff.isLoggedIn()) {
+          liff.login();
+          return;
+        }
+
+        const profile = await liff.getProfile();
+        state.userId = profile.userId || '';
+        state.displayName = profile.displayName || '';
+
+        setAuthStatusText('檢查排班權限中...');
+
+        const url = `${GAS_WEB_APP_URL}?action=checkPermission&uid=${encodeURIComponent(state.userId)}&displayName=${encodeURIComponent(state.displayName)}`;
+        const res = await fetch(url, { method:'GET' });
+        const data = await res.json();
+
+        if (!data.ok) {
+          state.authChecked = false;
+          state.authAllowed = false;
+          setAuthStatusText('驗證失敗');
+          showAuthBox(`授權檢查失敗：${data.message || '未知錯誤'}`, 'err');
+          return;
+        }
+
+        state.authChecked = true;
+        state.authAllowed = !!data.allowed;
+        state.authStatus = data.status || '';
+        state.authEnabled = data.enabled || '';
+
+        if (data.allowed) {
+          setAuthStatusText(
+            `驗證完成\n姓名：${state.displayName}\nUID：${state.userId}\n狀態：${data.status}\n啟用：${data.enabled}`
+          );
+          showAuthBox('你已通過排班權限驗證，可以進入下一步。', 'ok');
+        } else {
+          setAuthStatusText(
+            `姓名：${state.displayName}\nUID：${state.userId}\n狀態：${data.status || 'pending'}\n啟用：${data.enabled || 'N'}`
+          );
+          showAuthBox(data.message || '尚未開通排班權限，請聯絡管理員。', 'err');
+        }
+      } catch (err) {
+        state.authChecked = false;
+        state.authAllowed = false;
+        setAuthStatusText('驗證失敗');
+        showAuthBox(`登入或驗證失敗：${err.message || err}`, 'err');
+      }
+    }
+
+    function canGoNextFromStep1(){
+      if (!state.authChecked) {
+        alert('尚未完成驗證，請稍候。');
+        return false;
+      }
+
+      if (!state.authAllowed) {
+        alert('你目前尚未開通排班權限。');
+        return false;
+      }
+
+      return true;
+    }
+
+    function goStepFromAuth(){
+      if (!canGoNextFromStep1()) return;
+      goStep(2);
+    }
+
+    async function submitSchedule(){
+      if (state.submitBusy) return;
+
+      const errors = validateScheduleRules();
+      applyStep3ValidationResult(errors);
+      if (errors.length > 0) {
+        goStep(3);
+        return;
+      }
+
+      if (!state.authAllowed || !state.userId) {
+        showSubmitResult('目前登入狀態或權限異常，請回到第 1 步重新確認。', 'err');
+        return;
+      }
+
+      const schedules = buildSchedulesPayload();
+      if (schedules.length === 0) {
+        showSubmitResult('目前沒有可送出的排班資料。', 'err');
+        return;
+      }
+
+      try {
+        setSubmitBusy(true);
+        showSubmitResult('送出中，請稍候...', '');
+
+        const payload = {
+          action: 'submitSchedule',
+          uid: state.userId,
+          displayName: state.displayName,
+          month: monthValue(state.viewYear, state.viewMonth),
+          schedules: schedules
+        };
+
+        const { data } = await postJsonToGas(payload);
+
+        if (!data || !data.ok) {
+          showSubmitResult(`送出失敗：${(data && data.message) ? data.message : '未知錯誤'}`, 'err');
+          setSubmitBusy(false);
+          return;
+        }
+
+        showSubmitResult(
+          `送出成功 ✅\n姓名：${state.displayName}\n月份：${monthValue(state.viewYear, state.viewMonth)}\n筆數：${data.writeCount || schedules.length}\n批次ID：${data.batchId || ''}`,
+          'ok'
+        );
+
+        document.getElementById('submitPreview').textContent += '\n\n已成功寫入後台 PT排班資訊 分頁。';
+        setSubmitBusy(false);
+      } catch (err) {
+        showSubmitResult(`送出失敗：${err.message || err}`, 'err');
+        setSubmitBusy(false);
+      }
+    }
+
+    window.onload = async function(){
       const base = getNextMonthBase();
       state.viewYear = base.year;
       state.viewMonth = base.month;
@@ -1670,6 +1884,8 @@
       initTemplates();
       renderTemplatePalette();
       renderStep3Calendar();
+
+      await initLiffAndCheckPermission();
     };
   </script>
 </body>
