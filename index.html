@@ -12,15 +12,13 @@
       --shadow:0 10px 25px rgba(0,0,0,.06);
       --radius:18px;
 
-      /* 字體 */
       --fs-title: 24px;
       --fs-sub: 16px;
-      --fs-group: 32px; /* 調度/一級/換電 */
-      --fs-btn: 24px;   /* 到站/離站（縮小） */
+      --fs-group: clamp(26px, 6vw, 32px);
+      --fs-btn: clamp(20px, 4.8vw, 28px);
       --fs-status: 16px;
       --fs-debug: 13px;
 
-      /* 顏色：到站淺（黑字）、離站深（白字） */
       --dispatch-light:#5fd49a;
       --dispatch-dark:#15905a;
 
@@ -45,7 +43,7 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      padding:18px;
+      padding:16px;
       box-sizing:border-box;
     }
 
@@ -53,7 +51,7 @@
       width:min(560px, 100%);
       background:var(--card);
       border-radius:var(--radius);
-      padding:20px;
+      padding:18px;
       box-shadow:var(--shadow);
       box-sizing:border-box;
     }
@@ -73,49 +71,53 @@
       line-height:1.65;
     }
 
-    /* 每個項目一張卡 */
     .group{
-      margin-bottom: 22px;
+      margin-bottom: 18px;
       border: 2px solid #e9edf5;
       border-radius: 18px;
-      padding: 18px;
+      padding: 16px;
       background: #fff;
       box-shadow: 0 6px 16px rgba(0,0,0,.04);
     }
     .group:last-child{ margin-bottom: 0; }
 
-    /* 作法B：標題正常排版 */
     .groupTitle{
       font-size: var(--fs-group);
       font-weight: 900;
       color:#111;
-      margin: 0 0 14px;
+      margin: 0 0 12px;
       line-height: 1.1;
     }
 
     .row2{
       display:grid;
       grid-template-columns: 1fr 1fr;
-      gap: 14px;
+      gap: 12px;
     }
 
     button{
       border:0;
       border-radius:16px;
-      padding: 18px 14px;
+      padding: 16px 10px;
+      min-height: 92px;
       font-size:var(--fs-btn);
       font-weight:900;
       cursor:pointer;
       width:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      white-space:nowrap;
+      line-height:1.15;
+      letter-spacing:.5px;
     }
     button:disabled{ opacity:.55; cursor:not-allowed; }
 
-    /* 到站：淺色 + 黑字 */
     .dispatchArrive{ background: var(--dispatch-light); color:#000; }
     .level1Arrive{ background: var(--level1-light); color:#000; }
     .swapArrive{ background: var(--swap-light); color:#000; }
 
-    /* 離站：深色 + 白字 */
     .dispatchLeave{ background: var(--dispatch-dark); color:#fff; }
     .level1Leave{ background: var(--level1-dark); color:#fff; }
     .swapLeave{ background: var(--swap-dark); color:#fff; }
@@ -131,7 +133,6 @@
     .err{ color:#b42318; font-weight:900; }
     .muted{ color:#666; }
 
-    /* ✅ 閒置提醒區 */
     .idleWrap{
       display:none;
       margin-top:12px;
@@ -158,9 +159,11 @@
       border-radius:14px;
       border:0;
       width:auto;
+      min-height:auto;
       color:#fff;
       background:#111;
       cursor:pointer;
+      white-space:nowrap;
     }
 
     details{ margin-top:14px; }
@@ -177,6 +180,17 @@
       white-space:pre-wrap;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
+
+    @media (max-width: 380px){
+      .card{ padding:14px; }
+      .group{ padding:14px; }
+      .row2{ gap:10px; }
+      button{
+        min-height:84px;
+        padding:14px 8px;
+        font-size: clamp(18px, 4.3vw, 22px);
+      }
+    }
   </style>
 </head>
 
@@ -185,7 +199,7 @@
     <div class="card">
       <p class="title">桃園營運處｜打卡系統</p>
       <p class="sub">
-        選擇作業類，點選「到站」或「離站」打卡<br>
+        選擇作業類，點選「到站打卡」或「離站打卡」<br>
         成功後會顯示「完成」並自動關閉。
       </p>
 
@@ -213,14 +227,12 @@
         </div>
       </div>
 
-      <!-- ✅ 閒置提醒（掛太久自救） -->
       <div id="idleWrap" class="idleWrap">
         <p class="idleTitle">頁面已久未操作</p>
         <p class="idleText">若你把打卡頁面放太久，LINE/定位可能會失效，容易出現「打卡失敗」。建議按下重新整理再打卡。</p>
         <button class="idleBtn" onclick="hardReload()">重新整理</button>
       </div>
 
-      <!-- ✅ 不顯示「啟動中…」，預設空白 -->
       <div id="status" class="status muted"></div>
       <div id="authBox" style="display:none; margin-top:12px; padding:12px; border-radius:12px; background:#fff7e6; border:1px solid #f5d08a; color:#8a5300; font-weight:700; line-height:1.5;"></div>
 
@@ -232,21 +244,26 @@
   </div>
 
 <script>
-/** ===== 只要確認這兩個 ===== */
 const LIFF_ID = "2009174277-dSY24pNu";
 const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxUFysH7fGKyM9gJ_1vRMIa3krcuAsq7K5yDEioOXjB0NVbPJMx_e3TytAa_Nt6Eok94w/exec";
 
-/** ✅ 閒置超過幾分鐘就提醒（可調整） */
 const IDLE_WARN_MIN = 8;
 
-/** ✅ 定位策略（更快更穩） */
-const GEO_OPTIONS = {
+const GEO_OPTIONS_FAST = {
   enableHighAccuracy: false,
-  timeout: 8000,
-  maximumAge: 15000
+  timeout: 7000,
+  maximumAge: 10000
 };
 
-/** ===== UI ===== */
+const GEO_OPTIONS_RETRY = {
+  enableHighAccuracy: true,
+  timeout: 10000,
+  maximumAge: 0
+};
+
+const GEO_RETRY_IF_OVER_M = 80;
+const GEO_ACCEPT_MAX_M = 120;
+
 const $status = document.getElementById("status");
 const $debug = document.getElementById("debug");
 const $dbgWrap = document.getElementById("dbgWrap");
@@ -274,7 +291,6 @@ function setButtonsDisabled(disabled){
   Object.values(btns).forEach(b => b.disabled = disabled);
 }
 
-/** ===== 解析參數：一般 query + liff.state ===== */
 function getMergedParams(){
   const normal = new URLSearchParams(window.location.search || "");
   const merged = new URLSearchParams(normal.toString());
@@ -301,7 +317,6 @@ function showDebug(obj){
   $debug.textContent = JSON.stringify(obj, null, 2);
 }
 
-/** ===== 文字 ===== */
 function jobCN(job){
   return job === "dispatch" ? "調度"
        : job === "level1" ? "一級"
@@ -312,8 +327,6 @@ function stepCN(step){
   return step === "arrive" ? "到站" : "離站";
 }
 
-/** ===== 閒置自救 ===== */
-let openedAt = Date.now();
 let lastActionAt = Date.now();
 let idleShown = false;
 
@@ -328,7 +341,6 @@ function touchAction(){
 function hardReload(){
   try {
     const url = new URL(location.href);
-    // 加一個 cache bust，避免 GitHub/瀏覽器快取
     url.searchParams.set("v", String(Date.now()));
     location.replace(url.toString());
   } catch(_) {
@@ -344,27 +356,69 @@ setInterval(() => {
   }
 }, 15000);
 
-/** ===== 定位 ===== */
-function getLocation(){
+function getLocationOnce(options){
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) return reject(new Error("此裝置不支援定位"));
     navigator.geolocation.getCurrentPosition(
       (pos) => resolve({
         lat: pos.coords.latitude,
         lng: pos.coords.longitude,
-        accuracy: pos.coords.accuracy
+        accuracy: Number(pos.coords.accuracy),
+        ts: Date.now()
       }),
       (err) => reject(new Error(err.message || "定位失敗")),
-      GEO_OPTIONS
+      options
     );
   });
 }
 
-/** ===== LIFF profile（加強版，失效時提示） ===== */
+function isGoodLocation(loc){
+  return loc && isFinite(loc.lat) && isFinite(loc.lng) && isFinite(loc.accuracy) && loc.accuracy > 0;
+}
+
+function pickBetterLocation(a, b){
+  if (!isGoodLocation(a)) return b;
+  if (!isGoodLocation(b)) return a;
+  return a.accuracy <= b.accuracy ? a : b;
+}
+
+async function getLocationSmart(){
+  const attempts = [];
+
+  let first = null;
+  try {
+    first = await getLocationOnce(GEO_OPTIONS_FAST);
+    attempts.push({ step: "first", ok: true, loc: first });
+  } catch (e) {
+    attempts.push({ step: "first", ok: false, error: String(e && e.message ? e.message : e) });
+  }
+
+  if (isGoodLocation(first) && first.accuracy <= GEO_RETRY_IF_OVER_M) {
+    return { loc: first, attempts };
+  }
+
+  let second = null;
+  try {
+    second = await getLocationOnce(GEO_OPTIONS_RETRY);
+    attempts.push({ step: "second", ok: true, loc: second });
+  } catch (e) {
+    attempts.push({ step: "second", ok: false, error: String(e && e.message ? e.message : e) });
+  }
+
+  const best = pickBetterLocation(first, second);
+
+  if (!isGoodLocation(best)) {
+    const err = new Error("定位失敗");
+    err.attempts = attempts;
+    throw err;
+  }
+
+  return { loc: best, attempts };
+}
+
 async function getProfileSafe(){
   await liff.init({ liffId: LIFF_ID });
 
-  // 非 LINE 內：需要登入
   if (!liff.isInClient() && !liff.isLoggedIn()) {
     liff.login();
     throw new Error("redirect_login");
@@ -373,7 +427,6 @@ async function getProfileSafe(){
   try {
     return await liff.getProfile();
   } catch (e) {
-    // LIFF session 常見掛太久失效
     throw new Error("liff_profile_failed");
   }
 }
@@ -390,14 +443,13 @@ async function postJsonToGas(payload){
   return { res, text, data };
 }
 
-/** ===== 登入 + 授權閘門（待審核） ===== */
 async function initAuthGate(){
   setButtonsDisabled(true);
   AUTH_READY = false;
   setStatus("登入驗證中…", "muted");
 
   try {
-    const profile = await getProfileSafe(); // 可能觸發 liff.login()
+    const profile = await getProfileSafe();
     CURRENT_PROFILE = profile;
 
     const { data } = await postJsonToGas({
@@ -425,7 +477,6 @@ async function initAuthGate(){
       return;
     }
 
-    // pending / blocked / disabled
     AUTH_READY = false;
     setButtonsDisabled(true);
     $authBox.style.display = "";
@@ -434,10 +485,7 @@ async function initAuthGate(){
   } catch (e) {
     const msg = (e && e.message) ? e.message : String(e);
 
-    if (msg === "redirect_login") {
-      // 已跳轉登入，不額外顯示錯誤
-      return;
-    }
+    if (msg === "redirect_login") return;
 
     $authBox.style.display = "";
     if (msg === "liff_profile_failed") {
@@ -451,21 +499,38 @@ async function initAuthGate(){
   }
 }
 
-/** ===== 打卡 ===== */
 async function punch(job, step){
-
   touchAction();
+
+  if (!AUTH_READY || !CURRENT_PROFILE) {
+    setStatus("尚未完成登入驗證，請稍後再試", "err");
+    return;
+  }
+
   setButtonsDisabled(true);
   setStatus(`定位中…（${jobCN(job)}｜${stepCN(step)}）`, "muted");
 
   const params = getMergedParams();
-  const bypassKey = params.get("key") || "";  // 如果你用 ?key=hyb... 繞過測試
+  const bypassKey = params.get("key") || "";
   const v = params.get("v") || "";
   const test = params.get("test") || "";
 
   try{
     const profile = CURRENT_PROFILE;
-    const loc = await getLocation();
+    const geoResult = await getLocationSmart();
+    const loc = geoResult.loc;
+
+    showDebug({
+      step: "geo",
+      attempts: geoResult.attempts,
+      best: loc
+    });
+
+    if (!isFinite(loc.accuracy) || loc.accuracy <= 0 || loc.accuracy > GEO_ACCEPT_MAX_M) {
+      setStatus("錯誤：定位異常，請再試一次", "err");
+      setButtonsDisabled(false);
+      return;
+    }
 
     setStatus("送出打卡…", "muted");
 
@@ -492,16 +557,19 @@ async function punch(job, step){
 
     if (!data.ok) {
       const msg = data.message || "打卡失敗，請稍後再試";
-      // 特別針對常見錯誤給更好提示
+
       if (msg.includes("離場站過遠")) {
         setStatus(`錯誤：${msg}`, "err");
       } else if (msg.includes("尚未到站")) {
         setStatus(`錯誤：${msg}`, "err");
+      } else if (msg.includes("定位異常")) {
+        setStatus("錯誤：定位異常，請再試一次", "err");
       } else {
         setStatus(`錯誤：${msg}\n（若頁面放太久，建議按下重新整理再試）`, "err");
         $idleWrap.style.display = "";
         idleShown = true;
       }
+
       setButtonsDisabled(false);
       return;
     }
@@ -517,26 +585,25 @@ async function punch(job, step){
     const msg = (e && e.message) ? e.message : String(e);
 
     if (msg === "redirect_login") {
-      // 已觸發 liff.login()，不再顯示錯誤
       setButtonsDisabled(false);
       return;
     }
 
     if (!isTestMode()) {
-      // 正式模式：不暴露細節，但給出自救引導
       if (msg === "liff_profile_failed") {
         setStatus("錯誤：頁面已放置過久，請重新整理後再打卡", "err");
         $idleWrap.style.display = "";
         idleShown = true;
       } else if (msg.toLowerCase().includes("timeout")) {
         setStatus("錯誤：定位逾時，請開啟定位或重新整理後再試", "err");
+      } else if (msg.includes("定位失敗")) {
+        setStatus("錯誤：定位異常，請再試一次", "err");
       } else {
         setStatus("錯誤：打卡失敗，請稍後再試\n（若頁面放太久，建議重新整理）", "err");
         $idleWrap.style.display = "";
         idleShown = true;
       }
     } else {
-      // 測試模式：顯示更多細節
       setStatus(`錯誤：${msg}`, "err");
       showDebug({ step:"catch", error: String(e), stack: e && e.stack ? e.stack : "" });
       $idleWrap.style.display = "";
@@ -547,19 +614,14 @@ async function punch(job, step){
   }
 }
 
-/** 綁定：三作業 × 到站/離站 */
 btns.dispatchArrive.addEventListener("click", () => punch("dispatch","arrive"));
 btns.dispatchLeave.addEventListener("click", () => punch("dispatch","leave"));
-
 btns.level1Arrive.addEventListener("click", () => punch("level1","arrive"));
 btns.level1Leave.addEventListener("click", () => punch("level1","leave"));
-
 btns.swapArrive.addEventListener("click", () => punch("swap","arrive"));
 btns.swapLeave.addEventListener("click", () => punch("swap","leave"));
 
-/** 初始（不顯示啟動中文字） */
 (function(){
-  // 任何互動都刷新 lastActionAt
   document.addEventListener("click", touchAction, { passive:true });
   document.addEventListener("touchstart", touchAction, { passive:true });
   document.addEventListener("keydown", touchAction, { passive:true });
