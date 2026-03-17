@@ -150,7 +150,7 @@
 
     .status{
       margin-top:12px;
-      font-size:14px;
+      font-size:15px;
       line-height:1.7;
       white-space:pre-wrap;
     }
@@ -202,9 +202,9 @@
       font-size:11px;
       color:var(--muted);
       font-weight:800;
-      line-height:1.2;
+      line-height:1.25;
       text-align:center;
-      white-space:nowrap;
+      white-space:normal;
     }
 
     select, button{
@@ -217,11 +217,19 @@
       min-width:0;
     }
 
-    select{ width:100%; }
+    select{
+      width:100%;
+      appearance:auto;
+    }
 
     button{
       cursor:pointer;
       font-weight:900;
+    }
+
+    button:disabled{
+      opacity:.45;
+      cursor:not-allowed;
     }
 
     .btn-primary{
@@ -268,7 +276,7 @@
       justify-content:space-between;
       align-items:flex-start;
       gap:10px;
-      flex-wrap:nowrap;
+      flex-wrap:wrap;
       margin-bottom:8px;
       padding-bottom:8px;
       border-bottom:1px solid #e8edf5;
@@ -288,7 +296,7 @@
       align-items:center;
       justify-content:flex-end;
       gap:8px;
-      flex-wrap:nowrap;
+      flex-wrap:wrap;
       flex-shrink:0;
       margin-left:auto;
     }
@@ -563,6 +571,7 @@
       margin:4px 0;
       font-size:14px;
       line-height:1.5;
+      white-space:pre-wrap;
     }
 
     .success-box{
@@ -725,27 +734,10 @@
       margin-top:14px;
     }
 
-    @media (max-width: 640px){
-      .topbar{ padding:12px 12px 8px; }
+    @media (max-width: 768px){
       .topbar h1{ font-size:21px; }
       .section-title{ font-size:20px; }
-
-      .section-title-row{
-        align-items:center;
-      }
-
-      .btn-rule{
-        height:36px;
-        padding:0 12px;
-        font-size:13px;
-      }
-
-      .step-tab{
-        font-size:12px;
-        padding:8px 2px;
-        height:44px;
-      }
-
+      .step-tab{ font-size:12px; height:44px; padding:8px 2px; }
       .month-title{ font-size:16px; }
 
       .calendar-table thead th{
@@ -761,25 +753,33 @@
       .day-shift-text{ font-size:9px; min-height:32px; }
       .template-name{ font-size:16px; }
 
-      .template-head{ gap:8px; }
-      .template-actions{ gap:6px; }
-      .split-check{ font-size:13px; }
-
       .template-actions .btn-danger{
         height:36px;
         padding:0 12px;
       }
 
       .template-flat-row{
-        grid-template-columns:54px 1fr;
+        grid-template-columns:1fr;
         gap:8px;
       }
 
-      .seg-label{ font-size:12px; }
-      .flat-time-grid{ gap:6px; }
-      .field label{ font-size:10px; }
+      .seg-label{
+        font-size:13px;
+        margin-bottom:2px;
+      }
 
-      select, button{ height:38px; }
+      .flat-time-grid{
+        grid-template-columns:repeat(4, minmax(0, 1fr));
+        gap:6px;
+      }
+
+      .field label{
+        font-size:10px;
+      }
+
+      select, button{
+        height:38px;
+      }
 
       .template-chip{
         padding:7px 10px;
@@ -801,18 +801,28 @@
       }
     }
 
-    @media (max-width: 380px){
-      .template-actions{ gap:5px; }
-      .split-check{ font-size:12px; }
-
-      .template-flat-row{
-        grid-template-columns:50px 1fr;
-        gap:6px;
+    @media (max-width: 560px){
+      .flat-time-grid{
+        grid-template-columns:repeat(2, minmax(0, 1fr));
+        gap:8px;
       }
 
-      .flat-time-grid{ gap:5px; }
-      .field label{ font-size:10px; }
+      .template-head{
+        flex-direction:column;
+        align-items:flex-start;
+      }
 
+      .template-actions{
+        width:100%;
+        justify-content:space-between;
+      }
+
+      .footer-actions{
+        justify-content:flex-end;
+      }
+    }
+
+    @media (max-width: 380px){
       select{
         font-size:14px;
         padding:0 8px;
@@ -847,13 +857,13 @@
       <div class="card" id="step1">
         <h2 class="section-title">第 1 步｜驗證排班權限</h2>
         <div class="hint">
-          系統會自動讀取 LINE 身分並檢查排班權限。<br>
-          只有核准人員才能進入下一步。
+          系統會自動檢查排班權限。<br>
+          通過後才可進入下一步。
         </div>
-        <div class="status" id="authStatus">尚未驗證</div>
+        <div class="status" id="authStatus">驗證中...</div>
         <div class="auth-box hidden" id="authBox"></div>
         <div class="footer-actions">
-          <button class="btn-primary" onclick="goStepFromAuth()">進入下一步</button>
+          <button class="btn-primary" id="goStep2Btn" onclick="goStepFromAuth()" disabled>進入下一步</button>
         </div>
       </div>
 
@@ -1010,8 +1020,6 @@
       displayName: '',
       authChecked: false,
       authAllowed: false,
-      authStatus: '',
-      authEnabled: '',
       submitBusy: false
     };
 
@@ -1027,7 +1035,6 @@
     }
 
     function monthText(y,m){ return `${m}月 ${y}`; }
-
     function monthValue(y,m){ return `${y}-${pad2(m)}`; }
 
     function getMonthMatrix(year, month){
@@ -1083,10 +1090,7 @@
 
     function refreshTemplateColors(){
       let idx = 0;
-      state.templates.forEach(t => {
-        t.colorIndex = idx % TEMPLATE_COLORS.length;
-        idx++;
-      });
+      state.templates.forEach(t => t.colorIndex = idx++ % TEMPLATE_COLORS.length);
     }
 
     function renumberTemplateLabels(){
@@ -1270,10 +1274,7 @@
     }
 
     function formatTimeInline(tpl){
-      const s1 = `${formatShortTime(tpl.seg1StartH, tpl.seg1StartM)}-${formatShortTime(tpl.seg1EndH, tpl.seg1EndM)}`;
-      if (!tpl.isSplit) return s1;
-      const s2 = `${formatShortTime(tpl.seg2StartH, tpl.seg2StartM)}-${formatShortTime(tpl.seg2EndH, tpl.seg2EndM)}`;
-      return `${s1} / ${s2}`;
+      return formatTimeOnly(tpl);
     }
 
     function getTplColor(tpl){
@@ -1316,7 +1317,7 @@
       } else {
         const currentTpl = state.templates.find(t => t.id === state.selectedTemplateId);
         currentText.innerHTML = currentTpl
-          ? `目前選中：<b>${formatTimeInline(currentTpl)}</b>`
+          ? `目前選中：<b>${formatTimeOnly(currentTpl).replace('\n', ' / ')}</b>`
           : `目前選中：<b>尚未選擇</b>`;
       }
     }
@@ -1670,7 +1671,7 @@
         if (!tpl) return null;
         return {
           date: d,
-          shiftText: formatTimeInline(tpl)
+          shiftText: formatTimeOnly(tpl)
         };
       }).filter(Boolean);
     }
@@ -1682,10 +1683,10 @@
       if (errors.length > 0) return;
 
       const dates = getAssignedDatesSorted();
-      let txt = `送出人員：${state.displayName || '未登入'}\n月份：${monthValue(state.viewYear, state.viewMonth)}\n\n目前排班結果：\n\n`;
+      let txt = `月份：${monthValue(state.viewYear, state.viewMonth)}\n\n目前排班結果：\n\n`;
       dates.forEach(d => {
         const tpl = state.templates.find(t => t.id === state.assignedDays[d]);
-        txt += `${d} → ${tpl ? formatTimeInline(tpl) : ''}\n`;
+        txt += `${d} → ${tpl ? formatTimeOnly(tpl) : ''}\n`;
       });
       document.getElementById('submitPreview').textContent = txt.trim();
       document.getElementById('submitResultBox').classList.add('hidden');
@@ -1722,6 +1723,10 @@
       el.textContent = '';
     }
 
+    function setGoStep2Enabled(enabled){
+      document.getElementById('goStep2Btn').disabled = !enabled;
+    }
+
     function showSubmitResult(msg, type){
       const el = document.getElementById('submitResultBox');
       el.className = `auth-box ${type || ''}`;
@@ -1751,7 +1756,8 @@
 
     async function initLiffAndCheckPermission(){
       try {
-        setAuthStatusText('登入驗證中...');
+        setGoStep2Enabled(false);
+        setAuthStatusText('驗證中...');
         hideAuthBox();
 
         await liff.init({ liffId: LIFF_ID });
@@ -1765,47 +1771,43 @@
         state.userId = profile.userId || '';
         state.displayName = profile.displayName || '';
 
-        setAuthStatusText('檢查排班權限中...');
-
         const url = `${GAS_WEB_APP_URL}?action=checkPermission&uid=${encodeURIComponent(state.userId)}&displayName=${encodeURIComponent(state.displayName)}`;
         const res = await fetch(url, { method:'GET' });
         const data = await res.json();
 
         if (!data.ok) {
-          state.authChecked = false;
+          state.authChecked = true;
           state.authAllowed = false;
           setAuthStatusText('驗證失敗');
-          showAuthBox(`授權檢查失敗：${data.message || '未知錯誤'}`, 'err');
+          showAuthBox('權限檢查失敗，請稍後再試。', 'err');
+          setGoStep2Enabled(false);
           return;
         }
 
         state.authChecked = true;
         state.authAllowed = !!data.allowed;
-        state.authStatus = data.status || '';
-        state.authEnabled = data.enabled || '';
 
         if (data.allowed) {
-          setAuthStatusText(
-            `驗證完成\n姓名：${state.displayName}\nUID：${state.userId}\n狀態：${data.status}\n啟用：${data.enabled}`
-          );
+          setAuthStatusText('驗證完成');
           showAuthBox('你已通過排班權限驗證，可以進入下一步。', 'ok');
+          setGoStep2Enabled(true);
         } else {
-          setAuthStatusText(
-            `姓名：${state.displayName}\nUID：${state.userId}\n狀態：${data.status || 'pending'}\n啟用：${data.enabled || 'N'}`
-          );
+          setAuthStatusText('驗證完成');
           showAuthBox(data.message || '尚未開通排班權限，請聯絡管理員。', 'err');
+          setGoStep2Enabled(false);
         }
       } catch (err) {
-        state.authChecked = false;
+        state.authChecked = true;
         state.authAllowed = false;
         setAuthStatusText('驗證失敗');
-        showAuthBox(`登入或驗證失敗：${err.message || err}`, 'err');
+        showAuthBox('登入或驗證失敗，請重新開啟後再試。', 'err');
+        setGoStep2Enabled(false);
       }
     }
 
     function canGoNextFromStep1(){
       if (!state.authChecked) {
-        alert('尚未完成驗證，請稍候。');
+        alert('尚未完成驗證。');
         return false;
       }
 
@@ -1852,7 +1854,7 @@
           uid: state.userId,
           displayName: state.displayName,
           month: monthValue(state.viewYear, state.viewMonth),
-          schedules: schedules
+          schedules
         };
 
         const { data } = await postJsonToGas(payload);
@@ -1864,7 +1866,7 @@
         }
 
         showSubmitResult(
-          `送出成功 ✅\n姓名：${state.displayName}\n月份：${monthValue(state.viewYear, state.viewMonth)}\n筆數：${data.writeCount || schedules.length}\n批次ID：${data.batchId || ''}`,
+          `送出成功 ✅\n月份：${monthValue(state.viewYear, state.viewMonth)}\n筆數：${data.writeCount || schedules.length}`,
           'ok'
         );
 
