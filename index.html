@@ -2,639 +2,1891 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>桃園營運處｜打卡系統</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>桃園營運處｜排班系統</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     :root{
-      --bg:#f6f7fb;
-      --card:#fff;
-      --shadow:0 10px 25px rgba(0,0,0,.06);
-      --radius:18px;
-
-      --fs-title: 24px;
-      --fs-sub: 16px;
-      --fs-group: clamp(26px, 6vw, 32px);
-      --fs-btn: clamp(20px, 4.8vw, 28px);
-      --fs-status: 16px;
-      --fs-debug: 13px;
-
-      --dispatch-light:#5fd49a;
-      --dispatch-dark:#15905a;
-
-      --level1-light:#ffbe5c;
-      --level1-dark:#e07a00;
-
-      --swap-light:#7fb2ff;
-      --swap-dark:#1e79ff;
+      --bg:#eef1f5;
+      --card:#ffffff;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --line:#d9dee7;
+      --line-soft:#e7edf7;
+      --primary:#4b89dc;
+      --red:#dc2626;
+      --red-soft:#fee2e2;
+      --green:#15803d;
+      --green-soft:#f0fdf4;
+      --green-line:#bbf7d0;
+      --sun:#fdecec;
+      --sat:#eef4ff;
+      --holiday-red:#c2410c;
+      --holiday-soft:#fff4f4;
+      --holiday-top:#f8dede;
+      --shadow:0 8px 24px rgba(0,0,0,.08);
     }
 
-    html,body{ height:100%; }
-    body{
+    *{ box-sizing:border-box; }
+
+    html, body{
       margin:0;
-      font-family: system-ui, -apple-system, "Segoe UI", Arial, "Noto Sans TC", sans-serif;
+      padding:0;
+      width:100%;
+      max-width:100%;
+      overflow-x:hidden;
       background:var(--bg);
-      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-      font-size: 18px;
+      color:var(--text);
+      font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;
+    }
+
+    body{ min-height:100vh; }
+
+    .app{
+      width:100%;
+      max-width:100vw;
+      min-height:100vh;
+      overflow-x:hidden;
+    }
+
+    .topbar{
+      background:#fff;
+      text-align:center;
+      padding:14px 12px 10px;
+      box-shadow:0 1px 0 rgba(0,0,0,.05);
+    }
+
+    .topbar h1{
+      margin:0;
+      font-size:24px;
+      font-weight:900;
+      letter-spacing:.5px;
+      line-height:1.25;
+    }
+
+    .step-tabs{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:0;
+      margin:10px 12px 0;
+      border:1px solid #bfd3f2;
+      border-radius:16px;
+      overflow:hidden;
+      background:#fff;
+    }
+
+    .step-tab{
+      border:none;
+      background:#fff;
+      color:var(--primary);
+      font-size:13px;
+      font-weight:900;
+      padding:10px 4px;
+      min-width:0;
+      height:48px;
+      line-height:1;
+    }
+
+    .step-tab.active{
+      background:linear-gradient(180deg, #5d9af0 0%, #4b89dc 100%);
+      color:#fff;
     }
 
     .page{
-      min-height: 100dvh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:16px;
-      box-sizing:border-box;
+      padding:12px 12px 24px;
+      width:100%;
+      max-width:100%;
+      overflow-x:hidden;
     }
 
     .card{
-      width:min(560px, 100%);
       background:var(--card);
-      border-radius:var(--radius);
-      padding:18px;
+      border-radius:22px;
       box-shadow:var(--shadow);
-      box-sizing:border-box;
+      padding:16px 14px;
+      margin-bottom:14px;
+      overflow:hidden;
+      width:100%;
+      max-width:100%;
     }
 
-    .title{
-      font-size:var(--fs-title);
-      font-weight:900;
+    .section-title{
       margin:0 0 10px;
-      text-align:left;
-      letter-spacing:.2px;
+      font-size:22px;
+      font-weight:900;
+      line-height:1.3;
     }
 
-    .sub{
-      font-size:var(--fs-sub);
-      color:#666;
-      margin:0 0 16px;
-      line-height:1.65;
+    .section-title-row{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
     }
 
-    .group{
-      margin-bottom: 18px;
-      border: 2px solid #e9edf5;
-      border-radius: 18px;
-      padding: 16px;
-      background: #fff;
-      box-shadow: 0 6px 16px rgba(0,0,0,.04);
-    }
-    .group:last-child{ margin-bottom: 0; }
-
-    .groupTitle{
-      font-size: var(--fs-group);
-      font-weight: 900;
-      color:#111;
-      margin: 0 0 12px;
-      line-height: 1.1;
+    .section-title-row .section-title{
+      margin:0;
     }
 
-    .row2{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
+    .btn-rule{
+      flex:0 0 auto;
+      height:38px;
+      padding:0 14px;
+      border-radius:12px;
+      border:1px solid #bfd3f2;
+      background:#f8fbff;
+      color:var(--primary);
+      font-size:14px;
+      font-weight:900;
+      white-space:nowrap;
     }
+
+    .hint{
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.7;
+    }
+
+    .status{
+      margin-top:12px;
+      font-size:14px;
+      line-height:1.7;
+      white-space:pre-wrap;
+    }
+
+    .auth-box{
+      margin-top:12px;
+      border-radius:14px;
+      padding:12px;
+      font-size:14px;
+      line-height:1.7;
+      white-space:pre-wrap;
+      border:1px solid #e5e7eb;
+      background:#f9fafb;
+      color:#374151;
+    }
+
+    .auth-box.ok{
+      background:#f0fdf4;
+      border-color:#bbf7d0;
+      color:#166534;
+      font-weight:900;
+    }
+
+    .auth-box.err{
+      background:#fff7ed;
+      border-color:#fed7aa;
+      color:#9a3412;
+      font-weight:900;
+    }
+
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      width:100%;
+      min-width:0;
+    }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      flex:1;
+      min-width:0;
+    }
+
+    .field label{
+      font-size:11px;
+      color:var(--muted);
+      font-weight:800;
+      line-height:1.2;
+      text-align:center;
+      white-space:nowrap;
+    }
+
+    select, button{
+      height:40px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:#fff;
+      padding:0 10px;
+      font-size:15px;
+      min-width:0;
+    }
+
+    select{ width:100%; }
 
     button{
-      border:0;
-      border-radius:16px;
-      padding: 16px 10px;
-      min-height: 92px;
-      font-size:var(--fs-btn);
-      font-weight:900;
       cursor:pointer;
+      font-weight:900;
+    }
+
+    .btn-primary{
+      background:linear-gradient(180deg, #5d9af0 0%, #4b89dc 100%);
+      color:#fff;
+      border:none;
+    }
+
+    .btn-secondary{
+      background:#fff;
+      color:#111827;
+    }
+
+    .btn-danger{
+      background:#fff;
+      color:var(--red);
+      border:1px solid #fecaca;
+    }
+
+    .footer-actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:14px;
       width:100%;
+    }
+
+    .hidden{ display:none !important; }
+
+    .template-box{
+      border:1px solid #d7ddea;
+      border-radius:18px;
+      background:linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
+      padding:12px;
+      margin-bottom:12px;
+      box-shadow:0 4px 14px rgba(0,0,0,.04);
+      width:100%;
+      max-width:100%;
+    }
+
+    .template-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:10px;
+      flex-wrap:nowrap;
+      margin-bottom:8px;
+      padding-bottom:8px;
+      border-bottom:1px solid #e8edf5;
+      width:100%;
+    }
+
+    .template-name{
+      font-size:17px;
+      font-weight:900;
+      min-width:0;
+      line-height:1.3;
+      padding-top:2px;
+    }
+
+    .template-actions{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:8px;
+      flex-wrap:nowrap;
+      flex-shrink:0;
+      margin-left:auto;
+    }
+
+    .split-check{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      font-weight:900;
+      color:#1f2937;
+      white-space:nowrap;
+      font-size:14px;
+      line-height:1;
+      padding-top:2px;
+    }
+
+    .split-check input{
+      width:18px;
+      height:18px;
+      margin:0;
+    }
+
+    .template-actions .btn-danger{
+      height:38px;
+      padding:0 16px;
+      border-radius:12px;
+    }
+
+    .template-flat-row{
+      display:grid;
+      grid-template-columns:62px 1fr;
+      gap:10px;
+      align-items:center;
+      width:100%;
+      margin-top:8px;
+      padding:8px 0;
+      border-top:1px solid var(--line-soft);
+    }
+
+    .template-flat-row:first-of-type{
+      border-top:none;
+      margin-top:0;
+      padding-top:2px;
+    }
+
+    .seg-label{
+      font-size:13px;
+      font-weight:900;
+      color:#374151;
+      white-space:nowrap;
+      text-align:left;
+    }
+
+    .flat-time-grid{
+      display:grid;
+      grid-template-columns:repeat(4, minmax(0, 1fr));
+      gap:8px;
+      width:100%;
+      min-width:0;
+    }
+
+    .flat-time-item{
+      min-width:0;
+    }
+
+    .flat-time-item select{
+      width:100%;
+    }
+
+    .calendar-toolbar{
       display:flex;
       align-items:center;
       justify-content:center;
+      margin-bottom:10px;
+      width:100%;
+    }
+
+    .month-title{
+      font-size:18px;
+      font-weight:900;
+      color:var(--primary);
       text-align:center;
-      white-space:nowrap;
-      line-height:1.15;
-      letter-spacing:.5px;
+      flex:1;
     }
-    button:disabled{ opacity:.55; cursor:not-allowed; }
 
-    .dispatchArrive{ background: var(--dispatch-light); color:#000; }
-    .level1Arrive{ background: var(--level1-light); color:#000; }
-    .swapArrive{ background: var(--swap-light); color:#000; }
-
-    .dispatchLeave{ background: var(--dispatch-dark); color:#fff; }
-    .level1Leave{ background: var(--level1-dark); color:#fff; }
-    .swapLeave{ background: var(--swap-dark); color:#fff; }
-
-    .status{
-      margin-top:16px;
-      font-size:var(--fs-status);
-      line-height:1.7;
-      white-space:pre-wrap;
-      min-height: 22px;
-    }
-    .ok{ color:#0a7a35; font-weight:900; }
-    .err{ color:#b42318; font-weight:900; }
-    .muted{ color:#666; }
-
-    .idleWrap{
-      display:none;
-      margin-top:12px;
-      border:2px dashed #e5e7eb;
-      border-radius:16px;
-      padding:12px;
+    .calendar-table-wrap{
+      width:100%;
+      border:1px solid var(--line);
+      border-radius:14px;
+      overflow:hidden;
       background:#fff;
     }
-    .idleTitle{
-      font-weight:900;
-      margin:0 0 6px;
-      color:#111;
+
+    .calendar-table{
+      width:100%;
+      border-collapse:collapse;
+      table-layout:fixed;
     }
-    .idleText{
-      margin:0 0 10px;
-      color:#666;
+
+    .calendar-table thead th{
+      height:48px;
+      border-right:1px solid var(--line);
+      border-bottom:1px solid var(--line);
+      font-size:12px;
+      font-weight:900;
+      text-align:center;
+      background:#fff;
+      padding:0;
+    }
+
+    .calendar-table thead th:last-child{
+      border-right:none;
+    }
+
+    .calendar-table thead .sun{
+      color:#c2410c;
+    }
+
+    .calendar-table thead .sat{
+      color:#2563eb;
+    }
+
+    .calendar-table td{
+      position:relative;
+      height:108px;
+      vertical-align:top;
+      border-right:1px solid var(--line);
+      border-bottom:1px solid var(--line);
+      padding:5px;
+      overflow:hidden;
+      background:#fff;
+    }
+
+    .calendar-table td:last-child{
+      border-right:none;
+    }
+
+    .calendar-table tbody tr:last-child td{
+      border-bottom:none;
+    }
+
+    .day-cell.outside{
+      background:#f3f4f6;
+    }
+
+    .day-cell.sun-bg{
+      background:linear-gradient(0deg, rgba(255,255,255,1) 82%, var(--sun) 82%);
+    }
+
+    .day-cell.sat-bg{
+      background:linear-gradient(0deg, rgba(255,255,255,1) 82%, var(--sat) 82%);
+    }
+
+    .day-cell.holiday-bg{
+      background:
+        linear-gradient(180deg, var(--holiday-top) 0 18px, transparent 18px 100%),
+        var(--holiday-soft);
+    }
+
+    .day-cell.invalid{
+      box-shadow:inset 0 0 0 2px var(--red);
+      background:var(--red-soft) !important;
+    }
+
+    .day-top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:flex-start;
+      min-height:22px;
+      width:100%;
+      position:relative;
+      z-index:1;
+    }
+
+    .day-num{
+      font-size:15px;
+      font-weight:900;
+      color:#6b7280;
+      line-height:1;
+    }
+
+    .day-num.sun{ color:#c2410c; }
+    .day-num.sat{ color:#2563eb; }
+    .day-num.holiday{ color:var(--holiday-red); }
+    .day-num.outside{ color:#c9ced7; }
+
+    .day-body{
+      margin-top:6px;
+      position:relative;
+      z-index:1;
+      font-size:10px;
+      line-height:1.15;
+      color:#111827;
+      min-height:0;
+      overflow:hidden;
+      word-break:break-word;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-start;
+      gap:2px;
+      width:100%;
+      height:calc(100% - 28px);
+      text-align:center;
+    }
+
+    .day-shift-text{
+      width:100%;
+      font-weight:900;
+      font-size:10px;
+      line-height:1.15;
+      white-space:pre-line;
+      text-align:center;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:34px;
+      padding:0 1px;
+    }
+
+    .empty-note{
+      color:#a1a1aa;
+      font-size:10px;
+      margin-top:16px;
+    }
+
+    .legend{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:10px;
+      font-size:13px;
+      color:#4b5563;
+      width:100%;
+    }
+
+    .legend span{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+
+    .legend i{
+      width:16px;
+      height:16px;
+      border-radius:5px;
+      display:inline-block;
+      border:1px solid #d1d5db;
+    }
+
+    .lg-invalid{ background:#fee2e2; border-color:#dc2626 !important; }
+    .lg-holiday{ background:#fff4f4; border-color:#e7b2b2 !important; }
+    .lg-erase{ background:#fffbeb; border-color:#f59e0b !important; }
+
+    .error-box{
+      margin-top:12px;
+      border:1px solid #fecaca;
+      background:#fff1f2;
+      border-radius:14px;
+      padding:12px;
+      width:100%;
+    }
+
+    .error-title{
+      color:#991b1b;
+      font-weight:900;
+      margin-bottom:6px;
+    }
+
+    .error-item{
+      color:#991b1b;
+      margin:4px 0;
       font-size:14px;
       line-height:1.5;
     }
-    .idleBtn{
-      font-size:16px;
-      font-weight:900;
-      padding:12px 14px;
-      border-radius:14px;
-      border:0;
-      width:auto;
-      min-height:auto;
-      color:#fff;
-      background:#111;
-      cursor:pointer;
-      white-space:nowrap;
-    }
 
-    details{ margin-top:14px; }
-    summary{ cursor:pointer; color:#666; font-size:14px; }
-    .debugBox{
-      margin-top:10px;
-      border:1px solid #e5e7eb;
+    .success-box{
+      margin-top:12px;
+      border:1px solid var(--green-line);
+      background:var(--green-soft);
       border-radius:14px;
       padding:12px;
-      background:#fafafa;
-      font-size:var(--fs-debug);
-      max-height: 240px;
-      overflow:auto;
-      white-space:pre-wrap;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      width:100%;
+    }
+
+    .success-item{
+      color:var(--green);
+      font-size:14px;
+      line-height:1.5;
+      font-weight:900;
+    }
+
+    .palette-frame{
+      margin:12px 0 14px;
+      width:100%;
+      border:1px solid #d9e5f6;
+      border-radius:16px;
+      background:#f8fbff;
+      padding:12px;
+      overflow:hidden;
+    }
+
+    .palette-title{
+      font-size:14px;
+      font-weight:900;
+      margin-bottom:8px;
+      color:#374151;
+    }
+
+    .template-palette{
+      display:flex;
+      gap:8px;
+      overflow-x:auto;
+      overflow-y:hidden;
+      padding-bottom:6px;
+      -webkit-overflow-scrolling:touch;
+      align-items:center;
+      width:100%;
+      scrollbar-width:auto;
+    }
+
+    .template-palette::-webkit-scrollbar{
+      height:8px;
+    }
+
+    .template-palette::-webkit-scrollbar-track{
+      background:#e9eef7;
+      border-radius:999px;
+    }
+
+    .template-palette::-webkit-scrollbar-thumb{
+      background:#bdd1ef;
+      border-radius:999px;
+    }
+
+    .template-chip{
+      flex:0 0 auto;
+      min-width:auto;
+      max-width:none;
+      border:2px solid #dbe3ef;
+      border-radius:14px;
+      padding:8px 12px;
+      text-align:center;
+      font-size:12px;
+      font-weight:900;
+      line-height:1.2;
+      white-space:pre-line;
+      color:#334155;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:44px;
+    }
+
+    .template-chip.active{
+      outline:3px solid #60a5fa;
+      outline-offset:-3px;
+    }
+
+    .template-chip.erase{
+      color:#b45309;
+      background:#fffbeb;
+      border-color:#fcd34d;
+    }
+
+    .current-template{
+      margin-top:8px;
+      font-size:13px;
+      color:#374151;
+      line-height:1.6;
+    }
+
+    .current-template b{
+      color:#1d4ed8;
+    }
+
+    .confirm-tip{
+      margin-bottom:10px;
+      color:#6b7280;
+      font-size:14px;
+      line-height:1.7;
+    }
+
+    .modal-backdrop{
+      position:fixed;
+      inset:0;
+      background:rgba(15,23,42,.42);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      z-index:9999;
+    }
+
+    .modal-card{
+      width:100%;
+      max-width:520px;
+      background:#fff;
+      border-radius:22px;
+      box-shadow:0 20px 60px rgba(0,0,0,.22);
+      padding:18px 16px 16px;
+    }
+
+    .modal-title{
+      font-size:22px;
+      font-weight:900;
+      margin:0 0 12px;
+      line-height:1.3;
+    }
+
+    .rule-list{
+      margin:0;
+      padding-left:22px;
+      color:#374151;
+      font-size:15px;
+      line-height:1.8;
+    }
+
+    .rule-list li{
+      margin-bottom:8px;
+    }
+
+    .modal-note{
+      margin-top:10px;
+      color:#6b7280;
+      font-size:13px;
+      line-height:1.7;
+    }
+
+    .modal-actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      margin-top:14px;
+    }
+
+    @media (max-width: 640px){
+      .topbar{ padding:12px 12px 8px; }
+      .topbar h1{ font-size:21px; }
+      .section-title{ font-size:20px; }
+
+      .section-title-row{
+        align-items:center;
+      }
+
+      .btn-rule{
+        height:36px;
+        padding:0 12px;
+        font-size:13px;
+      }
+
+      .step-tab{
+        font-size:12px;
+        padding:8px 2px;
+        height:44px;
+      }
+
+      .month-title{ font-size:16px; }
+
+      .calendar-table thead th{
+        height:44px;
+        font-size:11px;
+      }
+
+      .calendar-table td{
+        height:98px;
+      }
+
+      .day-num{ font-size:14px; }
+      .day-shift-text{ font-size:9px; min-height:32px; }
+      .template-name{ font-size:16px; }
+
+      .template-head{ gap:8px; }
+      .template-actions{ gap:6px; }
+      .split-check{ font-size:13px; }
+
+      .template-actions .btn-danger{
+        height:36px;
+        padding:0 12px;
+      }
+
+      .template-flat-row{
+        grid-template-columns:54px 1fr;
+        gap:8px;
+      }
+
+      .seg-label{ font-size:12px; }
+      .flat-time-grid{ gap:6px; }
+      .field label{ font-size:10px; }
+
+      select, button{ height:38px; }
+
+      .template-chip{
+        padding:7px 10px;
+        font-size:11px;
+        min-height:40px;
+        border-radius:12px;
+      }
+
+      .modal-card{
+        padding:16px 14px 14px;
+      }
+
+      .modal-title{
+        font-size:20px;
+      }
+
+      .rule-list{
+        font-size:14px;
+      }
     }
 
     @media (max-width: 380px){
-      .card{ padding:14px; }
-      .group{ padding:14px; }
-      .row2{ gap:10px; }
-      button{
-        min-height:84px;
-        padding:14px 8px;
-        font-size: clamp(18px, 4.3vw, 22px);
+      .template-actions{ gap:5px; }
+      .split-check{ font-size:12px; }
+
+      .template-flat-row{
+        grid-template-columns:50px 1fr;
+        gap:6px;
+      }
+
+      .flat-time-grid{ gap:5px; }
+      .field label{ font-size:10px; }
+
+      select{
+        font-size:14px;
+        padding:0 8px;
+      }
+
+      .template-chip{
+        padding:6px 9px;
+        font-size:10px;
+      }
+
+      .btn-rule{
+        padding:0 10px;
+        font-size:12px;
       }
     }
   </style>
 </head>
-
 <body>
-  <div class="page">
-    <div class="card">
-      <p class="title">桃園營運處｜打卡系統</p>
-      <p class="sub">
-        選擇作業類，點選「到站打卡」或「離站打卡」<br>
-        成功後會顯示「完成」並自動關閉。
-      </p>
+  <div class="app">
+    <div class="topbar">
+      <h1>桃園營運處 排班系統</h1>
+    </div>
 
-      <div class="group">
-        <div class="groupTitle">調度</div>
-        <div class="row2">
-          <button id="btnDispatchArrive" class="dispatchArrive">到站打卡</button>
-          <button id="btnDispatchLeave" class="dispatchLeave">離站打卡</button>
+    <div class="step-tabs">
+      <button class="step-tab active" id="stepBadge1">1 驗證</button>
+      <button class="step-tab" id="stepBadge2">2 時段</button>
+      <button class="step-tab" id="stepBadge3">3 排班</button>
+      <button class="step-tab" id="stepBadge4">4 送出</button>
+    </div>
+
+    <div class="page">
+      <div class="card" id="step1">
+        <h2 class="section-title">第 1 步｜驗證排班權限</h2>
+        <div class="hint">
+          系統會自動讀取 LINE 身分並檢查排班權限。<br>
+          只有核准人員才能進入下一步。
+        </div>
+        <div class="status" id="authStatus">尚未驗證</div>
+        <div class="auth-box hidden" id="authBox"></div>
+        <div class="footer-actions">
+          <button class="btn-primary" onclick="goStepFromAuth()">進入下一步</button>
         </div>
       </div>
 
-      <div class="group">
-        <div class="groupTitle">一級</div>
-        <div class="row2">
-          <button id="btnLevel1Arrive" class="level1Arrive">到站打卡</button>
-          <button id="btnLevel1Leave" class="level1Leave">離站打卡</button>
+      <div class="card hidden" id="step2">
+        <h2 class="section-title">第 2 步｜設定上班時段</h2>
+        <div class="hint">
+          設定日常上班時段：<br>
+          時段可新增、刪除；每組都可以設定兩段班。
+        </div>
+
+        <div id="templateList"></div>
+
+        <div class="error-box hidden" id="step2Errors">
+          <div class="error-title">模板檢查結果</div>
+          <div id="step2ErrorList"></div>
+        </div>
+
+        <div class="footer-actions">
+          <button class="btn-secondary" onclick="addTemplate()">＋ 新增時段</button>
+        </div>
+
+        <div class="footer-actions">
+          <button class="btn-secondary" onclick="goStep(1)">上一步</button>
+          <button class="btn-primary" onclick="prepareStep3()">下一步</button>
         </div>
       </div>
 
-      <div class="group">
-        <div class="groupTitle">換電</div>
-        <div class="row2">
-          <button id="btnSwapArrive" class="swapArrive">到站打卡</button>
-          <button id="btnSwapLeave" class="swapLeave">離站打卡</button>
+      <div class="card hidden" id="step3">
+        <div class="section-title-row">
+          <h2 class="section-title">第 3 步｜排班與檢查</h2>
+          <button class="btn-rule" onclick="openRuleModal()">規則說明</button>
+        </div>
+
+        <div class="confirm-tip">
+          先選上班時段，再點下方日期套用。<br>
+          若有規則錯誤，日期會標紅；你可以直接在這一頁修正。
+        </div>
+
+        <div class="palette-frame">
+          <div class="palette-title">選擇要套用的班段</div>
+          <div class="template-palette" id="templatePalette"></div>
+          <div class="current-template" id="currentTemplateText"></div>
+        </div>
+
+        <div class="calendar-toolbar">
+          <div class="month-title" id="step3MonthTitle"></div>
+        </div>
+
+        <div class="calendar-table-wrap">
+          <table class="calendar-table">
+            <thead>
+              <tr>
+                <th class="sun">星期日</th>
+                <th>星期一</th>
+                <th>星期二</th>
+                <th>星期三</th>
+                <th>星期四</th>
+                <th>星期五</th>
+                <th class="sat">星期六</th>
+              </tr>
+            </thead>
+            <tbody id="step3Grid"></tbody>
+          </table>
+        </div>
+
+        <div class="legend">
+          <span><i class="lg-invalid"></i>規則錯誤</span>
+          <span><i class="lg-holiday"></i>國定假日</span>
+          <span><i class="lg-erase"></i>休假/清除</span>
+        </div>
+
+        <div class="success-box hidden" id="step3SuccessBox">
+          <div class="success-item">符合排班規則，可進行下一步</div>
+        </div>
+
+        <div class="error-box hidden" id="step3Errors">
+          <div class="error-title">檢查結果</div>
+          <div id="step3ErrorList"></div>
+        </div>
+
+        <div class="footer-actions">
+          <button class="btn-secondary" onclick="goStep(2)">上一步</button>
+          <button class="btn-secondary" onclick="runScheduleValidationOnly()">重新檢查</button>
+          <button class="btn-primary" onclick="prepareStep4()">下一步</button>
         </div>
       </div>
 
-      <div id="idleWrap" class="idleWrap">
-        <p class="idleTitle">頁面已久未操作</p>
-        <p class="idleText">若你把打卡頁面放太久，LINE/定位可能會失效，容易出現「打卡失敗」。建議按下重新整理再打卡。</p>
-        <button class="idleBtn" onclick="hardReload()">重新整理</button>
+      <div class="card hidden" id="step4">
+        <h2 class="section-title">第 4 步｜最後送出</h2>
+        <div class="hint">
+          送出前請務必再次確認排班內容。<br>
+          送出後會寫入後台 PT排班資訊 分頁。
+        </div>
+
+        <div class="status" id="submitPreview">按下下方按鈕後，會先顯示目前排班結果。</div>
+
+        <div class="auth-box hidden" id="submitResultBox"></div>
+
+        <div class="footer-actions">
+          <button class="btn-secondary" onclick="goStep(3)">上一步</button>
+          <button class="btn-primary" id="submitBtn" onclick="submitSchedule()">正式送出</button>
+        </div>
       </div>
-
-      <div id="status" class="status muted"></div>
-      <div id="authBox" style="display:none; margin-top:12px; padding:12px; border-radius:12px; background:#fff7e6; border:1px solid #f5d08a; color:#8a5300; font-weight:700; line-height:1.5;"></div>
-
-      <details id="dbgWrap" style="display:none;">
-        <summary>debug（僅 test=1 顯示）</summary>
-        <div id="debug" class="debugBox"></div>
-      </details>
     </div>
   </div>
 
-<script>
-const LIFF_ID = "2009174277-dSY24pNu";
-const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxUFysH7fGKyM9gJ_1vRMIa3krcuAsq7K5yDEioOXjB0NVbPJMx_e3TytAa_Nt6Eok94w/exec";
+  <div class="modal-backdrop hidden" id="ruleModal" onclick="closeRuleModalByBackdrop(event)">
+    <div class="modal-card">
+      <h3 class="modal-title">規則說明</h3>
+      <ol class="rule-list">
+        <li>每週（星期日至星期六）須排定至少兩天休假。</li>
+        <li>跨日班別需間隔至少 11 小時之休息時間。</li>
+        <li>至多連續出勤五日。</li>
+        <li>國定假日排班將依實際人力需求做調整。</li>
+      </ol>
+      <div class="modal-note">
+        關閉後可直接回到此頁繼續排班與修正。
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" onclick="closeRuleModal()">回上一步繼續排班</button>
+      </div>
+    </div>
+  </div>
 
-const IDLE_WARN_MIN = 8;
+  <script>
+    const LIFF_ID = '2009174277-yJdVzIb0';
+    const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbynmvNtFOWo3_cT9WtPjLCx3iGjp1lP99Q5SOLUba3SbE7oltxPUJc0tX4zI-B_M0vN/exec';
 
-const GEO_OPTIONS_FAST = {
-  enableHighAccuracy: false,
-  timeout: 7000,
-  maximumAge: 10000
-};
+    const HOLIDAYS_2026 = new Set([
+      '2026-01-01','2026-02-16','2026-02-17','2026-02-18','2026-02-19','2026-02-20',
+      '2026-02-27','2026-02-28','2026-04-03','2026-04-04','2026-04-05','2026-04-06',
+      '2026-05-01','2026-06-19','2026-09-25','2026-09-28','2026-10-09','2026-10-10',
+      '2026-10-24','2026-10-25','2026-10-26','2026-12-25','2026-12-28'
+    ]);
 
-const GEO_OPTIONS_RETRY = {
-  enableHighAccuracy: true,
-  timeout: 10000,
-  maximumAge: 0
-};
+    const TEMPLATE_COLORS = [
+      { bg:'#fff6bf', color:'#111827', border:'#facc15' },
+      { bg:'#dbeafe', color:'#1e3a8a', border:'#60a5fa' },
+      { bg:'#fde68a', color:'#78350f', border:'#f59e0b' },
+      { bg:'#fce7f3', color:'#9d174d', border:'#f472b6' },
+      { bg:'#dcfce7', color:'#166534', border:'#4ade80' },
+      { bg:'#ede9fe', color:'#5b21b6', border:'#8b5cf6' }
+    ];
 
-const GEO_RETRY_IF_OVER_M = 80;
-const GEO_ACCEPT_MAX_M = 120;
-
-const $status = document.getElementById("status");
-const $debug = document.getElementById("debug");
-const $dbgWrap = document.getElementById("dbgWrap");
-const $idleWrap = document.getElementById("idleWrap");
-const $authBox = document.getElementById("authBox");
-
-const btns = {
-  dispatchArrive: document.getElementById("btnDispatchArrive"),
-  dispatchLeave:  document.getElementById("btnDispatchLeave"),
-  level1Arrive:   document.getElementById("btnLevel1Arrive"),
-  level1Leave:    document.getElementById("btnLevel1Leave"),
-  swapArrive:     document.getElementById("btnSwapArrive"),
-  swapLeave:      document.getElementById("btnSwapLeave"),
-};
-
-let CURRENT_PROFILE = null;
-let AUTH_READY = false;
-
-function setStatus(msg, type){
-  $status.className = "status " + (type === "ok" ? "ok" : type === "err" ? "err" : "muted");
-  $status.textContent = msg || "";
-}
-
-function setButtonsDisabled(disabled){
-  Object.values(btns).forEach(b => b.disabled = disabled);
-}
-
-function getMergedParams(){
-  const normal = new URLSearchParams(window.location.search || "");
-  const merged = new URLSearchParams(normal.toString());
-
-  const stateRaw = normal.get("liff.state");
-  if (stateRaw) {
-    let decoded = "";
-    try { decoded = decodeURIComponent(stateRaw); } catch(e){ decoded = stateRaw; }
-    if (decoded.startsWith("?")) decoded = decoded.slice(1);
-    const sp = new URLSearchParams(decoded);
-    for (const [k,v] of sp.entries()) merged.set(k,v);
-  }
-  return merged;
-}
-
-function isTestMode(){
-  const p = getMergedParams();
-  return p.get("test") === "1";
-}
-
-function showDebug(obj){
-  if (!isTestMode()) return;
-  $dbgWrap.style.display = "";
-  $debug.textContent = JSON.stringify(obj, null, 2);
-}
-
-function jobCN(job){
-  return job === "dispatch" ? "調度"
-       : job === "level1" ? "一級"
-       : job === "swap" ? "換電"
-       : job;
-}
-function stepCN(step){
-  return step === "arrive" ? "到站" : "離站";
-}
-
-let lastActionAt = Date.now();
-let idleShown = false;
-
-function touchAction(){
-  lastActionAt = Date.now();
-  if (idleShown) {
-    $idleWrap.style.display = "none";
-    idleShown = false;
-  }
-}
-
-function hardReload(){
-  try {
-    const url = new URL(location.href);
-    url.searchParams.set("v", String(Date.now()));
-    location.replace(url.toString());
-  } catch(_) {
-    location.reload(true);
-  }
-}
-
-setInterval(() => {
-  const idleMin = (Date.now() - lastActionAt) / 60000;
-  if (idleMin >= IDLE_WARN_MIN && !idleShown) {
-    idleShown = true;
-    $idleWrap.style.display = "";
-  }
-}, 15000);
-
-function getLocationOnce(options){
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) return reject(new Error("此裝置不支援定位"));
-    navigator.geolocation.getCurrentPosition(
-      (pos) => resolve({
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude,
-        accuracy: Number(pos.coords.accuracy),
-        ts: Date.now()
-      }),
-      (err) => reject(new Error(err.message || "定位失敗")),
-      options
-    );
-  });
-}
-
-function isGoodLocation(loc){
-  return loc && isFinite(loc.lat) && isFinite(loc.lng) && isFinite(loc.accuracy) && loc.accuracy > 0;
-}
-
-function pickBetterLocation(a, b){
-  if (!isGoodLocation(a)) return b;
-  if (!isGoodLocation(b)) return a;
-  return a.accuracy <= b.accuracy ? a : b;
-}
-
-async function getLocationSmart(){
-  const attempts = [];
-
-  let first = null;
-  try {
-    first = await getLocationOnce(GEO_OPTIONS_FAST);
-    attempts.push({ step: "first", ok: true, loc: first });
-  } catch (e) {
-    attempts.push({ step: "first", ok: false, error: String(e && e.message ? e.message : e) });
-  }
-
-  if (isGoodLocation(first) && first.accuracy <= GEO_RETRY_IF_OVER_M) {
-    return { loc: first, attempts };
-  }
-
-  let second = null;
-  try {
-    second = await getLocationOnce(GEO_OPTIONS_RETRY);
-    attempts.push({ step: "second", ok: true, loc: second });
-  } catch (e) {
-    attempts.push({ step: "second", ok: false, error: String(e && e.message ? e.message : e) });
-  }
-
-  const best = pickBetterLocation(first, second);
-
-  if (!isGoodLocation(best)) {
-    const err = new Error("定位失敗");
-    err.attempts = attempts;
-    throw err;
-  }
-
-  return { loc: best, attempts };
-}
-
-async function getProfileSafe(){
-  await liff.init({ liffId: LIFF_ID });
-
-  if (!liff.isInClient() && !liff.isLoggedIn()) {
-    liff.login();
-    throw new Error("redirect_login");
-  }
-
-  try {
-    return await liff.getProfile();
-  } catch (e) {
-    throw new Error("liff_profile_failed");
-  }
-}
-
-async function postJsonToGas(payload){
-  const res = await fetch(GAS_WEB_APP_URL, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify(payload),
-  });
-  const text = await res.text();
-  let data = {};
-  try { data = JSON.parse(text); } catch(_) {}
-  return { res, text, data };
-}
-
-async function initAuthGate(){
-  setButtonsDisabled(true);
-  AUTH_READY = false;
-  setStatus("登入驗證中…", "muted");
-
-  try {
-    const profile = await getProfileSafe();
-    CURRENT_PROFILE = profile;
-
-    const { data } = await postJsonToGas({
-      action: "checkAuth",
-      userId: profile.userId || "",
-      displayName: profile.displayName || "",
-      test: isTestMode() ? "1" : "0",
-      ts: Date.now()
-    });
-
-    showDebug({ step:"checkAuth", profile, result:data });
-
-    if (!data || !data.ok) {
-      $authBox.style.display = "";
-      $authBox.textContent = "授權檢查失敗，請稍後再試";
-      setStatus("錯誤：授權檢查失敗", "err");
-      return;
-    }
-
-    if (data.canPunch === true) {
-      $authBox.style.display = "none";
-      AUTH_READY = true;
-      setButtonsDisabled(false);
-      setStatus(`已登入：${profile.displayName || "使用者"}，可開始打卡`, "muted");
-      return;
-    }
-
-    AUTH_READY = false;
-    setButtonsDisabled(true);
-    $authBox.style.display = "";
-    $authBox.textContent = data.message || "尚未開通打卡權限，請聯絡管理員";
-    setStatus("目前無法打卡", "err");
-  } catch (e) {
-    const msg = (e && e.message) ? e.message : String(e);
-
-    if (msg === "redirect_login") return;
-
-    $authBox.style.display = "";
-    if (msg === "liff_profile_failed") {
-      $authBox.textContent = "登入狀態已失效，請重新整理後再試";
-    } else {
-      $authBox.textContent = "登入或授權初始化失敗，請重新整理後再試";
-    }
-    setStatus("錯誤：登入初始化失敗", "err");
-    setButtonsDisabled(true);
-    AUTH_READY = false;
-  }
-}
-
-async function punch(job, step){
-  touchAction();
-
-  if (!AUTH_READY || !CURRENT_PROFILE) {
-    setStatus("尚未完成登入驗證，請稍後再試", "err");
-    return;
-  }
-
-  setButtonsDisabled(true);
-  setStatus(`定位中…（${jobCN(job)}｜${stepCN(step)}）`, "muted");
-
-  const params = getMergedParams();
-  const bypassKey = params.get("key") || "";
-  const v = params.get("v") || "";
-  const test = params.get("test") || "";
-
-  try{
-    const profile = CURRENT_PROFILE;
-    const geoResult = await getLocationSmart();
-    const loc = geoResult.loc;
-
-    showDebug({
-      step: "geo",
-      attempts: geoResult.attempts,
-      best: loc
-    });
-
-    if (!isFinite(loc.accuracy) || loc.accuracy <= 0 || loc.accuracy > GEO_ACCEPT_MAX_M) {
-      setStatus("錯誤：定位異常，請再試一次", "err");
-      setButtonsDisabled(false);
-      return;
-    }
-
-    setStatus("送出打卡…", "muted");
-
-    const payload = {
-      job,
-      step,
-      userId: profile.userId || "",
-      displayName: profile.displayName || "",
-      lat: loc.lat,
-      lng: loc.lng,
-      accuracy: loc.accuracy,
-      bypassKey,
-      test,
-      v,
-      href: location.href,
-      ts: Date.now()
+    const state = {
+      step: 1,
+      templates: [],
+      selectedTemplateId: '',
+      assignedDays: {},
+      step3InvalidDates: new Set(),
+      viewYear: 0,
+      viewMonth: 0,
+      userId: '',
+      displayName: '',
+      authChecked: false,
+      authAllowed: false,
+      authStatus: '',
+      authEnabled: '',
+      submitBusy: false
     };
 
-    showDebug({ step:"request", payload });
+    function pad2(n){ return String(n).padStart(2,'0'); }
+    function toDateKey(y,m,d){ return `${y}-${pad2(m)}-${pad2(d)}`; }
 
-    const { res, text, data } = await postJsonToGas(payload);
+    function getNextMonthBase() {
+      const now = new Date();
+      let y = now.getFullYear();
+      let m = now.getMonth() + 2;
+      if (m === 13) { y += 1; m = 1; }
+      return { year:y, month:m };
+    }
 
-    showDebug({ step:"response", status: res.status, text, data });
+    function monthText(y,m){ return `${m}月 ${y}`; }
 
-    if (!data.ok) {
-      const msg = data.message || "打卡失敗，請稍後再試";
+    function monthValue(y,m){ return `${y}-${pad2(m)}`; }
 
-      if (msg.includes("離場站過遠")) {
-        setStatus(`錯誤：${msg}`, "err");
-      } else if (msg.includes("尚未到站")) {
-        setStatus(`錯誤：${msg}`, "err");
-      } else if (msg.includes("定位異常")) {
-        setStatus("錯誤：定位異常，請再試一次", "err");
-      } else {
-        setStatus(`錯誤：${msg}\n（若頁面放太久，建議按下重新整理再試）`, "err");
-        $idleWrap.style.display = "";
-        idleShown = true;
+    function getMonthMatrix(year, month){
+      const first = new Date(year, month - 1, 1);
+      const lastDate = new Date(year, month, 0).getDate();
+      const startWeekday = first.getDay();
+      const prevLastDate = new Date(year, month - 1, 0).getDate();
+      const cells = [];
+
+      for (let i = startWeekday - 1; i >= 0; i--) {
+        const d = prevLastDate - i;
+        let py = year;
+        let pm = month - 1;
+        if (pm === 0) { py--; pm = 12; }
+        cells.push({ year:py, month:pm, day:d, outside:true });
       }
 
-      setButtonsDisabled(false);
-      return;
-    }
-
-    const station = data.stationName ? `\n站點：${data.stationName}` : "";
-    setStatus(`完成 ✅\n${jobCN(job)}｜${stepCN(step)}打卡${station}`, "ok");
-
-    setTimeout(() => {
-      try { liff.closeWindow(); } catch(_) {}
-    }, 900);
-
-  } catch(e){
-    const msg = (e && e.message) ? e.message : String(e);
-
-    if (msg === "redirect_login") {
-      setButtonsDisabled(false);
-      return;
-    }
-
-    if (!isTestMode()) {
-      if (msg === "liff_profile_failed") {
-        setStatus("錯誤：頁面已放置過久，請重新整理後再打卡", "err");
-        $idleWrap.style.display = "";
-        idleShown = true;
-      } else if (msg.toLowerCase().includes("timeout")) {
-        setStatus("錯誤：定位逾時，請開啟定位或重新整理後再試", "err");
-      } else if (msg.includes("定位失敗")) {
-        setStatus("錯誤：定位異常，請再試一次", "err");
-      } else {
-        setStatus("錯誤：打卡失敗，請稍後再試\n（若頁面放太久，建議重新整理）", "err");
-        $idleWrap.style.display = "";
-        idleShown = true;
+      for (let d = 1; d <= lastDate; d++) {
+        cells.push({ year, month, day:d, outside:false });
       }
-    } else {
-      setStatus(`錯誤：${msg}`, "err");
-      showDebug({ step:"catch", error: String(e), stack: e && e.stack ? e.stack : "" });
-      $idleWrap.style.display = "";
-      idleShown = true;
+
+      let nextDay = 1;
+      while (cells.length % 7 !== 0) {
+        let ny = year;
+        let nm = month + 1;
+        if (nm === 13) { ny++; nm = 1; }
+        cells.push({ year:ny, month:nm, day:nextDay++, outside:true });
+      }
+
+      return cells;
     }
 
-    setButtonsDisabled(false);
-  }
-}
+    function chunkArray(arr, size){
+      const out = [];
+      for (let i = 0; i < arr.length; i += size) {
+        out.push(arr.slice(i, i + size));
+      }
+      return out;
+    }
 
-btns.dispatchArrive.addEventListener("click", () => punch("dispatch","arrive"));
-btns.dispatchLeave.addEventListener("click", () => punch("dispatch","leave"));
-btns.level1Arrive.addEventListener("click", () => punch("level1","arrive"));
-btns.level1Leave.addEventListener("click", () => punch("level1","leave"));
-btns.swapArrive.addEventListener("click", () => punch("swap","arrive"));
-btns.swapLeave.addEventListener("click", () => punch("swap","leave"));
+    function createDefaultTemplate(index=1){
+      return {
+        id:'tpl_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+        label:`時段${index}`,
+        isSplit:false,
+        seg1StartH:'00', seg1StartM:'00',
+        seg1EndH:'00', seg1EndM:'00',
+        seg2StartH:'00', seg2StartM:'00',
+        seg2EndH:'00', seg2EndM:'00',
+        colorIndex:0
+      };
+    }
 
-(function(){
-  document.addEventListener("click", touchAction, { passive:true });
-  document.addEventListener("touchstart", touchAction, { passive:true });
-  document.addEventListener("keydown", touchAction, { passive:true });
+    function refreshTemplateColors(){
+      let idx = 0;
+      state.templates.forEach(t => {
+        t.colorIndex = idx % TEMPLATE_COLORS.length;
+        idx++;
+      });
+    }
 
-  if (isTestMode()) {
-    const p = getMergedParams();
-    showDebug({ note:"test=1", mergedParams:Object.fromEntries(p.entries()) });
-  } else {
-    setStatus("", "muted");
-  }
+    function renumberTemplateLabels(){
+      state.templates.forEach((t,i)=>{ t.label = `時段${i+1}`; });
+    }
 
-  initAuthGate();
-})();
-</script>
+    function initTemplates(){
+      state.templates = [createDefaultTemplate(1)];
+      refreshTemplateColors();
+      state.selectedTemplateId = state.templates[0].id;
+      renderTemplates();
+    }
+
+    function addTemplate(){
+      state.templates.push(createDefaultTemplate(state.templates.length + 1));
+      renumberTemplateLabels();
+      refreshTemplateColors();
+      renderTemplates();
+      hideStep2Errors();
+    }
+
+    function removeTemplate(id){
+      state.templates = state.templates.filter(t => t.id !== id);
+
+      Object.keys(state.assignedDays).forEach(dateKey => {
+        if (state.assignedDays[dateKey] === id) delete state.assignedDays[dateKey];
+      });
+
+      if (state.selectedTemplateId === id) {
+        state.selectedTemplateId = state.templates[0]?.id || 'ERASE';
+      }
+
+      renumberTemplateLabels();
+      refreshTemplateColors();
+      renderTemplates();
+      renderTemplatePalette();
+      renderStep3Calendar();
+      hideStep2Errors();
+    }
+
+    function timeOptionsHour(selected){
+      let html = '';
+      for (let i = 0; i <= 23; i++) {
+        const v = pad2(i);
+        html += `<option value="${v}" ${selected === v ? 'selected' : ''}>${v}</option>`;
+      }
+      return html;
+    }
+
+    function timeOptionsMinute(selected){
+      return ['00','30'].map(v => `<option value="${v}" ${selected === v ? 'selected' : ''}>${v}</option>`).join('');
+    }
+
+    function renderTemplates(){
+      const wrap = document.getElementById('templateList');
+      wrap.innerHTML = '';
+
+      state.templates.forEach((tpl) => {
+        const box = document.createElement('div');
+        box.className = 'template-box';
+        box.innerHTML = `
+          <div class="template-head">
+            <div class="template-name">${tpl.label}</div>
+            <div class="template-actions">
+              <label class="split-check">
+                <input type="checkbox" ${tpl.isSplit ? 'checked' : ''} onchange="toggleSplit('${tpl.id}', this.checked)">
+                <span>兩段班</span>
+              </label>
+              ${state.templates.length === 1 ? '' : `<button class="btn-danger" onclick="removeTemplate('${tpl.id}')">刪除</button>`}
+            </div>
+          </div>
+
+          <div class="template-flat-row">
+            <div class="seg-label">第一段</div>
+            <div class="flat-time-grid">
+              <div class="flat-time-item field">
+                <label>開始時</label>
+                <select onchange="updateTpl('${tpl.id}','seg1StartH',this.value)">${timeOptionsHour(tpl.seg1StartH)}</select>
+              </div>
+              <div class="flat-time-item field">
+                <label>開始分</label>
+                <select onchange="updateTpl('${tpl.id}','seg1StartM',this.value)">${timeOptionsMinute(tpl.seg1StartM)}</select>
+              </div>
+              <div class="flat-time-item field">
+                <label>結束時</label>
+                <select onchange="updateTpl('${tpl.id}','seg1EndH',this.value)">${timeOptionsHour(tpl.seg1EndH)}</select>
+              </div>
+              <div class="flat-time-item field">
+                <label>結束分</label>
+                <select onchange="updateTpl('${tpl.id}','seg1EndM',this.value)">${timeOptionsMinute(tpl.seg1EndM)}</select>
+              </div>
+            </div>
+          </div>
+
+          <div class="template-flat-row ${tpl.isSplit ? '' : 'hidden'}">
+            <div class="seg-label">第二段</div>
+            <div class="flat-time-grid">
+              <div class="flat-time-item field">
+                <label>開始時</label>
+                <select onchange="updateTpl('${tpl.id}','seg2StartH',this.value)">${timeOptionsHour(tpl.seg2StartH)}</select>
+              </div>
+              <div class="flat-time-item field">
+                <label>開始分</label>
+                <select onchange="updateTpl('${tpl.id}','seg2StartM',this.value)">${timeOptionsMinute(tpl.seg2StartM)}</select>
+              </div>
+              <div class="flat-time-item field">
+                <label>結束時</label>
+                <select onchange="updateTpl('${tpl.id}','seg2EndH',this.value)">${timeOptionsHour(tpl.seg2EndH)}</select>
+              </div>
+              <div class="flat-time-item field">
+                <label>結束分</label>
+                <select onchange="updateTpl('${tpl.id}','seg2EndM',this.value)">${timeOptionsMinute(tpl.seg2EndM)}</select>
+              </div>
+            </div>
+          </div>
+        `;
+        wrap.appendChild(box);
+      });
+    }
+
+    function hideStep2Errors(){
+      document.getElementById('step2Errors').classList.add('hidden');
+      document.getElementById('step2ErrorList').innerHTML = '';
+    }
+
+    function hideStep3Errors(){
+      document.getElementById('step3Errors').classList.add('hidden');
+      document.getElementById('step3ErrorList').innerHTML = '';
+    }
+
+    function hideStep3Success(){
+      document.getElementById('step3SuccessBox').classList.add('hidden');
+    }
+
+    function showStep3Success(){
+      document.getElementById('step3SuccessBox').classList.remove('hidden');
+    }
+
+    function updateTpl(id, key, value){
+      const tpl = state.templates.find(t => t.id === id);
+      if (!tpl) return;
+      tpl[key] = value;
+      renderTemplatePalette();
+      renderStep3Calendar();
+      hideStep2Errors();
+    }
+
+    function toggleSplit(id, checked){
+      const tpl = state.templates.find(t => t.id === id);
+      if (!tpl) return;
+      tpl.isSplit = checked;
+      renderTemplates();
+      renderTemplatePalette();
+      renderStep3Calendar();
+      hideStep2Errors();
+    }
+
+    function goStep(step){
+      state.step = step;
+      [1,2,3,4].forEach(n => {
+        document.getElementById('step' + n).classList.toggle('hidden', n !== step);
+        document.getElementById('stepBadge' + n).classList.toggle('active', n === step);
+      });
+
+      if (step === 3) {
+        renderTemplatePalette();
+        renderStep3Calendar();
+      }
+    }
+
+    function formatShortTime(h, m){
+      const hh = String(h).padStart(2, '0');
+      return m === '00' ? hh : `${hh}!`;
+    }
+
+    function formatTimeOnly(tpl){
+      const s1 = `${formatShortTime(tpl.seg1StartH, tpl.seg1StartM)}-${formatShortTime(tpl.seg1EndH, tpl.seg1EndM)}`;
+      if (!tpl.isSplit) return s1;
+      const s2 = `${formatShortTime(tpl.seg2StartH, tpl.seg2StartM)}-${formatShortTime(tpl.seg2EndH, tpl.seg2EndM)}`;
+      return `${s1}\n${s2}`;
+    }
+
+    function formatTimeInline(tpl){
+      const s1 = `${formatShortTime(tpl.seg1StartH, tpl.seg1StartM)}-${formatShortTime(tpl.seg1EndH, tpl.seg1EndM)}`;
+      if (!tpl.isSplit) return s1;
+      const s2 = `${formatShortTime(tpl.seg2StartH, tpl.seg2StartM)}-${formatShortTime(tpl.seg2EndH, tpl.seg2EndM)}`;
+      return `${s1} / ${s2}`;
+    }
+
+    function getTplColor(tpl){
+      return TEMPLATE_COLORS[tpl.colorIndex % TEMPLATE_COLORS.length];
+    }
+
+    function renderTemplatePalette(){
+      const wrap = document.getElementById('templatePalette');
+      const currentText = document.getElementById('currentTemplateText');
+      if (!wrap || !currentText) return;
+
+      wrap.innerHTML = '';
+
+      state.templates.forEach(tpl => {
+        const btn = document.createElement('button');
+        const c = getTplColor(tpl);
+        btn.className = 'template-chip' + (state.selectedTemplateId === tpl.id ? ' active' : '');
+        btn.style.background = c.bg;
+        btn.style.color = c.color;
+        btn.style.borderColor = c.border;
+        btn.innerHTML = formatTimeOnly(tpl).replaceAll('\n', '<br>');
+        btn.onclick = () => {
+          state.selectedTemplateId = tpl.id;
+          renderTemplatePalette();
+        };
+        wrap.appendChild(btn);
+      });
+
+      const eraseBtn = document.createElement('button');
+      eraseBtn.className = 'template-chip erase' + (state.selectedTemplateId === 'ERASE' ? ' active' : '');
+      eraseBtn.innerHTML = `休假/清除`;
+      eraseBtn.onclick = () => {
+        state.selectedTemplateId = 'ERASE';
+        renderTemplatePalette();
+      };
+      wrap.appendChild(eraseBtn);
+
+      if (state.selectedTemplateId === 'ERASE') {
+        currentText.innerHTML = `目前選中：<b>休假 / 清除</b>`;
+      } else {
+        const currentTpl = state.templates.find(t => t.id === state.selectedTemplateId);
+        currentText.innerHTML = currentTpl
+          ? `目前選中：<b>${formatTimeInline(currentTpl)}</b>`
+          : `目前選中：<b>尚未選擇</b>`;
+      }
+    }
+
+    function timeToMinutes(h, m){
+      return Number(h) * 60 + Number(m);
+    }
+
+    function calcSegmentMinutes(startH, startM, endH, endM){
+      const start = timeToMinutes(startH, startM);
+      const end = timeToMinutes(endH, endM);
+      if (start === end) return 0;
+      if (end > start) return end - start;
+      return (24 * 60 - start) + end;
+    }
+
+    function absoluteEndFromStart(startMin, endMin){
+      return endMin > startMin ? endMin : endMin + 24 * 60;
+    }
+
+    function formatMinutesToHourText(minutes){
+      const h = minutes / 60;
+      return Number.isInteger(h) ? `${h} 小時` : `${h.toFixed(1)} 小時`;
+    }
+
+    function getTemplateWindowMinutes(tpl){
+      const start1 = timeToMinutes(tpl.seg1StartH, tpl.seg1StartM);
+      const end1 = absoluteEndFromStart(start1, timeToMinutes(tpl.seg1EndH, tpl.seg1EndM));
+
+      if (!tpl.isSplit) {
+        return { firstStart: start1, lastEnd: end1, isCrossDay: end1 >= 24 * 60 };
+      }
+
+      const start2Raw = timeToMinutes(tpl.seg2StartH, tpl.seg2StartM);
+      let start2 = start2Raw;
+      while (start2 < end1) start2 += 24 * 60;
+
+      let end2 = timeToMinutes(tpl.seg2EndH, tpl.seg2EndM);
+      while (end2 <= start2) end2 += 24 * 60;
+
+      return {
+        firstStart: start1,
+        lastEnd: end2,
+        isCrossDay: end2 >= 24 * 60
+      };
+    }
+
+    function validateTemplateList(){
+      const errors = [];
+
+      state.templates.forEach(tpl => {
+        const start1 = timeToMinutes(tpl.seg1StartH, tpl.seg1StartM);
+        const end1Raw = timeToMinutes(tpl.seg1EndH, tpl.seg1EndM);
+        const seg1 = calcSegmentMinutes(tpl.seg1StartH, tpl.seg1StartM, tpl.seg1EndH, tpl.seg1EndM);
+
+        if (seg1 <= 0) {
+          errors.push(`${tpl.label}：第一段工時不可為 0 小時。`);
+          return;
+        }
+
+        let totalMinutes = seg1;
+        const end1Abs = absoluteEndFromStart(start1, end1Raw);
+
+        if (tpl.isSplit) {
+          const start2Raw = timeToMinutes(tpl.seg2StartH, tpl.seg2StartM);
+          const seg2 = calcSegmentMinutes(tpl.seg2StartH, tpl.seg2StartM, tpl.seg2EndH, tpl.seg2EndM);
+
+          if (seg2 <= 0) {
+            errors.push(`${tpl.label}：第二段工時不可為 0 小時。`);
+            return;
+          }
+
+          let start2Abs = start2Raw;
+          while (start2Abs < end1Abs) start2Abs += 24 * 60;
+
+          const breakMinutes = start2Abs - end1Abs;
+          if (breakMinutes < 120) {
+            errors.push(`${tpl.label}：兩段班中間休息需至少 2 小時，目前僅 ${formatMinutesToHourText(breakMinutes)}。`);
+            return;
+          }
+
+          totalMinutes = seg1 + seg2;
+        }
+
+        if (totalMinutes > 720) {
+          errors.push(`${tpl.label}：總工時 ${formatMinutesToHourText(totalMinutes)}，超過 12 小時，不能進入下一步。`);
+        }
+      });
+
+      return errors;
+    }
+
+    function prepareStep3(){
+      const errors = validateTemplateList();
+      const errorBox = document.getElementById('step2Errors');
+      const errorList = document.getElementById('step2ErrorList');
+
+      if (errors.length > 0) {
+        errorList.innerHTML = errors.map(t => `<div class="error-item">${t}</div>`).join('');
+        errorBox.classList.remove('hidden');
+        return;
+      }
+
+      errorBox.classList.add('hidden');
+      errorList.innerHTML = '';
+
+      if (!state.selectedTemplateId && state.templates.length > 0) {
+        state.selectedTemplateId = state.templates[0].id;
+      }
+      goStep(3);
+    }
+
+    function buildCellBody(assignedTpl, outside){
+      if (outside) return '';
+      if (!assignedTpl) return `<span class="empty-note">休假</span>`;
+      return `<div class="day-shift-text">${formatTimeOnly(assignedTpl)}</div>`;
+    }
+
+    function renderStep3Calendar(){
+      const monthTitle = document.getElementById('step3MonthTitle');
+      const tbody = document.getElementById('step3Grid');
+      if (!monthTitle || !tbody) return;
+
+      monthTitle.textContent = monthText(state.viewYear, state.viewMonth);
+      const cells = getMonthMatrix(state.viewYear, state.viewMonth);
+      const rows = chunkArray(cells, 7);
+      tbody.innerHTML = '';
+
+      rows.forEach(rowCells => {
+        const tr = document.createElement('tr');
+
+        rowCells.forEach(c => {
+          const dateKey = toDateKey(c.year, c.month, c.day);
+          const weekday = new Date(c.year, c.month - 1, c.day).getDay();
+          const assignedTpl = state.templates.find(t => t.id === state.assignedDays[dateKey]);
+          const isInvalid = state.step3InvalidDates.has(dateKey);
+          const isHoliday = HOLIDAYS_2026.has(dateKey);
+
+          const td = document.createElement('td');
+
+          let cls = 'day-cell';
+          if (c.outside) cls += ' outside';
+          if (!c.outside && weekday === 0) cls += ' sun-bg';
+          if (!c.outside && weekday === 6) cls += ' sat-bg';
+          if (!c.outside && isHoliday) cls += ' holiday-bg';
+          if (!c.outside && isInvalid) cls += ' invalid';
+          td.className = cls;
+
+          let numCls = 'day-num';
+          if (c.outside) numCls += ' outside';
+          else if (isHoliday) numCls += ' holiday';
+          else if (weekday === 0) numCls += ' sun';
+          else if (weekday === 6) numCls += ' sat';
+
+          if (assignedTpl && !isInvalid) {
+            const color = getTplColor(assignedTpl);
+            td.style.background = color.bg;
+            if (isHoliday) {
+              td.style.background = `linear-gradient(180deg, var(--holiday-top) 0 18px, transparent 18px 100%), ${color.bg}`;
+            }
+          }
+
+          td.innerHTML = `
+            <div class="day-top">
+              <div class="${numCls}">${c.day}</div>
+            </div>
+            <div class="day-body">
+              ${buildCellBody(assignedTpl, c.outside)}
+            </div>
+          `;
+
+          if (!c.outside) td.onclick = () => assignDate(dateKey);
+          tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    function assignDate(dateKey){
+      if (!state.selectedTemplateId) return;
+
+      if (state.selectedTemplateId === 'ERASE') {
+        delete state.assignedDays[dateKey];
+      } else {
+        state.assignedDays[dateKey] = state.selectedTemplateId;
+      }
+
+      state.step3InvalidDates = new Set();
+      hideStep3Errors();
+      hideStep3Success();
+      renderStep3Calendar();
+    }
+
+    function getAssignedDatesSorted(){
+      return Object.keys(state.assignedDays).sort();
+    }
+
+    function validateWeeklyOffDays(dates){
+      const errors = [];
+      if (dates.length === 0) return errors;
+
+      const assignedSet = new Set(dates);
+      const firstDate = new Date(dates[0] + 'T00:00:00');
+      const lastDate = new Date(dates[dates.length - 1] + 'T00:00:00');
+
+      const rangeStart = new Date(firstDate);
+      rangeStart.setDate(rangeStart.getDate() - rangeStart.getDay());
+
+      const rangeEnd = new Date(lastDate);
+      rangeEnd.setDate(rangeEnd.getDate() + (6 - rangeEnd.getDay()));
+
+      for (let weekStart = new Date(rangeStart); weekStart <= rangeEnd; weekStart.setDate(weekStart.getDate() + 7)) {
+        const weekDates = [];
+        let workCount = 0;
+
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(weekStart);
+          d.setDate(weekStart.getDate() + i);
+          const key = toDateKey(d.getFullYear(), d.getMonth() + 1, d.getDate());
+          weekDates.push(key);
+          if (assignedSet.has(key)) workCount++;
+        }
+
+        const offCount = 7 - workCount;
+        if (offCount < 2) {
+          errors.push({
+            dates:[...weekDates.filter(k => assignedSet.has(k))],
+            message:`${weekDates[0]} ～ ${weekDates[6]} 此週休假僅 ${offCount} 天，未達每週至少 2 天休假。`
+          });
+        }
+      }
+
+      return errors;
+    }
+
+    function validateMaxConsecutiveDays(dates){
+      const errors = [];
+      let streak = 0;
+      let streakDates = [];
+      let prevDate = null;
+
+      dates.forEach(dateKey => {
+        const current = new Date(dateKey + 'T00:00:00');
+
+        if (!prevDate) {
+          streak = 1;
+          streakDates = [dateKey];
+        } else {
+          const diff = (current - prevDate) / 86400000;
+          if (diff === 1) {
+            streak++;
+            streakDates.push(dateKey);
+          } else {
+            streak = 1;
+            streakDates = [dateKey];
+          }
+        }
+
+        if (streak >= 6) {
+          errors.push({
+            dates:[...streakDates],
+            message:`${streakDates[0]} ～ ${streakDates[streakDates.length - 1]} 形成連續出勤 ${streak} 天，超過最多 5 天。`
+          });
+        }
+
+        prevDate = current;
+      });
+
+      return errors;
+    }
+
+    function validateCrossDayRestRule(dates){
+      const errors = [];
+
+      for (let i = 1; i < dates.length; i++) {
+        const prevDateKey = dates[i - 1];
+        const currDateKey = dates[i];
+        const prevTpl = state.templates.find(t => t.id === state.assignedDays[prevDateKey]);
+        const currTpl = state.templates.find(t => t.id === state.assignedDays[currDateKey]);
+        if (!prevTpl || !currTpl) continue;
+
+        const prevWindow = getTemplateWindowMinutes(prevTpl);
+        if (!prevWindow.isCrossDay) continue;
+
+        const prevDateBase = new Date(prevDateKey + 'T00:00:00');
+        const currDateBase = new Date(currDateKey + 'T00:00:00');
+        const diffDays = (currDateBase - prevDateBase) / 86400000;
+        if (diffDays !== 1) continue;
+
+        const currWindow = getTemplateWindowMinutes(currTpl);
+        const currStartAbs = 24 * 60 + currWindow.firstStart;
+        const restMinutes = currStartAbs - prevWindow.lastEnd;
+
+        if (restMinutes < 660) {
+          const hours = (restMinutes / 60).toFixed(1);
+          errors.push({
+            dates:[prevDateKey, currDateKey],
+            message:`${prevDateKey} 為跨日班，至 ${currDateKey} 開班前休息僅 ${hours} 小時，未達 11 小時。`
+          });
+        }
+      }
+
+      return errors;
+    }
+
+    function validateScheduleRules(){
+      const dates = getAssignedDatesSorted();
+      const errors = [];
+
+      if (dates.length === 0) {
+        errors.push({ dates: [], message: '目前尚未排任何日期。' });
+        return errors;
+      }
+
+      errors.push(...validateWeeklyOffDays(dates));
+      errors.push(...validateMaxConsecutiveDays(dates));
+      errors.push(...validateCrossDayRestRule(dates));
+
+      return errors;
+    }
+
+    function applyStep3ValidationResult(errors){
+      state.step3InvalidDates = new Set(errors.flatMap(e => e.dates));
+
+      const errorBox = document.getElementById('step3Errors');
+      const errorList = document.getElementById('step3ErrorList');
+
+      if (errors.length > 0) {
+        hideStep3Success();
+        errorList.innerHTML = errors.map(e => `<div class="error-item">${e.message}</div>`).join('');
+        errorBox.classList.remove('hidden');
+      } else {
+        errorList.innerHTML = '';
+        errorBox.classList.add('hidden');
+        showStep3Success();
+      }
+
+      renderStep3Calendar();
+    }
+
+    function runScheduleValidationOnly(){
+      const errors = validateScheduleRules();
+      applyStep3ValidationResult(errors);
+    }
+
+    function buildSchedulesPayload(){
+      const dates = getAssignedDatesSorted();
+      return dates.map(d => {
+        const tpl = state.templates.find(t => t.id === state.assignedDays[d]);
+        if (!tpl) return null;
+        return {
+          date: d,
+          shiftText: formatTimeInline(tpl)
+        };
+      }).filter(Boolean);
+    }
+
+    function prepareStep4(){
+      const errors = validateScheduleRules();
+      applyStep3ValidationResult(errors);
+
+      if (errors.length > 0) return;
+
+      const dates = getAssignedDatesSorted();
+      let txt = `送出人員：${state.displayName || '未登入'}\n月份：${monthValue(state.viewYear, state.viewMonth)}\n\n目前排班結果：\n\n`;
+      dates.forEach(d => {
+        const tpl = state.templates.find(t => t.id === state.assignedDays[d]);
+        txt += `${d} → ${tpl ? formatTimeInline(tpl) : ''}\n`;
+      });
+      document.getElementById('submitPreview').textContent = txt.trim();
+      document.getElementById('submitResultBox').classList.add('hidden');
+      document.getElementById('submitResultBox').textContent = '';
+      goStep(4);
+    }
+
+    function openRuleModal(){
+      document.getElementById('ruleModal').classList.remove('hidden');
+    }
+
+    function closeRuleModal(){
+      document.getElementById('ruleModal').classList.add('hidden');
+    }
+
+    function closeRuleModalByBackdrop(e){
+      if (e.target.id === 'ruleModal') closeRuleModal();
+    }
+
+    function setAuthStatusText(msg){
+      document.getElementById('authStatus').textContent = msg || '';
+    }
+
+    function showAuthBox(msg, type){
+      const el = document.getElementById('authBox');
+      el.className = `auth-box ${type || ''}`;
+      el.textContent = msg || '';
+      el.classList.remove('hidden');
+    }
+
+    function hideAuthBox(){
+      const el = document.getElementById('authBox');
+      el.className = 'auth-box hidden';
+      el.textContent = '';
+    }
+
+    function showSubmitResult(msg, type){
+      const el = document.getElementById('submitResultBox');
+      el.className = `auth-box ${type || ''}`;
+      el.textContent = msg || '';
+      el.classList.remove('hidden');
+    }
+
+    function setSubmitBusy(busy){
+      state.submitBusy = busy;
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = !!busy;
+      btn.textContent = busy ? '送出中...' : '正式送出';
+    }
+
+    async function postJsonToGas(payload){
+      const res = await fetch(GAS_WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+
+      const text = await res.text();
+      let data = {};
+      try { data = JSON.parse(text); } catch(_) {}
+      return { res, text, data };
+    }
+
+    async function initLiffAndCheckPermission(){
+      try {
+        setAuthStatusText('登入驗證中...');
+        hideAuthBox();
+
+        await liff.init({ liffId: LIFF_ID });
+
+        if (!liff.isLoggedIn()) {
+          liff.login();
+          return;
+        }
+
+        const profile = await liff.getProfile();
+        state.userId = profile.userId || '';
+        state.displayName = profile.displayName || '';
+
+        setAuthStatusText('檢查排班權限中...');
+
+        const url = `${GAS_WEB_APP_URL}?action=checkPermission&uid=${encodeURIComponent(state.userId)}&displayName=${encodeURIComponent(state.displayName)}`;
+        const res = await fetch(url, { method:'GET' });
+        const data = await res.json();
+
+        if (!data.ok) {
+          state.authChecked = false;
+          state.authAllowed = false;
+          setAuthStatusText('驗證失敗');
+          showAuthBox(`授權檢查失敗：${data.message || '未知錯誤'}`, 'err');
+          return;
+        }
+
+        state.authChecked = true;
+        state.authAllowed = !!data.allowed;
+        state.authStatus = data.status || '';
+        state.authEnabled = data.enabled || '';
+
+        if (data.allowed) {
+          setAuthStatusText(
+            `驗證完成\n姓名：${state.displayName}\nUID：${state.userId}\n狀態：${data.status}\n啟用：${data.enabled}`
+          );
+          showAuthBox('你已通過排班權限驗證，可以進入下一步。', 'ok');
+        } else {
+          setAuthStatusText(
+            `姓名：${state.displayName}\nUID：${state.userId}\n狀態：${data.status || 'pending'}\n啟用：${data.enabled || 'N'}`
+          );
+          showAuthBox(data.message || '尚未開通排班權限，請聯絡管理員。', 'err');
+        }
+      } catch (err) {
+        state.authChecked = false;
+        state.authAllowed = false;
+        setAuthStatusText('驗證失敗');
+        showAuthBox(`登入或驗證失敗：${err.message || err}`, 'err');
+      }
+    }
+
+    function canGoNextFromStep1(){
+      if (!state.authChecked) {
+        alert('尚未完成驗證，請稍候。');
+        return false;
+      }
+
+      if (!state.authAllowed) {
+        alert('你目前尚未開通排班權限。');
+        return false;
+      }
+
+      return true;
+    }
+
+    function goStepFromAuth(){
+      if (!canGoNextFromStep1()) return;
+      goStep(2);
+    }
+
+    async function submitSchedule(){
+      if (state.submitBusy) return;
+
+      const errors = validateScheduleRules();
+      applyStep3ValidationResult(errors);
+      if (errors.length > 0) {
+        goStep(3);
+        return;
+      }
+
+      if (!state.authAllowed || !state.userId) {
+        showSubmitResult('目前登入狀態或權限異常，請回到第 1 步重新確認。', 'err');
+        return;
+      }
+
+      const schedules = buildSchedulesPayload();
+      if (schedules.length === 0) {
+        showSubmitResult('目前沒有可送出的排班資料。', 'err');
+        return;
+      }
+
+      try {
+        setSubmitBusy(true);
+        showSubmitResult('送出中，請稍候...', '');
+
+        const payload = {
+          action: 'submitSchedule',
+          uid: state.userId,
+          displayName: state.displayName,
+          month: monthValue(state.viewYear, state.viewMonth),
+          schedules: schedules
+        };
+
+        const { data } = await postJsonToGas(payload);
+
+        if (!data || !data.ok) {
+          showSubmitResult(`送出失敗：${(data && data.message) ? data.message : '未知錯誤'}`, 'err');
+          setSubmitBusy(false);
+          return;
+        }
+
+        showSubmitResult(
+          `送出成功 ✅\n姓名：${state.displayName}\n月份：${monthValue(state.viewYear, state.viewMonth)}\n筆數：${data.writeCount || schedules.length}\n批次ID：${data.batchId || ''}`,
+          'ok'
+        );
+
+        document.getElementById('submitPreview').textContent += '\n\n已成功寫入後台 PT排班資訊 分頁。';
+        setSubmitBusy(false);
+      } catch (err) {
+        showSubmitResult(`送出失敗：${err.message || err}`, 'err');
+        setSubmitBusy(false);
+      }
+    }
+
+    window.onload = async function(){
+      const base = getNextMonthBase();
+      state.viewYear = base.year;
+      state.viewMonth = base.month;
+
+      initTemplates();
+      renderTemplatePalette();
+      renderStep3Calendar();
+
+      await initLiffAndCheckPermission();
+    };
+  </script>
 </body>
 </html>
