@@ -181,20 +181,10 @@
       font-weight:900;
     }
 
-    .row{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-      width:100%;
-      min-width:0;
-    }
-
     .field{
       display:flex;
       flex-direction:column;
       gap:4px;
-      flex:1;
       min-width:0;
     }
 
@@ -202,9 +192,9 @@
       font-size:11px;
       color:var(--muted);
       font-weight:800;
-      line-height:1.25;
+      line-height:1.2;
       text-align:center;
-      white-space:normal;
+      white-space:nowrap;
     }
 
     select, button{
@@ -274,7 +264,7 @@
     .template-head{
       display:flex;
       justify-content:space-between;
-      align-items:flex-start;
+      align-items:center;
       gap:10px;
       flex-wrap:wrap;
       margin-bottom:8px;
@@ -327,9 +317,9 @@
 
     .template-flat-row{
       display:grid;
-      grid-template-columns:62px 1fr;
-      gap:10px;
-      align-items:center;
+      grid-template-columns:56px repeat(4, minmax(0, 1fr));
+      gap:8px;
+      align-items:end;
       width:100%;
       margin-top:8px;
       padding:8px 0;
@@ -348,14 +338,7 @@
       color:#374151;
       white-space:nowrap;
       text-align:left;
-    }
-
-    .flat-time-grid{
-      display:grid;
-      grid-template-columns:repeat(4, minmax(0, 1fr));
-      gap:8px;
-      width:100%;
-      min-width:0;
+      padding-bottom:10px;
     }
 
     .flat-time-item{
@@ -681,6 +664,42 @@
       line-height:1.7;
     }
 
+    .preview-table-wrap{
+      margin-top:12px;
+      width:100%;
+      overflow-x:auto;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#fff;
+    }
+
+    .preview-table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:260px;
+    }
+
+    .preview-table th,
+    .preview-table td{
+      border-bottom:1px solid var(--line);
+      padding:10px 12px;
+      text-align:left;
+      vertical-align:top;
+      font-size:14px;
+      line-height:1.6;
+    }
+
+    .preview-table th{
+      background:#f8fbff;
+      color:#1f2937;
+      font-weight:900;
+      white-space:nowrap;
+    }
+
+    .preview-table tbody tr:last-child td{
+      border-bottom:none;
+    }
+
     .modal-backdrop{
       position:fixed;
       inset:0;
@@ -753,24 +772,13 @@
       .day-shift-text{ font-size:9px; min-height:32px; }
       .template-name{ font-size:16px; }
 
-      .template-actions .btn-danger{
-        height:36px;
-        padding:0 12px;
-      }
-
       .template-flat-row{
-        grid-template-columns:1fr;
-        gap:8px;
+        grid-template-columns:52px repeat(4, minmax(0, 1fr));
+        gap:6px;
       }
 
       .seg-label{
-        font-size:13px;
-        margin-bottom:2px;
-      }
-
-      .flat-time-grid{
-        grid-template-columns:repeat(4, minmax(0, 1fr));
-        gap:6px;
+        font-size:12px;
       }
 
       .field label{
@@ -779,6 +787,7 @@
 
       select, button{
         height:38px;
+        font-size:14px;
       }
 
       .template-chip{
@@ -802,14 +811,9 @@
     }
 
     @media (max-width: 560px){
-      .flat-time-grid{
-        grid-template-columns:repeat(2, minmax(0, 1fr));
-        gap:8px;
-      }
-
-      .template-head{
-        flex-direction:column;
-        align-items:flex-start;
+      .template-flat-row{
+        grid-template-columns:48px repeat(4, minmax(0, 1fr));
+        gap:5px;
       }
 
       .template-actions{
@@ -817,17 +821,21 @@
         justify-content:space-between;
       }
 
-      .footer-actions{
-        justify-content:flex-end;
+      .field label{
+        font-size:9px;
+      }
+
+      select{
+        padding:0 6px;
+        font-size:13px;
+      }
+
+      .seg-label{
+        padding-bottom:8px;
       }
     }
 
     @media (max-width: 380px){
-      select{
-        font-size:14px;
-        padding:0 8px;
-      }
-
       .template-chip{
         padding:6px 9px;
         font-size:10px;
@@ -835,6 +843,14 @@
 
       .btn-rule{
         padding:0 10px;
+        font-size:12px;
+      }
+
+      .field label{
+        font-size:8px;
+      }
+
+      select{
         font-size:12px;
       }
     }
@@ -954,11 +970,26 @@
       <div class="card hidden" id="step4">
         <h2 class="section-title">第 4 步｜最後送出</h2>
         <div class="hint">
-          送出前請務必再次確認排班內容。<br>
-          送出後會寫入後台 PT排班資訊 分頁。
+          送出前請再次確認排班內容。
         </div>
 
-        <div class="status" id="submitPreview">按下下方按鈕後，會先顯示目前排班結果。</div>
+        <div class="status" id="submitMonthText"></div>
+
+        <div class="preview-table-wrap">
+          <table class="preview-table">
+            <thead>
+              <tr>
+                <th style="width:42%;">日期</th>
+                <th>班段</th>
+              </tr>
+            </thead>
+            <tbody id="submitPreviewBody">
+              <tr>
+                <td colspan="2">目前沒有排班資料</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
         <div class="auth-box hidden" id="submitResultBox"></div>
 
@@ -1069,9 +1100,7 @@
 
     function chunkArray(arr, size){
       const out = [];
-      for (let i = 0; i < arr.length; i += size) {
-        out.push(arr.slice(i, i + size));
-      }
+      for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
       return out;
     }
 
@@ -1165,45 +1194,41 @@
 
           <div class="template-flat-row">
             <div class="seg-label">第一段</div>
-            <div class="flat-time-grid">
-              <div class="flat-time-item field">
-                <label>開始時</label>
-                <select onchange="updateTpl('${tpl.id}','seg1StartH',this.value)">${timeOptionsHour(tpl.seg1StartH)}</select>
-              </div>
-              <div class="flat-time-item field">
-                <label>開始分</label>
-                <select onchange="updateTpl('${tpl.id}','seg1StartM',this.value)">${timeOptionsMinute(tpl.seg1StartM)}</select>
-              </div>
-              <div class="flat-time-item field">
-                <label>結束時</label>
-                <select onchange="updateTpl('${tpl.id}','seg1EndH',this.value)">${timeOptionsHour(tpl.seg1EndH)}</select>
-              </div>
-              <div class="flat-time-item field">
-                <label>結束分</label>
-                <select onchange="updateTpl('${tpl.id}','seg1EndM',this.value)">${timeOptionsMinute(tpl.seg1EndM)}</select>
-              </div>
+            <div class="field flat-time-item">
+              <label>開始時</label>
+              <select onchange="updateTpl('${tpl.id}','seg1StartH',this.value)">${timeOptionsHour(tpl.seg1StartH)}</select>
+            </div>
+            <div class="field flat-time-item">
+              <label>開始分</label>
+              <select onchange="updateTpl('${tpl.id}','seg1StartM',this.value)">${timeOptionsMinute(tpl.seg1StartM)}</select>
+            </div>
+            <div class="field flat-time-item">
+              <label>結束時</label>
+              <select onchange="updateTpl('${tpl.id}','seg1EndH',this.value)">${timeOptionsHour(tpl.seg1EndH)}</select>
+            </div>
+            <div class="field flat-time-item">
+              <label>結束分</label>
+              <select onchange="updateTpl('${tpl.id}','seg1EndM',this.value)">${timeOptionsMinute(tpl.seg1EndM)}</select>
             </div>
           </div>
 
           <div class="template-flat-row ${tpl.isSplit ? '' : 'hidden'}">
             <div class="seg-label">第二段</div>
-            <div class="flat-time-grid">
-              <div class="flat-time-item field">
-                <label>開始時</label>
-                <select onchange="updateTpl('${tpl.id}','seg2StartH',this.value)">${timeOptionsHour(tpl.seg2StartH)}</select>
-              </div>
-              <div class="flat-time-item field">
-                <label>開始分</label>
-                <select onchange="updateTpl('${tpl.id}','seg2StartM',this.value)">${timeOptionsMinute(tpl.seg2StartM)}</select>
-              </div>
-              <div class="flat-time-item field">
-                <label>結束時</label>
-                <select onchange="updateTpl('${tpl.id}','seg2EndH',this.value)">${timeOptionsHour(tpl.seg2EndH)}</select>
-              </div>
-              <div class="flat-time-item field">
-                <label>結束分</label>
-                <select onchange="updateTpl('${tpl.id}','seg2EndM',this.value)">${timeOptionsMinute(tpl.seg2EndM)}</select>
-              </div>
+            <div class="field flat-time-item">
+              <label>開始時</label>
+              <select onchange="updateTpl('${tpl.id}','seg2StartH',this.value)">${timeOptionsHour(tpl.seg2StartH)}</select>
+            </div>
+            <div class="field flat-time-item">
+              <label>開始分</label>
+              <select onchange="updateTpl('${tpl.id}','seg2StartM',this.value)">${timeOptionsMinute(tpl.seg2StartM)}</select>
+            </div>
+            <div class="field flat-time-item">
+              <label>結束時</label>
+              <select onchange="updateTpl('${tpl.id}','seg2EndH',this.value)">${timeOptionsHour(tpl.seg2EndH)}</select>
+            </div>
+            <div class="field flat-time-item">
+              <label>結束分</label>
+              <select onchange="updateTpl('${tpl.id}','seg2EndM',this.value)">${timeOptionsMinute(tpl.seg2EndM)}</select>
             </div>
           </div>
         `;
@@ -1266,15 +1291,22 @@
       return m === '00' ? hh : `${hh}!`;
     }
 
-    function formatTimeOnly(tpl){
-      const s1 = `${formatShortTime(tpl.seg1StartH, tpl.seg1StartM)}-${formatShortTime(tpl.seg1EndH, tpl.seg1EndM)}`;
-      if (!tpl.isSplit) return s1;
-      const s2 = `${formatShortTime(tpl.seg2StartH, tpl.seg2StartM)}-${formatShortTime(tpl.seg2EndH, tpl.seg2EndM)}`;
-      return `${s1}\n${s2}`;
+    function getShiftParts(tpl){
+      const shift1 = `${formatShortTime(tpl.seg1StartH, tpl.seg1StartM)}-${formatShortTime(tpl.seg1EndH, tpl.seg1EndM)}`;
+      const shift2 = tpl.isSplit
+        ? `${formatShortTime(tpl.seg2StartH, tpl.seg2StartM)}-${formatShortTime(tpl.seg2EndH, tpl.seg2EndM)}`
+        : '';
+      return { shift1, shift2 };
     }
 
-    function formatTimeInline(tpl){
-      return formatTimeOnly(tpl);
+    function formatTimeOnly(tpl){
+      const { shift1, shift2 } = getShiftParts(tpl);
+      return shift2 ? `${shift1}\n${shift2}` : shift1;
+    }
+
+    function formatTimePreview(tpl){
+      const { shift1, shift2 } = getShiftParts(tpl);
+      return shift2 ? `${shift1} / ${shift2}` : shift1;
     }
 
     function getTplColor(tpl){
@@ -1317,7 +1349,7 @@
       } else {
         const currentTpl = state.templates.find(t => t.id === state.selectedTemplateId);
         currentText.innerHTML = currentTpl
-          ? `目前選中：<b>${formatTimeOnly(currentTpl).replace('\n', ' / ')}</b>`
+          ? `目前選中：<b>${formatTimePreview(currentTpl)}</b>`
           : `目前選中：<b>尚未選擇</b>`;
       }
     }
@@ -1669,11 +1701,38 @@
       return dates.map(d => {
         const tpl = state.templates.find(t => t.id === state.assignedDays[d]);
         if (!tpl) return null;
+        const { shift1, shift2 } = getShiftParts(tpl);
         return {
           date: d,
-          shiftText: formatTimeOnly(tpl)
+          shift1Text: shift1,
+          shift2Text: shift2
         };
       }).filter(Boolean);
+    }
+
+    function renderStep4PreviewTable(){
+      const tbody = document.getElementById('submitPreviewBody');
+      const monthEl = document.getElementById('submitMonthText');
+      const schedules = buildSchedulesPayload();
+
+      monthEl.textContent = `月份：${monthValue(state.viewYear, state.viewMonth)}`;
+
+      if (schedules.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="2">目前沒有排班資料</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = schedules.map(item => {
+        const shiftText = item.shift2Text
+          ? `${item.shift1Text} / ${item.shift2Text}`
+          : item.shift1Text;
+        return `
+          <tr>
+            <td>${item.date}</td>
+            <td>${shiftText}</td>
+          </tr>
+        `;
+      }).join('');
     }
 
     function prepareStep4(){
@@ -1682,13 +1741,7 @@
 
       if (errors.length > 0) return;
 
-      const dates = getAssignedDatesSorted();
-      let txt = `月份：${monthValue(state.viewYear, state.viewMonth)}\n\n目前排班結果：\n\n`;
-      dates.forEach(d => {
-        const tpl = state.templates.find(t => t.id === state.assignedDays[d]);
-        txt += `${d} → ${tpl ? formatTimeOnly(tpl) : ''}\n`;
-      });
-      document.getElementById('submitPreview').textContent = txt.trim();
+      renderStep4PreviewTable();
       document.getElementById('submitResultBox').classList.add('hidden');
       document.getElementById('submitResultBox').textContent = '';
       goStep(4);
@@ -1796,7 +1849,7 @@
           showAuthBox(data.message || '尚未開通排班權限，請聯絡管理員。', 'err');
           setGoStep2Enabled(false);
         }
-      } catch (err) {
+      } catch (_) {
         state.authChecked = true;
         state.authAllowed = false;
         setAuthStatusText('驗證失敗');
@@ -1870,7 +1923,6 @@
           'ok'
         );
 
-        document.getElementById('submitPreview').textContent += '\n\n已成功寫入後台 PT排班資訊 分頁。';
         setSubmitBusy(false);
       } catch (err) {
         showSubmitResult(`送出失敗：${err.message || err}`, 'err');
