@@ -1216,7 +1216,7 @@
     }
 
     function formatShortTime(h, m){
-      const hh = String(Number(h));
+      const hh = String(h).padStart(2, '0');
       return m === '00' ? hh : `${hh}!`;
     }
 
