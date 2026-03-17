@@ -1051,7 +1051,8 @@
       displayName: '',
       authChecked: false,
       authAllowed: false,
-      submitBusy: false
+      submitBusy: false,
+      submitLocked: false
     };
 
     function pad2(n){ return String(n).padStart(2,'0'); }
@@ -1735,6 +1736,49 @@
       }).join('');
     }
 
+    function getSubmitLockKey(){
+      return `schedule_submitted:${state.userId}:${monthValue(state.viewYear, state.viewMonth)}`;
+    }
+
+    function updateSubmitButtonState(){
+      const btn = document.getElementById('submitBtn');
+      if (!btn) return;
+
+      if (state.submitBusy) {
+        btn.disabled = true;
+        btn.textContent = '送出中...';
+        return;
+      }
+
+      if (state.submitLocked) {
+        btn.disabled = true;
+        btn.textContent = '已送出';
+        return;
+      }
+
+      btn.disabled = false;
+      btn.textContent = '正式送出';
+    }
+
+    function loadSubmitLock(){
+      if (!state.userId) {
+        state.submitLocked = false;
+        updateSubmitButtonState();
+        return false;
+      }
+      const locked = localStorage.getItem(getSubmitLockKey()) === '1';
+      state.submitLocked = locked;
+      updateSubmitButtonState();
+      return locked;
+    }
+
+    function lockSubmitForThisMonth(){
+      if (!state.userId) return;
+      localStorage.setItem(getSubmitLockKey(), '1');
+      state.submitLocked = true;
+      updateSubmitButtonState();
+    }
+
     function prepareStep4(){
       const errors = validateScheduleRules();
       applyStep3ValidationResult(errors);
@@ -1745,6 +1789,7 @@
       document.getElementById('submitResultBox').classList.add('hidden');
       document.getElementById('submitResultBox').textContent = '';
       goStep(4);
+      loadSubmitLock();
     }
 
     function openRuleModal(){
@@ -1789,9 +1834,7 @@
 
     function setSubmitBusy(busy){
       state.submitBusy = busy;
-      const btn = document.getElementById('submitBtn');
-      btn.disabled = !!busy;
-      btn.textContent = busy ? '送出中...' : '正式送出';
+      updateSubmitButtonState();
     }
 
     async function postJsonToGas(payload){
@@ -1880,6 +1923,12 @@
     async function submitSchedule(){
       if (state.submitBusy) return;
 
+      if (state.submitLocked) {
+        showSubmitResult('本月份排班已送出，不能再次送出。', 'err');
+        updateSubmitButtonState();
+        return;
+      }
+
       const errors = validateScheduleRules();
       applyStep3ValidationResult(errors);
       if (errors.length > 0) {
@@ -1918,15 +1967,16 @@
           return;
         }
 
+        setSubmitBusy(false);
+        lockSubmitForThisMonth();
+
         showSubmitResult(
           `送出成功 ✅\n月份：${monthValue(state.viewYear, state.viewMonth)}\n筆數：${data.writeCount || schedules.length}`,
           'ok'
         );
-
-        setSubmitBusy(false);
       } catch (err) {
-        showSubmitResult(`送出失敗：${err.message || err}`, 'err');
         setSubmitBusy(false);
+        showSubmitResult(`送出失敗：${err.message || err}`, 'err');
       }
     }
 
