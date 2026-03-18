@@ -781,6 +781,8 @@
     </div>
 
     <div class="page">
+      <div class="step2-validating hidden" id="globalLoading">處理中，請稍候...</div>
+
       <div class="card" id="step1">
         <h2 class="section-title">第 1 步｜驗證排班權限</h2>
         <div class="hint">
@@ -900,7 +902,6 @@
           </table>
         </div>
 
-        <div class="step2-validating hidden" id="stepActionLoading">驗證中，請稍候...</div>
         <div class="auth-box hidden" id="submitResultBox"></div>
 
         <div class="footer-actions">
@@ -986,6 +987,13 @@
     function isOpenPeriodNow(){
       const day = new Date().getDate();
       return day >= 15 && day <= 25;
+    }
+
+    function showGlobalLoading(show, text){
+      const el = document.getElementById('globalLoading');
+      if (!el) return;
+      el.textContent = text || '處理中，請稍候...';
+      el.classList.toggle('hidden', !show);
     }
 
     function getMonthMatrix(year, month){
@@ -1176,13 +1184,6 @@
 
     function showStep2Validating(show){
       document.getElementById('step2Validating').classList.toggle('hidden', !show);
-    }
-
-    function showStepActionLoading(show, text){
-      const el = document.getElementById('stepActionLoading');
-      if (!el) return;
-      el.textContent = text || '處理中，請稍候...';
-      el.classList.toggle('hidden', !show);
     }
 
     function updateTpl(id, key, value){
@@ -1762,17 +1763,17 @@
     }
 
     async function runScheduleValidationOnly(){
-      showStepActionLoading(true, '驗證中，請稍候...');
+      showGlobalLoading(true, '驗證中，請稍候...');
       try {
         const result = await validateScheduleAgainstBackend();
         applyBackendValidationResult(result);
       } finally {
-        showStepActionLoading(false);
+        showGlobalLoading(false);
       }
     }
 
     async function prepareStep4(){
-      showStepActionLoading(true, '驗證中，請稍候...');
+      showGlobalLoading(true, '驗證中，請稍候...');
       try {
         const result = await validateScheduleAgainstBackend();
         applyBackendValidationResult(result);
@@ -1788,7 +1789,7 @@
         goStep(4);
         updateSubmitButtonState();
       } finally {
-        showStepActionLoading(false);
+        showGlobalLoading(false);
       }
     }
 
@@ -1806,8 +1807,8 @@
       try {
         state.submitBusy = true;
         updateSubmitButtonState();
-        showStepActionLoading(true, '送出中，請稍候...');
-        showSubmitResult('送出中，請稍候...', '');
+        showGlobalLoading(true, '送出中，請稍候...');
+        document.getElementById('submitResultBox').classList.add('hidden');
 
         const payload = {
           action: 'submitSchedule',
@@ -1835,7 +1836,7 @@
         updateSubmitButtonState();
         showSubmitResult(`送出失敗：${err.message || err}`, 'err');
       } finally {
-        showStepActionLoading(false);
+        showGlobalLoading(false);
       }
     }
 
