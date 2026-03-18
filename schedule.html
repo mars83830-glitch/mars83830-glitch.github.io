@@ -900,6 +900,7 @@
           </table>
         </div>
 
+        <div class="step2-validating hidden" id="stepActionLoading">驗證中，請稍候...</div>
         <div class="auth-box hidden" id="submitResultBox"></div>
 
         <div class="footer-actions">
@@ -950,7 +951,7 @@
       step: 1,
       templates: [],
       selectedTemplateId: '',
-      assignedDays: {}, // dateKey -> tplId | 'OFF'
+      assignedDays: {},
       step3InvalidDates: new Set(),
       viewYear: 0,
       viewMonth: 0,
@@ -959,6 +960,7 @@
       authChecked: false,
       authAllowed: false,
       submitBusy: false,
+      submittedSuccess: false,
       validateBusy: false,
       openPeriodAllowed: false
     };
@@ -1171,6 +1173,13 @@
       document.getElementById('step2Validating').classList.toggle('hidden', !show);
     }
 
+    function showStepActionLoading(show, text){
+      const el = document.getElementById('stepActionLoading');
+      if (!el) return;
+      el.textContent = text || '處理中，請稍候...';
+      el.classList.toggle('hidden', !show);
+    }
+
     function updateTpl(id, key, value){
       const tpl = state.templates.find(t => t.id === id);
       if (!tpl) return;
@@ -1369,18 +1378,14 @@
     function buildCellBody(assignedValue, outside, isHoliday){
       if (outside) return '';
 
-      // 這裡是這次重點修正：
-      // 未填時，國假格就先直接顯示「國假」
       if (!assignedValue) {
         return isHoliday ? `<div class="day-off-text holiday-off">國假</div>` : '';
       }
 
-      // 已指定休假
       if (assignedValue === 'OFF') {
         return `<div class="day-off-text ${isHoliday ? 'holiday-off' : ''}">${isHoliday ? '國假' : '休假'}</div>`;
       }
 
-      // 已指定班別
       const assignedTpl = state.templates.find(t => t.id === assignedValue);
       if (!assignedTpl) {
         return isHoliday ? `<div class="day-off-text holiday-off">國假</div>` : '';
@@ -1481,8 +1486,6 @@
       return getMonthDateKeys().map(d => {
         const assignedValue = state.assignedDays[d];
 
-        // 這裡是這次重點修正：
-        // 休假一律送 X，不再送 OFF
         if (assignedValue === 'OFF') {
           return {
             date: d,
@@ -1591,6 +1594,14 @@
 
     function updateSubmitButtonState(){
       const btn = document.getElementById('submitBtn');
+      if (!btn) return;
+
+      if (state.submittedSuccess) {
+        btn.disabled = true;
+        btn.textContent = '已送出';
+        return;
+      }
+
       btn.disabled = !!state.submitBusy;
       btn.textContent = state.submitBusy ? '送出中...' : '正式送出';
     }
@@ -1747,24 +1758,38 @@
     }
 
     async function runScheduleValidationOnly(){
-      const result = await validateScheduleAgainstBackend();
-      applyBackendValidationResult(result);
+      showStepActionLoading(true, '驗證中，請稍候...');
+      try {
+        const result = await validateScheduleAgainstBackend();
+        applyBackendValidationResult(result);
+      } finally {
+        showStepActionLoading(false);
+      }
     }
 
     async function prepareStep4(){
-      const result = await validateScheduleAgainstBackend();
-      applyBackendValidationResult(result);
+      showStepActionLoading(true, '驗證中，請稍候...');
+      try {
+        const result = await validateScheduleAgainstBackend();
+        applyBackendValidationResult(result);
 
-      if (!result.valid) return;
+        if (!result.valid) return;
 
-      renderStep4PreviewTable();
-      document.getElementById('submitResultBox').classList.add('hidden');
-      goStep(4);
-      updateSubmitButtonState();
+        renderStep4PreviewTable();
+        document.getElementById('submitResultBox').classList.add('hidden');
+
+        state.submittedSuccess = false;
+        updateSubmitButtonState();
+
+        goStep(4);
+        updateSubmitButtonState();
+      } finally {
+        showStepActionLoading(false);
+      }
     }
 
     async function submitSchedule(){
-      if (state.submitBusy) return;
+      if (state.submitBusy || state.submittedSuccess) return;
 
       const validateResult = await validateScheduleAgainstBackend();
       applyBackendValidationResult(validateResult);
@@ -1777,6 +1802,7 @@
       try {
         state.submitBusy = true;
         updateSubmitButtonState();
+        showStepActionLoading(true, '送出中，請稍候...');
         showSubmitResult('送出中，請稍候...', '');
 
         const payload = {
@@ -1797,12 +1823,15 @@
         }
 
         state.submitBusy = false;
+        state.submittedSuccess = true;
         updateSubmitButtonState();
         showSubmitResult(`送出成功 ✅\n月份：${monthValue(state.viewYear, state.viewMonth)}\n筆數：${data.writeCount || 0}`, 'ok');
       } catch (err) {
         state.submitBusy = false;
         updateSubmitButtonState();
         showSubmitResult(`送出失敗：${err.message || err}`, 'err');
+      } finally {
+        showStepActionLoading(false);
       }
     }
 
@@ -1814,6 +1843,7 @@
       initTemplates();
       renderTemplatePalette();
       renderStep3Calendar();
+      updateSubmitButtonState();
 
       await initLiffAndCheckPermission();
     };
