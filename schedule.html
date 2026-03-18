@@ -730,6 +730,30 @@
       margin-top:14px;
     }
 
+    .loading-mask{
+      position:fixed;
+      inset:0;
+      background:rgba(15,23,42,.32);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      z-index:20000;
+    }
+
+    .loading-card{
+      width:min(320px, 92vw);
+      background:#fff;
+      border-radius:22px;
+      box-shadow:0 20px 60px rgba(0,0,0,.22);
+      padding:20px 18px;
+      text-align:center;
+      font-size:20px;
+      font-weight:900;
+      color:#1d4ed8;
+      line-height:1.5;
+    }
+
     @media (max-width: 768px){
       .topbar h1{ font-size:21px; }
       .section-title{ font-size:20px; }
@@ -749,6 +773,7 @@
       .modal-card{ padding:16px 14px 14px; }
       .modal-title{ font-size:20px; }
       .rule-list{ font-size:14px; }
+      .loading-card{ font-size:18px; }
     }
 
     @media (max-width: 560px){
@@ -781,9 +806,10 @@
     </div>
 
     <div class="loading-mask hidden" id="globalLoadingMask">
-      <div class="loading-card">處理中，請稍候...</div>
+      <div class="loading-card" id="globalLoadingText">處理中，請稍候...</div>
     </div>
 
+    <div class="page">
       <div class="card" id="step1">
         <h2 class="section-title">第 1 步｜驗證排班權限</h2>
         <div class="hint">
@@ -991,10 +1017,11 @@
     }
 
     function showGlobalLoading(show, text){
-      const el = document.getElementById('globalLoading');
-      if (!el) return;
-      el.textContent = text || '處理中，請稍候...';
-      el.classList.toggle('hidden', !show);
+      const mask = document.getElementById('globalLoadingMask');
+      const textEl = document.getElementById('globalLoadingText');
+      if (!mask || !textEl) return;
+      textEl.textContent = text || '處理中，請稍候...';
+      mask.classList.toggle('hidden', !show);
     }
 
     function getMonthMatrix(year, month){
