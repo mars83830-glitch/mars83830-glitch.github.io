@@ -931,7 +931,6 @@
     const LIFF_ID = '2009174277-yJdVzIb0';
     const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbynmvNtFOWo3_cT9WtPjLCx3iGjp1lP99Q5SOLUba3SbE7oltxPUJc0tX4zI-B_M0vN/exec';
 
-    // 只保留真正國定假日，不含補假 / 放假日
     const HOLIDAYS_2026 = new Set([
       '2026-01-01',
       '2026-02-16','2026-02-17','2026-02-18','2026-02-19','2026-02-20',
@@ -1555,10 +1554,7 @@
       tbody.innerHTML = schedules.map(item => {
         let text = '';
         if (item.shift1Text === 'X' && !item.shift2Text) {
-            text = '休假';
-          } else {
-          const isHoliday = HOLIDAYS_2026.has(item.date);
-          text = isHoliday ? '國假' : '休假';
+          text = '休假';
         } else {
           text = item.shift2Text ? `${item.shift1Text} / ${item.shift2Text}` : item.shift1Text;
         }
