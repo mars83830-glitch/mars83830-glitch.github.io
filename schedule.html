@@ -874,7 +874,7 @@
         <h2 class="section-title">第 1 步｜驗證排班權限</h2>
         <div class="hint">
           系統會自動檢查排班權限。<br>
-          通過後才可進入下一步。
+          僅開放每月 15 日～25 日使用。
         </div>
         <div class="status" id="authStatus">驗證中...</div>
         <div class="auth-box hidden" id="authBox"></div>
@@ -969,9 +969,7 @@
 
       <div class="card hidden" id="step4">
         <h2 class="section-title">第 4 步｜最後送出</h2>
-        <div class="hint">
-          送出前請再次確認排班內容。
-        </div>
+        <div class="hint">送出前請再次確認排班內容。</div>
 
         <div class="status" id="submitMonthText"></div>
 
@@ -1010,9 +1008,7 @@
         <li>至多連續出勤五日。</li>
         <li>國定假日排班將依實際人力需求做調整。</li>
       </ol>
-      <div class="modal-note">
-        關閉後可直接回到此頁繼續排班與修正。
-      </div>
+      <div class="modal-note">關閉後可直接回到此頁繼續排班與修正。</div>
       <div class="modal-actions">
         <button class="btn-primary" onclick="closeRuleModal()">回上一步繼續排班</button>
       </div>
@@ -1052,7 +1048,7 @@
       authChecked: false,
       authAllowed: false,
       submitBusy: false,
-      submitLocked: false
+      openPeriodAllowed: false
     };
 
     function pad2(n){ return String(n).padStart(2,'0'); }
@@ -1068,6 +1064,11 @@
 
     function monthText(y,m){ return `${m}月 ${y}`; }
     function monthValue(y,m){ return `${y}-${pad2(m)}`; }
+
+    function isOpenPeriodNow(){
+      const day = new Date().getDate();
+      return day >= 15 && day <= 25;
+    }
 
     function getMonthMatrix(year, month){
       const first = new Date(year, month - 1, 1);
@@ -1736,49 +1737,6 @@
       }).join('');
     }
 
-    function getSubmitLockKey(){
-      return `schedule_submitted:${state.userId}:${monthValue(state.viewYear, state.viewMonth)}`;
-    }
-
-    function updateSubmitButtonState(){
-      const btn = document.getElementById('submitBtn');
-      if (!btn) return;
-
-      if (state.submitBusy) {
-        btn.disabled = true;
-        btn.textContent = '送出中...';
-        return;
-      }
-
-      if (state.submitLocked) {
-        btn.disabled = true;
-        btn.textContent = '已送出';
-        return;
-      }
-
-      btn.disabled = false;
-      btn.textContent = '正式送出';
-    }
-
-    function loadSubmitLock(){
-      if (!state.userId) {
-        state.submitLocked = false;
-        updateSubmitButtonState();
-        return false;
-      }
-      const locked = localStorage.getItem(getSubmitLockKey()) === '1';
-      state.submitLocked = locked;
-      updateSubmitButtonState();
-      return locked;
-    }
-
-    function lockSubmitForThisMonth(){
-      if (!state.userId) return;
-      localStorage.setItem(getSubmitLockKey(), '1');
-      state.submitLocked = true;
-      updateSubmitButtonState();
-    }
-
     function prepareStep4(){
       const errors = validateScheduleRules();
       applyStep3ValidationResult(errors);
@@ -1789,7 +1747,7 @@
       document.getElementById('submitResultBox').classList.add('hidden');
       document.getElementById('submitResultBox').textContent = '';
       goStep(4);
-      loadSubmitLock();
+      updateSubmitButtonState();
     }
 
     function openRuleModal(){
@@ -1832,9 +1790,11 @@
       el.classList.remove('hidden');
     }
 
-    function setSubmitBusy(busy){
-      state.submitBusy = busy;
-      updateSubmitButtonState();
+    function updateSubmitButtonState(){
+      const btn = document.getElementById('submitBtn');
+      if (!btn) return;
+      btn.disabled = !!state.submitBusy;
+      btn.textContent = state.submitBusy ? '送出中...' : '正式送出';
     }
 
     async function postJsonToGas(payload){
@@ -1852,6 +1812,17 @@
 
     async function initLiffAndCheckPermission(){
       try {
+        state.openPeriodAllowed = isOpenPeriodNow();
+
+        if (!state.openPeriodAllowed) {
+          state.authChecked = true;
+          state.authAllowed = false;
+          setAuthStatusText('目前未開放');
+          showAuthBox('排班開放時間為每月 15 日至 25 日，現在不能使用。', 'err');
+          setGoStep2Enabled(false);
+          return;
+        }
+
         setGoStep2Enabled(false);
         setAuthStatusText('驗證中...');
         hideAuthBox();
@@ -1902,6 +1873,11 @@
     }
 
     function canGoNextFromStep1(){
+      if (!state.openPeriodAllowed) {
+        alert('目前不在開放排班期間。');
+        return false;
+      }
+
       if (!state.authChecked) {
         alert('尚未完成驗證。');
         return false;
@@ -1923,16 +1899,15 @@
     async function submitSchedule(){
       if (state.submitBusy) return;
 
-      if (state.submitLocked) {
-        showSubmitResult('本月份排班已送出，不能再次送出。', 'err');
-        updateSubmitButtonState();
-        return;
-      }
-
       const errors = validateScheduleRules();
       applyStep3ValidationResult(errors);
       if (errors.length > 0) {
         goStep(3);
+        return;
+      }
+
+      if (!state.openPeriodAllowed) {
+        showSubmitResult('目前不在開放排班期間。', 'err');
         return;
       }
 
@@ -1948,7 +1923,8 @@
       }
 
       try {
-        setSubmitBusy(true);
+        state.submitBusy = true;
+        updateSubmitButtonState();
         showSubmitResult('送出中，請稍候...', '');
 
         const payload = {
@@ -1962,20 +1938,18 @@
         const { data } = await postJsonToGas(payload);
 
         if (!data || !data.ok) {
+          state.submitBusy = false;
+          updateSubmitButtonState();
           showSubmitResult(`送出失敗：${(data && data.message) ? data.message : '未知錯誤'}`, 'err');
-          setSubmitBusy(false);
           return;
         }
 
-        setSubmitBusy(false);
-        lockSubmitForThisMonth();
-
-        showSubmitResult(
-          `送出成功 ✅\n月份：${monthValue(state.viewYear, state.viewMonth)}\n筆數：${data.writeCount || schedules.length}`,
-          'ok'
-        );
+        state.submitBusy = false;
+        updateSubmitButtonState();
+        showSubmitResult(`送出成功 ✅\n月份：${monthValue(state.viewYear, state.viewMonth)}\n筆數：${data.writeCount || schedules.length}`, 'ok');
       } catch (err) {
-        setSubmitBusy(false);
+        state.submitBusy = false;
+        updateSubmitButtonState();
         showSubmitResult(`送出失敗：${err.message || err}`, 'err');
       }
     }
