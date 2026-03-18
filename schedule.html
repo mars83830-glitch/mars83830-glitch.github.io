@@ -1317,10 +1317,14 @@
             return;
           }
 
-          let start2Abs = start2Raw;
-          while (start2Abs < end1Abs) start2Abs += 24 * 60;
+          // 第二段必須晚於第一段結束，不能重疊或倒排
+          if (start2Raw <= end1Abs) {
+            errors.push(`${tpl.label}：第二段必須晚於第一段結束，且不可重疊。`);
+            return;
+          }
 
-          const breakMinutes = start2Abs - end1Abs;
+          const breakMinutes = start2Raw - end1Abs;
+
           if (breakMinutes < 120) {
             errors.push(`${tpl.label}：兩段班中間休息需至少 2 小時，目前僅 ${formatMinutesToHourText(breakMinutes)}。`);
             return;
@@ -1458,8 +1462,14 @@
     }
 
     function applyBackendValidationResult(data){
-      const invalidDates = Array.isArray(data.invalidDates) ? data.invalidDates : [];
-      const errors = Array.isArray(data.errors) ? data.errors : [];
+      const invalidDates = Array.isArray(data?.invalidDates) ? data.invalidDates : [];
+
+      let errors = [];
+      if (Array.isArray(data?.errors) && data.errors.length > 0) {
+        errors = data.errors;
+      } else if (data?.message) {
+        errors = [data.message];
+      }
 
       state.step3InvalidDates = new Set(invalidDates);
 
@@ -1642,24 +1652,26 @@
     }
 
     async function validateScheduleAgainstBackend(){
-      if (state.validateBusy) return { ok:false, valid:false, errors:['檢查中，請稍候'], invalidDates:[] };
+      if (state.validateBusy) {
+        return { ok:false, valid:false, message:'檢查中，請稍候', errors:['檢查中，請稍候'], invalidDates:[] };
+      }
 
       if (!state.openPeriodAllowed) {
-        return { ok:false, valid:false, errors:['目前不在開放排班期間。'], invalidDates:[] };
+        return { ok:false, valid:false, message:'目前不在開放排班期間。', errors:['目前不在開放排班期間。'], invalidDates:[] };
       }
 
       if (!state.authAllowed || !state.userId) {
-        return { ok:false, valid:false, errors:['目前登入狀態或權限異常，請回到第 1 步重新確認。'], invalidDates:[] };
+        return { ok:false, valid:false, message:'目前登入狀態或權限異常，請回到第 1 步重新確認。', errors:['目前登入狀態或權限異常，請回到第 1 步重新確認。'], invalidDates:[] };
       }
 
       const localTemplateErrors = validateTemplateList();
       if (localTemplateErrors.length > 0) {
-        return { ok:false, valid:false, errors:localTemplateErrors, invalidDates:[] };
+        return { ok:false, valid:false, message:localTemplateErrors[0], errors:localTemplateErrors, invalidDates:[] };
       }
 
       const schedules = buildSchedulesPayload();
       if (schedules.length === 0) {
-        return { ok:true, valid:false, errors:['目前尚未排任何日期。'], invalidDates:[] };
+        return { ok:true, valid:false, message:'目前尚未排任何日期。', errors:['目前尚未排任何日期。'], invalidDates:[] };
       }
 
       try {
@@ -1674,15 +1686,15 @@
         };
 
         const { data } = await postJsonToGas(payload);
-
         state.validateBusy = false;
 
         if (!data || !data.ok) {
           return {
             ok:false,
             valid:false,
-            errors:[(data && data.message) ? data.message : '後台驗證失敗'],
-            invalidDates:[]
+            message:(data && data.message) ? data.message : '後台驗證失敗',
+            errors:Array.isArray(data?.errors) && data.errors.length ? data.errors : [((data && data.message) ? data.message : '後台驗證失敗')],
+            invalidDates:Array.isArray(data?.invalidDates) ? data.invalidDates : []
           };
         }
 
@@ -1692,6 +1704,7 @@
         return {
           ok:false,
           valid:false,
+          message:`後台驗證失敗：${err.message || err}`,
           errors:[`後台驗證失敗：${err.message || err}`],
           invalidDates:[]
         };
