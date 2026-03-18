@@ -1389,7 +1389,7 @@
       }
 
       if (assignedValue === 'OFF') {
-        return `<div class="day-off-text ${isHoliday ? 'holiday-off' : ''}">${isHoliday ? '國假' : '休假'}</div>`;
+        return `<div class="day-off-text">休假</div>`;
       }
 
       const assignedTpl = state.templates.find(t => t.id === assignedValue);
@@ -1555,6 +1555,8 @@
       tbody.innerHTML = schedules.map(item => {
         let text = '';
         if (item.shift1Text === 'X' && !item.shift2Text) {
+            text = '休假';
+          } else {
           const isHoliday = HOLIDAYS_2026.has(item.date);
           text = isHoliday ? '國假' : '休假';
         } else {
