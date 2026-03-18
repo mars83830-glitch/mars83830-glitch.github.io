@@ -602,20 +602,6 @@
       scrollbar-width:auto;
     }
 
-    .template-palette::-webkit-scrollbar{
-      height:8px;
-    }
-
-    .template-palette::-webkit-scrollbar-track{
-      background:#e9eef7;
-      border-radius:999px;
-    }
-
-    .template-palette::-webkit-scrollbar-thumb{
-      background:#bdd1ef;
-      border-radius:999px;
-    }
-
     .template-chip{
       flex:0 0 auto;
       min-width:auto;
@@ -758,101 +744,34 @@
       .section-title{ font-size:20px; }
       .step-tab{ font-size:12px; height:44px; padding:8px 2px; }
       .month-title{ font-size:16px; }
-
-      .calendar-table thead th{
-        height:44px;
-        font-size:11px;
-      }
-
-      .calendar-table td{
-        height:98px;
-      }
-
+      .calendar-table thead th{ height:44px; font-size:11px; }
+      .calendar-table td{ height:98px; }
       .day-num{ font-size:14px; }
       .day-shift-text{ font-size:9px; min-height:32px; }
       .template-name{ font-size:16px; }
-
-      .template-flat-row{
-        grid-template-columns:52px repeat(4, minmax(0, 1fr));
-        gap:6px;
-      }
-
-      .seg-label{
-        font-size:12px;
-      }
-
-      .field label{
-        font-size:10px;
-      }
-
-      select, button{
-        height:38px;
-        font-size:14px;
-      }
-
-      .template-chip{
-        padding:7px 10px;
-        font-size:11px;
-        min-height:40px;
-        border-radius:12px;
-      }
-
-      .modal-card{
-        padding:16px 14px 14px;
-      }
-
-      .modal-title{
-        font-size:20px;
-      }
-
-      .rule-list{
-        font-size:14px;
-      }
+      .template-flat-row{ grid-template-columns:52px repeat(4, minmax(0, 1fr)); gap:6px; }
+      .seg-label{ font-size:12px; }
+      .field label{ font-size:10px; }
+      select, button{ height:38px; font-size:14px; }
+      .template-chip{ padding:7px 10px; font-size:11px; min-height:40px; border-radius:12px; }
+      .modal-card{ padding:16px 14px 14px; }
+      .modal-title{ font-size:20px; }
+      .rule-list{ font-size:14px; }
     }
 
     @media (max-width: 560px){
-      .template-flat-row{
-        grid-template-columns:48px repeat(4, minmax(0, 1fr));
-        gap:5px;
-      }
-
-      .template-actions{
-        width:100%;
-        justify-content:space-between;
-      }
-
-      .field label{
-        font-size:9px;
-      }
-
-      select{
-        padding:0 6px;
-        font-size:13px;
-      }
-
-      .seg-label{
-        padding-bottom:8px;
-      }
+      .template-flat-row{ grid-template-columns:48px repeat(4, minmax(0, 1fr)); gap:5px; }
+      .template-actions{ width:100%; justify-content:space-between; }
+      .field label{ font-size:9px; }
+      select{ padding:0 6px; font-size:13px; }
+      .seg-label{ padding-bottom:8px; }
     }
 
     @media (max-width: 380px){
-      .template-chip{
-        padding:6px 9px;
-        font-size:10px;
-      }
-
-      .btn-rule{
-        padding:0 10px;
-        font-size:12px;
-      }
-
-      .field label{
-        font-size:8px;
-      }
-
-      select{
-        font-size:12px;
-      }
+      .template-chip{ padding:6px 9px; font-size:10px; }
+      .btn-rule{ padding:0 10px; font-size:12px; }
+      .field label{ font-size:8px; }
+      select{ font-size:12px; }
     }
   </style>
 </head>
@@ -982,9 +901,7 @@
               </tr>
             </thead>
             <tbody id="submitPreviewBody">
-              <tr>
-                <td colspan="2">目前沒有排班資料</td>
-              </tr>
+              <tr><td colspan="2">目前沒有排班資料</td></tr>
             </tbody>
           </table>
         </div>
@@ -1048,11 +965,14 @@
       authChecked: false,
       authAllowed: false,
       submitBusy: false,
+      validateBusy: false,
       openPeriodAllowed: false
     };
 
     function pad2(n){ return String(n).padStart(2,'0'); }
     function toDateKey(y,m,d){ return `${y}-${pad2(m)}-${pad2(d)}`; }
+    function monthText(y,m){ return `${m}月 ${y}`; }
+    function monthValue(y,m){ return `${y}-${pad2(m)}`; }
 
     function getNextMonthBase() {
       const now = new Date();
@@ -1061,9 +981,6 @@
       if (m === 13) { y += 1; m = 1; }
       return { year:y, month:m };
     }
-
-    function monthText(y,m){ return `${m}月 ${y}`; }
-    function monthValue(y,m){ return `${y}-${pad2(m)}`; }
 
     function isOpenPeriodNow(){
       const day = new Date().getDate();
@@ -1085,9 +1002,7 @@
         cells.push({ year:py, month:pm, day:d, outside:true });
       }
 
-      for (let d = 1; d <= lastDate; d++) {
-        cells.push({ year, month, day:d, outside:false });
-      }
+      for (let d = 1; d <= lastDate; d++) cells.push({ year, month, day:d, outside:false });
 
       let nextDay = 1;
       while (cells.length % 7 !== 0) {
@@ -1377,28 +1292,6 @@
       return Number.isInteger(h) ? `${h} 小時` : `${h.toFixed(1)} 小時`;
     }
 
-    function getTemplateWindowMinutes(tpl){
-      const start1 = timeToMinutes(tpl.seg1StartH, tpl.seg1StartM);
-      const end1 = absoluteEndFromStart(start1, timeToMinutes(tpl.seg1EndH, tpl.seg1EndM));
-
-      if (!tpl.isSplit) {
-        return { firstStart: start1, lastEnd: end1, isCrossDay: end1 >= 24 * 60 };
-      }
-
-      const start2Raw = timeToMinutes(tpl.seg2StartH, tpl.seg2StartM);
-      let start2 = start2Raw;
-      while (start2 < end1) start2 += 24 * 60;
-
-      let end2 = timeToMinutes(tpl.seg2EndH, tpl.seg2EndM);
-      while (end2 <= start2) end2 += 24 * 60;
-
-      return {
-        firstStart: start1,
-        lastEnd: end2,
-        isCrossDay: end2 >= 24 * 60
-      };
-    }
-
     function validateTemplateList(){
       const errors = [];
 
@@ -1550,154 +1443,6 @@
       return Object.keys(state.assignedDays).sort();
     }
 
-    function validateWeeklyOffDays(dates){
-      const errors = [];
-      if (dates.length === 0) return errors;
-
-      const assignedSet = new Set(dates);
-      const firstDate = new Date(dates[0] + 'T00:00:00');
-      const lastDate = new Date(dates[dates.length - 1] + 'T00:00:00');
-
-      const rangeStart = new Date(firstDate);
-      rangeStart.setDate(rangeStart.getDate() - rangeStart.getDay());
-
-      const rangeEnd = new Date(lastDate);
-      rangeEnd.setDate(rangeEnd.getDate() + (6 - rangeEnd.getDay()));
-
-      for (let weekStart = new Date(rangeStart); weekStart <= rangeEnd; weekStart.setDate(weekStart.getDate() + 7)) {
-        const weekDates = [];
-        let workCount = 0;
-
-        for (let i = 0; i < 7; i++) {
-          const d = new Date(weekStart);
-          d.setDate(weekStart.getDate() + i);
-          const key = toDateKey(d.getFullYear(), d.getMonth() + 1, d.getDate());
-          weekDates.push(key);
-          if (assignedSet.has(key)) workCount++;
-        }
-
-        const offCount = 7 - workCount;
-        if (offCount < 2) {
-          errors.push({
-            dates:[...weekDates.filter(k => assignedSet.has(k))],
-            message:`${weekDates[0]} ～ ${weekDates[6]} 此週休假僅 ${offCount} 天，未達每週至少 2 天休假。`
-          });
-        }
-      }
-
-      return errors;
-    }
-
-    function validateMaxConsecutiveDays(dates){
-      const errors = [];
-      let streak = 0;
-      let streakDates = [];
-      let prevDate = null;
-
-      dates.forEach(dateKey => {
-        const current = new Date(dateKey + 'T00:00:00');
-
-        if (!prevDate) {
-          streak = 1;
-          streakDates = [dateKey];
-        } else {
-          const diff = (current - prevDate) / 86400000;
-          if (diff === 1) {
-            streak++;
-            streakDates.push(dateKey);
-          } else {
-            streak = 1;
-            streakDates = [dateKey];
-          }
-        }
-
-        if (streak >= 6) {
-          errors.push({
-            dates:[...streakDates],
-            message:`${streakDates[0]} ～ ${streakDates[streakDates.length - 1]} 形成連續出勤 ${streak} 天，超過最多 5 天。`
-          });
-        }
-
-        prevDate = current;
-      });
-
-      return errors;
-    }
-
-    function validateCrossDayRestRule(dates){
-      const errors = [];
-
-      for (let i = 1; i < dates.length; i++) {
-        const prevDateKey = dates[i - 1];
-        const currDateKey = dates[i];
-        const prevTpl = state.templates.find(t => t.id === state.assignedDays[prevDateKey]);
-        const currTpl = state.templates.find(t => t.id === state.assignedDays[currDateKey]);
-        if (!prevTpl || !currTpl) continue;
-
-        const prevWindow = getTemplateWindowMinutes(prevTpl);
-        if (!prevWindow.isCrossDay) continue;
-
-        const prevDateBase = new Date(prevDateKey + 'T00:00:00');
-        const currDateBase = new Date(currDateKey + 'T00:00:00');
-        const diffDays = (currDateBase - prevDateBase) / 86400000;
-        if (diffDays !== 1) continue;
-
-        const currWindow = getTemplateWindowMinutes(currTpl);
-        const currStartAbs = 24 * 60 + currWindow.firstStart;
-        const restMinutes = currStartAbs - prevWindow.lastEnd;
-
-        if (restMinutes < 660) {
-          const hours = (restMinutes / 60).toFixed(1);
-          errors.push({
-            dates:[prevDateKey, currDateKey],
-            message:`${prevDateKey} 為跨日班，至 ${currDateKey} 開班前休息僅 ${hours} 小時，未達 11 小時。`
-          });
-        }
-      }
-
-      return errors;
-    }
-
-    function validateScheduleRules(){
-      const dates = getAssignedDatesSorted();
-      const errors = [];
-
-      if (dates.length === 0) {
-        errors.push({ dates: [], message: '目前尚未排任何日期。' });
-        return errors;
-      }
-
-      errors.push(...validateWeeklyOffDays(dates));
-      errors.push(...validateMaxConsecutiveDays(dates));
-      errors.push(...validateCrossDayRestRule(dates));
-
-      return errors;
-    }
-
-    function applyStep3ValidationResult(errors){
-      state.step3InvalidDates = new Set(errors.flatMap(e => e.dates));
-
-      const errorBox = document.getElementById('step3Errors');
-      const errorList = document.getElementById('step3ErrorList');
-
-      if (errors.length > 0) {
-        hideStep3Success();
-        errorList.innerHTML = errors.map(e => `<div class="error-item">${e.message}</div>`).join('');
-        errorBox.classList.remove('hidden');
-      } else {
-        errorList.innerHTML = '';
-        errorBox.classList.add('hidden');
-        showStep3Success();
-      }
-
-      renderStep3Calendar();
-    }
-
-    function runScheduleValidationOnly(){
-      const errors = validateScheduleRules();
-      applyStep3ValidationResult(errors);
-    }
-
     function buildSchedulesPayload(){
       const dates = getAssignedDatesSorted();
       return dates.map(d => {
@@ -1710,6 +1455,28 @@
           shift2Text: shift2
         };
       }).filter(Boolean);
+    }
+
+    function applyBackendValidationResult(data){
+      const invalidDates = Array.isArray(data.invalidDates) ? data.invalidDates : [];
+      const errors = Array.isArray(data.errors) ? data.errors : [];
+
+      state.step3InvalidDates = new Set(invalidDates);
+
+      const errorBox = document.getElementById('step3Errors');
+      const errorList = document.getElementById('step3ErrorList');
+
+      if (errors.length > 0) {
+        hideStep3Success();
+        errorList.innerHTML = errors.map(e => `<div class="error-item">${e}</div>`).join('');
+        errorBox.classList.remove('hidden');
+      } else {
+        errorList.innerHTML = '';
+        errorBox.classList.add('hidden');
+        showStep3Success();
+      }
+
+      renderStep3Calendar();
     }
 
     function renderStep4PreviewTable(){
@@ -1728,26 +1495,8 @@
         const shiftText = item.shift2Text
           ? `${item.shift1Text} / ${item.shift2Text}`
           : item.shift1Text;
-        return `
-          <tr>
-            <td>${item.date}</td>
-            <td>${shiftText}</td>
-          </tr>
-        `;
+        return `<tr><td>${item.date}</td><td>${shiftText}</td></tr>`;
       }).join('');
-    }
-
-    function prepareStep4(){
-      const errors = validateScheduleRules();
-      applyStep3ValidationResult(errors);
-
-      if (errors.length > 0) return;
-
-      renderStep4PreviewTable();
-      document.getElementById('submitResultBox').classList.add('hidden');
-      document.getElementById('submitResultBox').textContent = '';
-      goStep(4);
-      updateSubmitButtonState();
     }
 
     function openRuleModal(){
@@ -1803,7 +1552,6 @@
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(payload)
       });
-
       const text = await res.text();
       let data = {};
       try { data = JSON.parse(text); } catch(_) {}
@@ -1877,17 +1625,14 @@
         alert('目前不在開放排班期間。');
         return false;
       }
-
       if (!state.authChecked) {
         alert('尚未完成驗證。');
         return false;
       }
-
       if (!state.authAllowed) {
         alert('你目前尚未開通排班權限。');
         return false;
       }
-
       return true;
     }
 
@@ -1896,12 +1641,88 @@
       goStep(2);
     }
 
+    async function validateScheduleAgainstBackend(){
+      if (state.validateBusy) return { ok:false, valid:false, errors:['檢查中，請稍候'], invalidDates:[] };
+
+      if (!state.openPeriodAllowed) {
+        return { ok:false, valid:false, errors:['目前不在開放排班期間。'], invalidDates:[] };
+      }
+
+      if (!state.authAllowed || !state.userId) {
+        return { ok:false, valid:false, errors:['目前登入狀態或權限異常，請回到第 1 步重新確認。'], invalidDates:[] };
+      }
+
+      const localTemplateErrors = validateTemplateList();
+      if (localTemplateErrors.length > 0) {
+        return { ok:false, valid:false, errors:localTemplateErrors, invalidDates:[] };
+      }
+
+      const schedules = buildSchedulesPayload();
+      if (schedules.length === 0) {
+        return { ok:true, valid:false, errors:['目前尚未排任何日期。'], invalidDates:[] };
+      }
+
+      try {
+        state.validateBusy = true;
+
+        const payload = {
+          action: 'validateSchedule',
+          uid: state.userId,
+          displayName: state.displayName,
+          month: monthValue(state.viewYear, state.viewMonth),
+          schedules
+        };
+
+        const { data } = await postJsonToGas(payload);
+
+        state.validateBusy = false;
+
+        if (!data || !data.ok) {
+          return {
+            ok:false,
+            valid:false,
+            errors:[(data && data.message) ? data.message : '後台驗證失敗'],
+            invalidDates:[]
+          };
+        }
+
+        return data;
+      } catch (err) {
+        state.validateBusy = false;
+        return {
+          ok:false,
+          valid:false,
+          errors:[`後台驗證失敗：${err.message || err}`],
+          invalidDates:[]
+        };
+      }
+    }
+
+    async function runScheduleValidationOnly(){
+      const result = await validateScheduleAgainstBackend();
+      applyBackendValidationResult(result);
+    }
+
+    async function prepareStep4(){
+      const result = await validateScheduleAgainstBackend();
+      applyBackendValidationResult(result);
+
+      if (!result.valid) return;
+
+      renderStep4PreviewTable();
+      document.getElementById('submitResultBox').classList.add('hidden');
+      document.getElementById('submitResultBox').textContent = '';
+      goStep(4);
+      updateSubmitButtonState();
+    }
+
     async function submitSchedule(){
       if (state.submitBusy) return;
 
-      const errors = validateScheduleRules();
-      applyStep3ValidationResult(errors);
-      if (errors.length > 0) {
+      const validateResult = await validateScheduleAgainstBackend();
+      applyBackendValidationResult(validateResult);
+
+      if (!validateResult.valid) {
         goStep(3);
         return;
       }
