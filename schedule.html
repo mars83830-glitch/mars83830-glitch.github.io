@@ -950,7 +950,7 @@
       step: 1,
       templates: [],
       selectedTemplateId: '',
-      assignedDays: {},
+      assignedDays: {}, // dateKey -> tplId | 'OFF'
       step3InvalidDates: new Set(),
       viewYear: 0,
       viewMonth: 0,
@@ -1368,16 +1368,23 @@
 
     function buildCellBody(assignedValue, outside, isHoliday){
       if (outside) return '';
+
+      // 這裡是這次重點修正：
+      // 未填時，國假格就先直接顯示「國假」
       if (!assignedValue) {
         return isHoliday ? `<div class="day-off-text holiday-off">國假</div>` : '';
       }
 
+      // 已指定休假
       if (assignedValue === 'OFF') {
         return `<div class="day-off-text ${isHoliday ? 'holiday-off' : ''}">${isHoliday ? '國假' : '休假'}</div>`;
       }
 
+      // 已指定班別
       const assignedTpl = state.templates.find(t => t.id === assignedValue);
-      if (!assignedTpl) return isHoliday ? `<div class="day-off-text holiday-off">國假</div>` : '';
+      if (!assignedTpl) {
+        return isHoliday ? `<div class="day-off-text holiday-off">國假</div>` : '';
+      }
       return `<div class="day-shift-text">${formatTimeOnly(assignedTpl)}</div>`;
     }
 
@@ -1474,6 +1481,8 @@
       return getMonthDateKeys().map(d => {
         const assignedValue = state.assignedDays[d];
 
+        // 這裡是這次重點修正：
+        // 休假一律送 X，不再送 OFF
         if (assignedValue === 'OFF') {
           return {
             date: d,
@@ -1484,6 +1493,7 @@
 
         const tpl = state.templates.find(t => t.id === assignedValue);
         if (!tpl) return null;
+
         const { shift1, shift2 } = getShiftParts(tpl);
         return {
           date: d,
