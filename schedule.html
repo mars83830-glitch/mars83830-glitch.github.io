@@ -339,7 +339,6 @@
     }
 
     .flat-time-item{ min-width:0; }
-
     .flat-time-item select{ width:100%; }
 
     .step2-validating{
@@ -951,7 +950,7 @@
       step: 1,
       templates: [],
       selectedTemplateId: '',
-      assignedDays: {}, // dateKey -> templateId | 'OFF'
+      assignedDays: {},
       step3InvalidDates: new Set(),
       viewYear: 0,
       viewMonth: 0,
@@ -997,9 +996,7 @@
         cells.push({ year:py, month:pm, day:d, outside:true });
       }
 
-      for (let d = 1; d <= lastDate; d++) {
-        cells.push({ year, month, day:d, outside:false });
-      }
+      for (let d = 1; d <= lastDate; d++) cells.push({ year, month, day:d, outside:false });
 
       let nextDay = 1;
       while (cells.length % 7 !== 0) {
@@ -1295,15 +1292,6 @@
       return Number.isInteger(h) ? `${h} 小時` : `${h.toFixed(1)} 小時`;
     }
 
-    function getTemplateTotalMinutes(tpl){
-      const seg1 = calcSegmentMinutes(tpl.seg1StartH, tpl.seg1StartM, tpl.seg1EndH, tpl.seg1EndM);
-      let total = seg1;
-      if (tpl.isSplit) {
-        total += calcSegmentMinutes(tpl.seg2StartH, tpl.seg2StartM, tpl.seg2EndH, tpl.seg2EndM);
-      }
-      return total;
-    }
-
     function validateTemplateList(){
       const errors = [];
 
@@ -1380,14 +1368,16 @@
 
     function buildCellBody(assignedValue, outside, isHoliday){
       if (outside) return '';
-      if (!assignedValue) return '';
+      if (!assignedValue) {
+        return isHoliday ? `<div class="day-off-text holiday-off">國假</div>` : '';
+      }
 
       if (assignedValue === 'OFF') {
         return `<div class="day-off-text ${isHoliday ? 'holiday-off' : ''}">${isHoliday ? '國假' : '休假'}</div>`;
       }
 
       const assignedTpl = state.templates.find(t => t.id === assignedValue);
-      if (!assignedTpl) return '';
+      if (!assignedTpl) return isHoliday ? `<div class="day-off-text holiday-off">國假</div>` : '';
       return `<div class="day-shift-text">${formatTimeOnly(assignedTpl)}</div>`;
     }
 
@@ -1487,7 +1477,7 @@
         if (assignedValue === 'OFF') {
           return {
             date: d,
-            shift1Text: 'OFF',
+            shift1Text: 'X',
             shift2Text: ''
           };
         }
@@ -1545,7 +1535,7 @@
 
       tbody.innerHTML = schedules.map(item => {
         let text = '';
-        if (item.shift1Text === 'OFF') {
+        if (item.shift1Text === 'X' && !item.shift2Text) {
           const isHoliday = HOLIDAYS_2026.has(item.date);
           text = isHoliday ? '國假' : '休假';
         } else {
