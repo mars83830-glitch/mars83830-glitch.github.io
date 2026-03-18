@@ -67,7 +67,6 @@
     .step-tabs{
       display:grid;
       grid-template-columns:repeat(4,1fr);
-      gap:0;
       margin:10px 12px 0;
       border:1px solid #bfd3f2;
       border-radius:16px;
@@ -125,9 +124,7 @@
       margin-bottom:10px;
     }
 
-    .section-title-row .section-title{
-      margin:0;
-    }
+    .section-title-row .section-title{ margin:0; }
 
     .btn-rule{
       flex:0 0 auto;
@@ -341,12 +338,20 @@
       padding-bottom:10px;
     }
 
-    .flat-time-item{
-      min-width:0;
-    }
+    .flat-time-item{ min-width:0; }
 
-    .flat-time-item select{
-      width:100%;
+    .flat-time-item select{ width:100%; }
+
+    .step2-validating{
+      margin-top:12px;
+      border:1px solid #bfd3f2;
+      background:#f8fbff;
+      color:#1d4ed8;
+      border-radius:14px;
+      padding:12px;
+      font-size:14px;
+      font-weight:900;
+      line-height:1.6;
     }
 
     .calendar-toolbar{
@@ -390,17 +395,9 @@
       padding:0;
     }
 
-    .calendar-table thead th:last-child{
-      border-right:none;
-    }
-
-    .calendar-table thead .sun{
-      color:#c2410c;
-    }
-
-    .calendar-table thead .sat{
-      color:#2563eb;
-    }
+    .calendar-table thead th:last-child{ border-right:none; }
+    .calendar-table thead .sun{ color:#c2410c; }
+    .calendar-table thead .sat{ color:#2563eb; }
 
     .calendar-table td{
       position:relative;
@@ -413,25 +410,12 @@
       background:#fff;
     }
 
-    .calendar-table td:last-child{
-      border-right:none;
-    }
+    .calendar-table td:last-child{ border-right:none; }
+    .calendar-table tbody tr:last-child td{ border-bottom:none; }
 
-    .calendar-table tbody tr:last-child td{
-      border-bottom:none;
-    }
-
-    .day-cell.outside{
-      background:#f3f4f6;
-    }
-
-    .day-cell.sun-bg{
-      background:linear-gradient(0deg, rgba(255,255,255,1) 82%, var(--sun) 82%);
-    }
-
-    .day-cell.sat-bg{
-      background:linear-gradient(0deg, rgba(255,255,255,1) 82%, var(--sat) 82%);
-    }
+    .day-cell.outside{ background:#f3f4f6; }
+    .day-cell.sun-bg{ background:linear-gradient(0deg, rgba(255,255,255,1) 82%, var(--sun) 82%); }
+    .day-cell.sat-bg{ background:linear-gradient(0deg, rgba(255,255,255,1) 82%, var(--sat) 82%); }
 
     .day-cell.holiday-bg{
       background:
@@ -500,10 +484,24 @@
       padding:0 1px;
     }
 
-    .empty-note{
-      color:#a1a1aa;
+    .day-off-text{
+      width:100%;
+      font-weight:900;
       font-size:10px;
-      margin-top:16px;
+      line-height:1.15;
+      text-align:center;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:34px;
+      padding:0 1px;
+      color:#6b7280;
+    }
+
+    .day-off-text.holiday-off{
+      color:var(--holiday-red);
+      font-weight:900;
+      font-size:11px;
     }
 
     .legend{
@@ -532,7 +530,7 @@
 
     .lg-invalid{ background:#fee2e2; border-color:#dc2626 !important; }
     .lg-holiday{ background:#fff4f4; border-color:#e7b2b2 !important; }
-    .lg-erase{ background:#fffbeb; border-color:#f59e0b !important; }
+    .lg-off{ background:#f3f4f6; border-color:#cbd5e1 !important; }
 
     .error-box{
       margin-top:12px;
@@ -551,9 +549,9 @@
 
     .error-item{
       color:#991b1b;
-      margin:4px 0;
+      margin:6px 0;
       font-size:14px;
-      line-height:1.5;
+      line-height:1.6;
       white-space:pre-wrap;
     }
 
@@ -626,10 +624,10 @@
       outline-offset:-3px;
     }
 
-    .template-chip.erase{
-      color:#b45309;
-      background:#fffbeb;
-      border-color:#fcd34d;
+    .template-chip.off{
+      color:#374151;
+      background:#f3f4f6;
+      border-color:#cbd5e1;
     }
 
     .current-template{
@@ -639,9 +637,7 @@
       line-height:1.6;
     }
 
-    .current-template b{
-      color:#1d4ed8;
-    }
+    .current-template b{ color:#1d4ed8; }
 
     .confirm-tip{
       margin-bottom:10px;
@@ -682,9 +678,7 @@
       white-space:nowrap;
     }
 
-    .preview-table tbody tr:last-child td{
-      border-bottom:none;
-    }
+    .preview-table tbody tr:last-child td{ border-bottom:none; }
 
     .modal-backdrop{
       position:fixed;
@@ -721,9 +715,7 @@
       line-height:1.8;
     }
 
-    .rule-list li{
-      margin-bottom:8px;
-    }
+    .rule-list li{ margin-bottom:8px; }
 
     .modal-note{
       margin-top:10px;
@@ -747,7 +739,8 @@
       .calendar-table thead th{ height:44px; font-size:11px; }
       .calendar-table td{ height:98px; }
       .day-num{ font-size:14px; }
-      .day-shift-text{ font-size:9px; min-height:32px; }
+      .day-shift-text,.day-off-text{ font-size:9px; min-height:32px; }
+      .day-off-text.holiday-off{ font-size:10px; }
       .template-name{ font-size:16px; }
       .template-flat-row{ grid-template-columns:52px repeat(4, minmax(0, 1fr)); gap:6px; }
       .seg-label{ font-size:12px; }
@@ -811,6 +804,8 @@
 
         <div id="templateList"></div>
 
+        <div class="step2-validating hidden" id="step2Validating">驗證中，請稍候...</div>
+
         <div class="error-box hidden" id="step2Errors">
           <div class="error-title">模板檢查結果</div>
           <div id="step2ErrorList"></div>
@@ -833,7 +828,7 @@
         </div>
 
         <div class="confirm-tip">
-          先選上班時段，再點下方日期套用。<br>
+          請把下個月每一天都填滿，只能選擇「排班」或「休假」。<br>
           若有規則錯誤，日期會標紅；你可以直接在這一頁修正。
         </div>
 
@@ -867,7 +862,7 @@
         <div class="legend">
           <span><i class="lg-invalid"></i>規則錯誤</span>
           <span><i class="lg-holiday"></i>國定假日</span>
-          <span><i class="lg-erase"></i>休假/清除</span>
+          <span><i class="lg-off"></i>休假 / 國假</span>
         </div>
 
         <div class="success-box hidden" id="step3SuccessBox">
@@ -897,7 +892,7 @@
             <thead>
               <tr>
                 <th style="width:42%;">日期</th>
-                <th>班段</th>
+                <th>內容</th>
               </tr>
             </thead>
             <tbody id="submitPreviewBody">
@@ -923,7 +918,7 @@
         <li>每週（星期日至星期六）須排定至少兩天休假。</li>
         <li>跨日班別需間隔至少 11 小時之休息時間。</li>
         <li>至多連續出勤五日。</li>
-        <li>國定假日排班將依實際人力需求做調整。</li>
+        <li>國定假日排班將依實際人力需求做調整，且當日總工時最多 9 小時。</li>
       </ol>
       <div class="modal-note">關閉後可直接回到此頁繼續排班與修正。</div>
       <div class="modal-actions">
@@ -956,7 +951,7 @@
       step: 1,
       templates: [],
       selectedTemplateId: '',
-      assignedDays: {},
+      assignedDays: {}, // dateKey -> templateId | 'OFF'
       step3InvalidDates: new Set(),
       viewYear: 0,
       viewMonth: 0,
@@ -1002,7 +997,9 @@
         cells.push({ year:py, month:pm, day:d, outside:true });
       }
 
-      for (let d = 1; d <= lastDate; d++) cells.push({ year, month, day:d, outside:false });
+      for (let d = 1; d <= lastDate; d++) {
+        cells.push({ year, month, day:d, outside:false });
+      }
 
       let nextDay = 1;
       while (cells.length % 7 !== 0) {
@@ -1066,7 +1063,7 @@
       });
 
       if (state.selectedTemplateId === id) {
-        state.selectedTemplateId = state.templates[0]?.id || 'ERASE';
+        state.selectedTemplateId = state.templates[0]?.id || 'OFF';
       }
 
       renumberTemplateLabels();
@@ -1075,6 +1072,8 @@
       renderTemplatePalette();
       renderStep3Calendar();
       hideStep2Errors();
+      hideStep3Errors();
+      hideStep3Success();
     }
 
     function timeOptionsHour(selected){
@@ -1171,6 +1170,10 @@
       document.getElementById('step3SuccessBox').classList.remove('hidden');
     }
 
+    function showStep2Validating(show){
+      document.getElementById('step2Validating').classList.toggle('hidden', !show);
+    }
+
     function updateTpl(id, key, value){
       const tpl = state.templates.find(t => t.id === id);
       if (!tpl) return;
@@ -1252,17 +1255,17 @@
         wrap.appendChild(btn);
       });
 
-      const eraseBtn = document.createElement('button');
-      eraseBtn.className = 'template-chip erase' + (state.selectedTemplateId === 'ERASE' ? ' active' : '');
-      eraseBtn.innerHTML = `休假/清除`;
-      eraseBtn.onclick = () => {
-        state.selectedTemplateId = 'ERASE';
+      const offBtn = document.createElement('button');
+      offBtn.className = 'template-chip off' + (state.selectedTemplateId === 'OFF' ? ' active' : '');
+      offBtn.innerHTML = `休假`;
+      offBtn.onclick = () => {
+        state.selectedTemplateId = 'OFF';
         renderTemplatePalette();
       };
-      wrap.appendChild(eraseBtn);
+      wrap.appendChild(offBtn);
 
-      if (state.selectedTemplateId === 'ERASE') {
-        currentText.innerHTML = `目前選中：<b>休假 / 清除</b>`;
+      if (state.selectedTemplateId === 'OFF') {
+        currentText.innerHTML = `目前選中：<b>休假</b>`;
       } else {
         const currentTpl = state.templates.find(t => t.id === state.selectedTemplateId);
         currentText.innerHTML = currentTpl
@@ -1292,6 +1295,15 @@
       return Number.isInteger(h) ? `${h} 小時` : `${h.toFixed(1)} 小時`;
     }
 
+    function getTemplateTotalMinutes(tpl){
+      const seg1 = calcSegmentMinutes(tpl.seg1StartH, tpl.seg1StartM, tpl.seg1EndH, tpl.seg1EndM);
+      let total = seg1;
+      if (tpl.isSplit) {
+        total += calcSegmentMinutes(tpl.seg2StartH, tpl.seg2StartM, tpl.seg2EndH, tpl.seg2EndM);
+      }
+      return total;
+    }
+
     function validateTemplateList(){
       const errors = [];
 
@@ -1317,14 +1329,12 @@
             return;
           }
 
-          // 第二段必須晚於第一段結束，不能重疊或倒排
           if (start2Raw <= end1Abs) {
             errors.push(`${tpl.label}：第二段必須晚於第一段結束，且不可重疊。`);
             return;
           }
 
           const breakMinutes = start2Raw - end1Abs;
-
           if (breakMinutes < 120) {
             errors.push(`${tpl.label}：兩段班中間休息需至少 2 小時，目前僅 ${formatMinutesToHourText(breakMinutes)}。`);
             return;
@@ -1334,36 +1344,50 @@
         }
 
         if (totalMinutes > 720) {
-          errors.push(`${tpl.label}：總工時 ${formatMinutesToHourText(totalMinutes)}，超過 12 小時，不能進入下一步。`);
+          errors.push(`${tpl.label}：總工時 ${formatMinutesToHourText(totalMinutes)}，超過 12 小時。`);
         }
       });
 
       return errors;
     }
 
-    function prepareStep3(){
-      const errors = validateTemplateList();
-      const errorBox = document.getElementById('step2Errors');
-      const errorList = document.getElementById('step2ErrorList');
+    async function prepareStep3(){
+      showStep2Validating(true);
 
-      if (errors.length > 0) {
-        errorList.innerHTML = errors.map(t => `<div class="error-item">${t}</div>`).join('');
-        errorBox.classList.remove('hidden');
-        return;
+      try {
+        await new Promise(r => setTimeout(r, 120));
+        const errors = validateTemplateList();
+        const errorBox = document.getElementById('step2Errors');
+        const errorList = document.getElementById('step2ErrorList');
+
+        if (errors.length > 0) {
+          errorList.innerHTML = errors.map(t => `<div class="error-item">${t}</div>`).join('');
+          errorBox.classList.remove('hidden');
+          return;
+        }
+
+        errorBox.classList.add('hidden');
+        errorList.innerHTML = '';
+
+        if (!state.selectedTemplateId && state.templates.length > 0) {
+          state.selectedTemplateId = state.templates[0].id;
+        }
+        goStep(3);
+      } finally {
+        showStep2Validating(false);
       }
-
-      errorBox.classList.add('hidden');
-      errorList.innerHTML = '';
-
-      if (!state.selectedTemplateId && state.templates.length > 0) {
-        state.selectedTemplateId = state.templates[0].id;
-      }
-      goStep(3);
     }
 
-    function buildCellBody(assignedTpl, outside){
+    function buildCellBody(assignedValue, outside, isHoliday){
       if (outside) return '';
-      if (!assignedTpl) return `<span class="empty-note">休假</span>`;
+      if (!assignedValue) return '';
+
+      if (assignedValue === 'OFF') {
+        return `<div class="day-off-text ${isHoliday ? 'holiday-off' : ''}">${isHoliday ? '國假' : '休假'}</div>`;
+      }
+
+      const assignedTpl = state.templates.find(t => t.id === assignedValue);
+      if (!assignedTpl) return '';
       return `<div class="day-shift-text">${formatTimeOnly(assignedTpl)}</div>`;
     }
 
@@ -1383,7 +1407,7 @@
         rowCells.forEach(c => {
           const dateKey = toDateKey(c.year, c.month, c.day);
           const weekday = new Date(c.year, c.month - 1, c.day).getDay();
-          const assignedTpl = state.templates.find(t => t.id === state.assignedDays[dateKey]);
+          const assignedValue = state.assignedDays[dateKey];
           const isInvalid = state.step3InvalidDates.has(dateKey);
           const isHoliday = HOLIDAYS_2026.has(dateKey);
 
@@ -1403,11 +1427,14 @@
           else if (weekday === 0) numCls += ' sun';
           else if (weekday === 6) numCls += ' sat';
 
-          if (assignedTpl && !isInvalid) {
-            const color = getTplColor(assignedTpl);
-            td.style.background = color.bg;
-            if (isHoliday) {
-              td.style.background = `linear-gradient(180deg, var(--holiday-top) 0 18px, transparent 18px 100%), ${color.bg}`;
+          if (assignedValue && assignedValue !== 'OFF' && !isInvalid) {
+            const assignedTpl = state.templates.find(t => t.id === assignedValue);
+            if (assignedTpl) {
+              const color = getTplColor(assignedTpl);
+              td.style.background = color.bg;
+              if (isHoliday) {
+                td.style.background = `linear-gradient(180deg, var(--holiday-top) 0 18px, transparent 18px 100%), ${color.bg}`;
+              }
             }
           }
 
@@ -1416,7 +1443,7 @@
               <div class="${numCls}">${c.day}</div>
             </div>
             <div class="day-body">
-              ${buildCellBody(assignedTpl, c.outside)}
+              ${buildCellBody(assignedValue, c.outside, isHoliday)}
             </div>
           `;
 
@@ -1430,27 +1457,42 @@
 
     function assignDate(dateKey){
       if (!state.selectedTemplateId) return;
-
-      if (state.selectedTemplateId === 'ERASE') {
-        delete state.assignedDays[dateKey];
-      } else {
-        state.assignedDays[dateKey] = state.selectedTemplateId;
-      }
-
+      state.assignedDays[dateKey] = state.selectedTemplateId;
       state.step3InvalidDates = new Set();
       hideStep3Errors();
       hideStep3Success();
       renderStep3Calendar();
     }
 
-    function getAssignedDatesSorted(){
-      return Object.keys(state.assignedDays).sort();
+    function getMonthDateKeys(){
+      const lastDate = new Date(state.viewYear, state.viewMonth, 0).getDate();
+      const keys = [];
+      for (let d = 1; d <= lastDate; d++) keys.push(toDateKey(state.viewYear, state.viewMonth, d));
+      return keys;
+    }
+
+    function getUnfilledMonthDates(){
+      return getMonthDateKeys().filter(k => !state.assignedDays[k]);
+    }
+
+    function formatShortDateKey(dateKey){
+      const d = new Date(dateKey + 'T00:00:00');
+      return `${d.getMonth() + 1}/${d.getDate()}`;
     }
 
     function buildSchedulesPayload(){
-      const dates = getAssignedDatesSorted();
-      return dates.map(d => {
-        const tpl = state.templates.find(t => t.id === state.assignedDays[d]);
+      return getMonthDateKeys().map(d => {
+        const assignedValue = state.assignedDays[d];
+
+        if (assignedValue === 'OFF') {
+          return {
+            date: d,
+            shift1Text: 'OFF',
+            shift2Text: ''
+          };
+        }
+
+        const tpl = state.templates.find(t => t.id === assignedValue);
         if (!tpl) return null;
         const { shift1, shift2 } = getShiftParts(tpl);
         return {
@@ -1502,10 +1544,14 @@
       }
 
       tbody.innerHTML = schedules.map(item => {
-        const shiftText = item.shift2Text
-          ? `${item.shift1Text} / ${item.shift2Text}`
-          : item.shift1Text;
-        return `<tr><td>${item.date}</td><td>${shiftText}</td></tr>`;
+        let text = '';
+        if (item.shift1Text === 'OFF') {
+          const isHoliday = HOLIDAYS_2026.has(item.date);
+          text = isHoliday ? '國假' : '休假';
+        } else {
+          text = item.shift2Text ? `${item.shift1Text} / ${item.shift2Text}` : item.shift1Text;
+        }
+        return `<tr><td>${formatShortDateKey(item.date)}</td><td>${text}</td></tr>`;
       }).join('');
     }
 
@@ -1532,12 +1578,6 @@
       el.classList.remove('hidden');
     }
 
-    function hideAuthBox(){
-      const el = document.getElementById('authBox');
-      el.className = 'auth-box hidden';
-      el.textContent = '';
-    }
-
     function setGoStep2Enabled(enabled){
       document.getElementById('goStep2Btn').disabled = !enabled;
     }
@@ -1551,7 +1591,6 @@
 
     function updateSubmitButtonState(){
       const btn = document.getElementById('submitBtn');
-      if (!btn) return;
       btn.disabled = !!state.submitBusy;
       btn.textContent = state.submitBusy ? '送出中...' : '正式送出';
     }
@@ -1565,7 +1604,7 @@
       const text = await res.text();
       let data = {};
       try { data = JSON.parse(text); } catch(_) {}
-      return { res, text, data };
+      return { data };
     }
 
     async function initLiffAndCheckPermission(){
@@ -1583,7 +1622,6 @@
 
         setGoStep2Enabled(false);
         setAuthStatusText('驗證中...');
-        hideAuthBox();
 
         await liff.init({ liffId: LIFF_ID });
 
@@ -1599,15 +1637,6 @@
         const url = `${GAS_WEB_APP_URL}?action=checkPermission&uid=${encodeURIComponent(state.userId)}&displayName=${encodeURIComponent(state.displayName)}`;
         const res = await fetch(url, { method:'GET' });
         const data = await res.json();
-
-        if (!data.ok) {
-          state.authChecked = true;
-          state.authAllowed = false;
-          setAuthStatusText('驗證失敗');
-          showAuthBox('權限檢查失敗，請稍後再試。', 'err');
-          setGoStep2Enabled(false);
-          return;
-        }
 
         state.authChecked = true;
         state.authAllowed = !!data.allowed;
@@ -1669,9 +1698,15 @@
         return { ok:false, valid:false, message:localTemplateErrors[0], errors:localTemplateErrors, invalidDates:[] };
       }
 
-      const schedules = buildSchedulesPayload();
-      if (schedules.length === 0) {
-        return { ok:true, valid:false, message:'目前尚未排任何日期。', errors:['目前尚未排任何日期。'], invalidDates:[] };
+      const unfilledDates = getUnfilledMonthDates();
+      if (unfilledDates.length > 0) {
+        return {
+          ok:false,
+          valid:false,
+          message:`尚有未填日期：${unfilledDates.map(formatShortDateKey).join('、')}`,
+          errors:[`尚有未填日期：${unfilledDates.map(formatShortDateKey).join('、')}。請把整月都填成排班或休假。`],
+          invalidDates:unfilledDates
+        };
       }
 
       try {
@@ -1682,7 +1717,7 @@
           uid: state.userId,
           displayName: state.displayName,
           month: monthValue(state.viewYear, state.viewMonth),
-          schedules
+          schedules: buildSchedulesPayload()
         };
 
         const { data } = await postJsonToGas(payload);
@@ -1724,7 +1759,6 @@
 
       renderStep4PreviewTable();
       document.getElementById('submitResultBox').classList.add('hidden');
-      document.getElementById('submitResultBox').textContent = '';
       goStep(4);
       updateSubmitButtonState();
     }
@@ -1740,22 +1774,6 @@
         return;
       }
 
-      if (!state.openPeriodAllowed) {
-        showSubmitResult('目前不在開放排班期間。', 'err');
-        return;
-      }
-
-      if (!state.authAllowed || !state.userId) {
-        showSubmitResult('目前登入狀態或權限異常，請回到第 1 步重新確認。', 'err');
-        return;
-      }
-
-      const schedules = buildSchedulesPayload();
-      if (schedules.length === 0) {
-        showSubmitResult('目前沒有可送出的排班資料。', 'err');
-        return;
-      }
-
       try {
         state.submitBusy = true;
         updateSubmitButtonState();
@@ -1766,7 +1784,7 @@
           uid: state.userId,
           displayName: state.displayName,
           month: monthValue(state.viewYear, state.viewMonth),
-          schedules
+          schedules: buildSchedulesPayload()
         };
 
         const { data } = await postJsonToGas(payload);
@@ -1780,7 +1798,7 @@
 
         state.submitBusy = false;
         updateSubmitButtonState();
-        showSubmitResult(`送出成功 ✅\n月份：${monthValue(state.viewYear, state.viewMonth)}\n筆數：${data.writeCount || schedules.length}`, 'ok');
+        showSubmitResult(`送出成功 ✅\n月份：${monthValue(state.viewYear, state.viewMonth)}\n筆數：${data.writeCount || 0}`, 'ok');
       } catch (err) {
         state.submitBusy = false;
         updateSubmitButtonState();
