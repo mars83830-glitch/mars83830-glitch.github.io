@@ -143,6 +143,7 @@
       color:var(--muted);
       font-size:14px;
       line-height:1.7;
+      white-space:pre-line;
     }
 
     .status{
@@ -400,11 +401,11 @@
 
     .calendar-table td{
       position:relative;
-      height:108px;
+      height:88px;
       vertical-align:top;
       border-right:1px solid var(--line);
       border-bottom:1px solid var(--line);
-      padding:5px;
+      padding:4px 5px;
       overflow:hidden;
       background:#fff;
     }
@@ -431,7 +432,7 @@
       display:flex;
       align-items:flex-start;
       justify-content:flex-start;
-      min-height:22px;
+      min-height:18px;
       width:100%;
       position:relative;
       z-index:1;
@@ -450,7 +451,7 @@
     .day-num.outside{ color:#c9ced7; }
 
     .day-body{
-      margin-top:6px;
+      margin-top:4px;
       position:relative;
       z-index:1;
       font-size:10px;
@@ -465,7 +466,7 @@
       justify-content:flex-start;
       gap:2px;
       width:100%;
-      height:calc(100% - 28px);
+      height:calc(100% - 22px);
       text-align:center;
     }
 
@@ -479,7 +480,7 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      min-height:34px;
+      min-height:28px;
       padding:0 1px;
     }
 
@@ -492,7 +493,7 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      min-height:34px;
+      min-height:28px;
       padding:0 1px;
       color:#6b7280;
     }
@@ -790,9 +791,9 @@
       .step-tab{ font-size:12px; height:44px; padding:8px 2px; }
       .month-title{ font-size:16px; }
       .calendar-table thead th{ height:44px; font-size:11px; }
-      .calendar-table td{ height:98px; }
+      .calendar-table td{ height:80px; }
       .day-num{ font-size:14px; }
-      .day-shift-text,.day-off-text{ font-size:9px; min-height:32px; }
+      .day-shift-text,.day-off-text{ font-size:9px; min-height:24px; }
       .day-off-text.holiday-off{ font-size:10px; }
       .template-name{ font-size:16px; }
       .template-flat-row{ grid-template-columns:52px repeat(4, minmax(0, 1fr)); gap:6px; }
@@ -804,6 +805,8 @@
       .modal-title{ font-size:20px; }
       .rule-list{ font-size:14px; }
       .loading-card{ font-size:18px; }
+      .day-top{ min-height:16px; }
+      .day-body{ margin-top:3px; height:calc(100% - 20px); }
     }
 
     @media (max-width: 560px){
@@ -1642,7 +1645,8 @@
       }
 
       box.classList.remove('hidden');
-      hint.textContent = `僅供查詢下個月（${monthValue(state.viewYear, state.viewMonth)}）已送出的排班資訊`;
+      hint.textContent = `僅供查詢下個月（${monthValue(state.viewYear, state.viewMonth)}）已送出的排班資訊
+查詢後進入下一步即可進行修改`;
 
       if (!state.queriedLoaded) {
         resultWrap.classList.add('hidden');
