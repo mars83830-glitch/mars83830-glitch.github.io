@@ -143,7 +143,6 @@
       color:var(--muted);
       font-size:14px;
       line-height:1.7;
-      white-space:pre-line;
     }
 
     .status{
@@ -1645,8 +1644,7 @@
       }
 
       box.classList.remove('hidden');
-      hint.textContent = `僅供查詢下個月（${monthValue(state.viewYear, state.viewMonth)}）已送出的排班資訊
-查詢後進入下一步即可進行修改`;
+      hint.innerHTML = `僅供查詢下個月（${monthValue(state.viewYear, state.viewMonth)}）已送出的排班資訊。<br>查詢後進入下一步即可進行修改。`;
 
       if (!state.queriedLoaded) {
         resultWrap.classList.add('hidden');
