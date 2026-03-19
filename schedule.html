@@ -754,6 +754,30 @@
       line-height:1.5;
     }
 
+    .query-box{
+      margin-top:16px;
+      border-top:1px solid #e5e7eb;
+      padding-top:14px;
+    }
+
+    .query-title{
+      font-size:18px;
+      font-weight:900;
+      margin:0 0 8px;
+      color:#1f2937;
+    }
+
+    .query-empty{
+      margin-top:10px;
+      border:1px dashed #cbd5e1;
+      background:#f8fafc;
+      border-radius:14px;
+      padding:14px;
+      text-align:center;
+      color:#64748b;
+      font-weight:900;
+    }
+
     @media (max-width: 768px){
       .topbar h1{ font-size:21px; }
       .section-title{ font-size:20px; }
@@ -818,6 +842,35 @@
         </div>
         <div class="status" id="authStatus">驗證中...</div>
         <div class="auth-box hidden" id="authBox"></div>
+
+        <div class="query-box hidden" id="step1QueryBox">
+          <div class="query-title">下個月已送出排班查詢</div>
+          <div class="hint" id="step1QueryHint"></div>
+
+          <div class="calendar-toolbar" style="margin-top:10px;">
+            <div class="month-title" id="step1MonthTitle"></div>
+          </div>
+
+          <div class="calendar-table-wrap">
+            <table class="calendar-table">
+              <thead>
+                <tr>
+                  <th class="sun">星期日</th>
+                  <th>星期一</th>
+                  <th>星期二</th>
+                  <th>星期三</th>
+                  <th>星期四</th>
+                  <th>星期五</th>
+                  <th class="sat">星期六</th>
+                </tr>
+              </thead>
+              <tbody id="step1QueryGrid"></tbody>
+            </table>
+          </div>
+
+          <div class="query-empty hidden" id="step1QueryEmpty">尚未排班</div>
+        </div>
+
         <div class="footer-actions">
           <button class="btn-primary" id="goStep2Btn" onclick="goStepFromAuth()" disabled>進入下一步</button>
         </div>
@@ -995,7 +1048,11 @@
       submitBusy: false,
       submittedSuccess: false,
       validateBusy: false,
-      openPeriodAllowed: false
+      openPeriodAllowed: false,
+      queriedSchedules: [],
+      queriedFound: false,
+      queriedLoaded: false,
+      queryAppliedToEditor: false
     };
 
     function pad2(n){ return String(n).padStart(2,'0'); }
@@ -1068,6 +1125,38 @@
         seg2StartH:'00', seg2StartM:'00',
         seg2EndH:'00', seg2EndM:'00',
         colorIndex:0
+      };
+    }
+
+    function createTemplateFromShiftTexts(index, shift1Text, shift2Text){
+      const seg1 = parseShortShiftText(shift1Text);
+      const seg2 = shift2Text ? parseShortShiftText(shift2Text) : null;
+
+      return {
+        id:'tpl_import_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+        label:`時段${index}`,
+        isSplit: !!seg2,
+        seg1StartH: seg1 ? seg1.startH : '00',
+        seg1StartM: seg1 ? seg1.startM : '00',
+        seg1EndH: seg1 ? seg1.endH : '00',
+        seg1EndM: seg1 ? seg1.endM : '00',
+        seg2StartH: seg2 ? seg2.startH : '00',
+        seg2StartM: seg2 ? seg2.startM : '00',
+        seg2EndH: seg2 ? seg2.endH : '00',
+        seg2EndM: seg2 ? seg2.endM : '00',
+        colorIndex:0
+      };
+    }
+
+    function parseShortShiftText(text){
+      const t = String(text || '').trim();
+      const m = t.match(/^(\d{2})(!?)-(\d{2})(!?)$/);
+      if (!m) return null;
+      return {
+        startH: m[1],
+        startM: m[2] === '!' ? '30' : '00',
+        endH: m[3],
+        endM: m[4] === '!' ? '30' : '00'
       };
     }
 
@@ -1427,6 +1516,18 @@
       return `<div class="day-shift-text">${formatTimeOnly(assignedTpl)}</div>`;
     }
 
+    function buildQueryCellBody(item, outside, isHoliday){
+      if (outside) return '';
+      if (!item) return isHoliday ? `<div class="day-off-text holiday-off">國假</div>` : '';
+
+      if (item.shift1Text === 'X' && !item.shift2Text) {
+        return `<div class="day-off-text">休假</div>`;
+      }
+
+      const text = item.shift2Text ? `${item.shift1Text}\n${item.shift2Text}` : item.shift1Text;
+      return `<div class="day-shift-text">${text}</div>`;
+    }
+
     function renderStep3Calendar(){
       const monthTitle = document.getElementById('step3MonthTitle');
       const tbody = document.getElementById('step3Grid');
@@ -1484,6 +1585,77 @@
           `;
 
           if (!c.outside) td.onclick = () => assignDate(dateKey);
+          tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderStep1QueryCalendar(){
+      const box = document.getElementById('step1QueryBox');
+      const hint = document.getElementById('step1QueryHint');
+      const monthTitle = document.getElementById('step1MonthTitle');
+      const tbody = document.getElementById('step1QueryGrid');
+      const emptyBox = document.getElementById('step1QueryEmpty');
+      if (!box || !hint || !monthTitle || !tbody || !emptyBox) return;
+
+      if (!state.authAllowed) {
+        box.classList.add('hidden');
+        return;
+      }
+
+      box.classList.remove('hidden');
+      hint.textContent = `目前僅顯示下個月（${monthValue(state.viewYear, state.viewMonth)}）已送出資料`;
+      monthTitle.textContent = monthText(state.viewYear, state.viewMonth);
+
+      if (!state.queriedLoaded || !state.queriedFound) {
+        tbody.innerHTML = '';
+        emptyBox.classList.remove('hidden');
+        return;
+      }
+
+      emptyBox.classList.add('hidden');
+
+      const queryMap = {};
+      state.queriedSchedules.forEach(item => { queryMap[item.date] = item; });
+
+      const cells = getMonthMatrix(state.viewYear, state.viewMonth);
+      const rows = chunkArray(cells, 7);
+      tbody.innerHTML = '';
+
+      rows.forEach(rowCells => {
+        const tr = document.createElement('tr');
+
+        rowCells.forEach(c => {
+          const dateKey = toDateKey(c.year, c.month, c.day);
+          const weekday = new Date(c.year, c.month - 1, c.day).getDay();
+          const item = queryMap[dateKey] || null;
+          const isHoliday = HOLIDAYS_2026.has(dateKey);
+
+          const td = document.createElement('td');
+
+          let cls = 'day-cell';
+          if (c.outside) cls += ' outside';
+          if (!c.outside && weekday === 0) cls += ' sun-bg';
+          if (!c.outside && weekday === 6) cls += ' sat-bg';
+          if (!c.outside && isHoliday) cls += ' holiday-bg';
+          td.className = cls;
+
+          let numCls = 'day-num';
+          if (c.outside) numCls += ' outside';
+          else if (isHoliday) numCls += ' holiday';
+          else if (weekday === 0) numCls += ' sun';
+          else if (weekday === 6) numCls += ' sat';
+
+          td.innerHTML = `
+            <div class="day-top">
+              <div class="${numCls}">${c.day}</div>
+            </div>
+            <div class="day-body">
+              ${buildQueryCellBody(item, c.outside, isHoliday)}
+            </div>
+          `;
           tr.appendChild(td);
         });
 
@@ -1591,6 +1763,66 @@
       }).join('');
     }
 
+    function applyQueriedScheduleToEditor(){
+      if (state.queryAppliedToEditor) return;
+      if (!state.queriedFound || !state.queriedSchedules.length) {
+        state.queryAppliedToEditor = true;
+        return;
+      }
+
+      const workPatterns = [];
+      const patternSet = new Set();
+
+      state.queriedSchedules.forEach(item => {
+        if (item.shift1Text === 'X' && !item.shift2Text) return;
+        const key = `${item.shift1Text}__${item.shift2Text || ''}`;
+        if (patternSet.has(key)) return;
+        patternSet.add(key);
+        workPatterns.push({
+          shift1Text: item.shift1Text,
+          shift2Text: item.shift2Text || ''
+        });
+      });
+
+      if (workPatterns.length > 0) {
+        state.templates = workPatterns.map((p, idx) => createTemplateFromShiftTexts(idx + 1, p.shift1Text, p.shift2Text));
+        refreshTemplateColors();
+        renumberTemplateLabels();
+      } else {
+        state.templates = [createDefaultTemplate(1)];
+        refreshTemplateColors();
+      }
+
+      const patternToTplId = {};
+      state.templates.forEach(tpl => {
+        const parts = getShiftParts(tpl);
+        const key = `${parts.shift1}__${parts.shift2 || ''}`;
+        patternToTplId[key] = tpl.id;
+      });
+
+      state.assignedDays = {};
+      getMonthDateKeys().forEach(dateKey => {
+        state.assignedDays[dateKey] = 'OFF';
+      });
+
+      state.queriedSchedules.forEach(item => {
+        if (item.shift1Text === 'X' && !item.shift2Text) {
+          state.assignedDays[item.date] = 'OFF';
+        } else {
+          const key = `${item.shift1Text}__${item.shift2Text || ''}`;
+          const tplId = patternToTplId[key];
+          if (tplId) state.assignedDays[item.date] = tplId;
+        }
+      });
+
+      state.selectedTemplateId = state.templates[0]?.id || 'OFF';
+      state.queryAppliedToEditor = true;
+
+      renderTemplates();
+      renderTemplatePalette();
+      renderStep3Calendar();
+    }
+
     function openRuleModal(){
       document.getElementById('ruleModal').classList.remove('hidden');
     }
@@ -1651,6 +1883,34 @@
       return { data };
     }
 
+    async function loadSubmittedSchedule(){
+      if (!state.authAllowed || !state.userId) return;
+
+      try {
+        showGlobalLoading(true, '查詢中，請稍候...');
+        const payload = {
+          action: 'getSubmittedSchedule',
+          uid: state.userId,
+          month: monthValue(state.viewYear, state.viewMonth)
+        };
+        const { data } = await postJsonToGas(payload);
+
+        state.queriedLoaded = true;
+        state.queriedFound = !!(data && data.ok && data.found);
+        state.queriedSchedules = Array.isArray(data?.schedules) ? data.schedules : [];
+        state.queryAppliedToEditor = false;
+        renderStep1QueryCalendar();
+      } catch (_) {
+        state.queriedLoaded = true;
+        state.queriedFound = false;
+        state.queriedSchedules = [];
+        state.queryAppliedToEditor = false;
+        renderStep1QueryCalendar();
+      } finally {
+        showGlobalLoading(false);
+      }
+    }
+
     async function initLiffAndCheckPermission(){
       try {
         state.openPeriodAllowed = isOpenPeriodNow();
@@ -1689,6 +1949,7 @@
           setAuthStatusText('驗證完成');
           showAuthBox('你已通過排班權限驗證，可以進入下一步。', 'ok');
           setGoStep2Enabled(true);
+          await loadSubmittedSchedule();
         } else {
           setAuthStatusText('驗證完成');
           showAuthBox(data.message || '尚未開通排班權限，請聯絡管理員。', 'err');
@@ -1721,6 +1982,7 @@
 
     function goStepFromAuth(){
       if (!canGoNextFromStep1()) return;
+      applyQueriedScheduleToEditor();
       goStep(2);
     }
 
@@ -1876,6 +2138,7 @@
       initTemplates();
       renderTemplatePalette();
       renderStep3Calendar();
+      renderStep1QueryCalendar();
       updateSubmitButtonState();
 
       await initLiffAndCheckPermission();
