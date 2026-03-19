@@ -1642,7 +1642,7 @@
       }
 
       box.classList.remove('hidden');
-      hint.textContent = `目前僅顯示下個月（${monthValue(state.viewYear, state.viewMonth)}）已送出資料`;
+      hint.textContent = `僅供查詢下個月（${monthValue(state.viewYear, state.viewMonth)}）已送出的排班資訊`;
 
       if (!state.queriedLoaded) {
         resultWrap.classList.add('hidden');
