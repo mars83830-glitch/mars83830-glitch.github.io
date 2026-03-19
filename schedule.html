@@ -881,9 +881,9 @@
                 <tbody id="step1QueryGrid"></tbody>
               </table>
             </div>
-
-            <div class="query-empty hidden" id="step1QueryEmpty">尚未排班</div>
           </div>
+
+          <div class="query-empty hidden" id="step1QueryEmpty">尚未排班</div>
         </div>
 
         <div class="footer-actions">
@@ -1650,18 +1650,19 @@
 
       if (!state.queriedLoaded) {
         resultWrap.classList.add('hidden');
+        emptyBox.classList.add('hidden');
         return;
       }
 
-      resultWrap.classList.remove('hidden');
-      monthTitle.textContent = monthText(state.viewYear, state.viewMonth);
-
       if (!state.queriedFound) {
+        resultWrap.classList.add('hidden');
         tbody.innerHTML = '';
         emptyBox.classList.remove('hidden');
         return;
       }
 
+      resultWrap.classList.remove('hidden');
+      monthTitle.textContent = monthText(state.viewYear, state.viewMonth);
       emptyBox.classList.add('hidden');
 
       const queryMap = {};
