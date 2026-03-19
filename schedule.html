@@ -778,6 +778,12 @@
       font-weight:900;
     }
 
+    .ui-locked .page,
+    .ui-locked .step-tabs,
+    .ui-locked .topbar{
+      pointer-events:none;
+    }
+
     @media (max-width: 768px){
       .topbar h1{ font-size:21px; }
       .section-title{ font-size:20px; }
@@ -817,7 +823,7 @@
   </style>
 </head>
 <body>
-  <div class="app">
+  <div class="app" id="appRoot">
     <div class="topbar">
       <h1>桃園營運處 排班系統</h1>
     </div>
@@ -847,28 +853,34 @@
           <div class="query-title">下個月已送出排班查詢</div>
           <div class="hint" id="step1QueryHint"></div>
 
-          <div class="calendar-toolbar" style="margin-top:10px;">
-            <div class="month-title" id="step1MonthTitle"></div>
+          <div class="footer-actions" style="justify-content:flex-start; margin-top:10px;">
+            <button class="btn-secondary" id="queryScheduleBtn" onclick="handleQuerySubmittedSchedule()">查詢下個月排班</button>
           </div>
 
-          <div class="calendar-table-wrap">
-            <table class="calendar-table">
-              <thead>
-                <tr>
-                  <th class="sun">星期日</th>
-                  <th>星期一</th>
-                  <th>星期二</th>
-                  <th>星期三</th>
-                  <th>星期四</th>
-                  <th>星期五</th>
-                  <th class="sat">星期六</th>
-                </tr>
-              </thead>
-              <tbody id="step1QueryGrid"></tbody>
-            </table>
-          </div>
+          <div id="step1QueryResult" class="hidden">
+            <div class="calendar-toolbar" style="margin-top:10px;">
+              <div class="month-title" id="step1MonthTitle"></div>
+            </div>
 
-          <div class="query-empty hidden" id="step1QueryEmpty">尚未排班</div>
+            <div class="calendar-table-wrap">
+              <table class="calendar-table">
+                <thead>
+                  <tr>
+                    <th class="sun">星期日</th>
+                    <th>星期一</th>
+                    <th>星期二</th>
+                    <th>星期三</th>
+                    <th>星期四</th>
+                    <th>星期五</th>
+                    <th class="sat">星期六</th>
+                  </tr>
+                </thead>
+                <tbody id="step1QueryGrid"></tbody>
+              </table>
+            </div>
+
+            <div class="query-empty hidden" id="step1QueryEmpty">尚未排班</div>
+          </div>
         </div>
 
         <div class="footer-actions">
@@ -1052,7 +1064,8 @@
       queriedSchedules: [],
       queriedFound: false,
       queriedLoaded: false,
-      queryAppliedToEditor: false
+      queryAppliedToEditor: false,
+      uiLocked: false
     };
 
     function pad2(n){ return String(n).padStart(2,'0'); }
@@ -1079,6 +1092,12 @@
       if (!mask || !textEl) return;
       textEl.textContent = text || '處理中，請稍候...';
       mask.classList.toggle('hidden', !show);
+    }
+
+    function setUiLocked(locked){
+      state.uiLocked = !!locked;
+      const appRoot = document.getElementById('appRoot');
+      if (appRoot) appRoot.classList.toggle('ui-locked', locked);
     }
 
     function getMonthMatrix(year, month){
@@ -1177,6 +1196,7 @@
     }
 
     function addTemplate(){
+      if (state.uiLocked) return;
       state.templates.push(createDefaultTemplate(state.templates.length + 1));
       renumberTemplateLabels();
       refreshTemplateColors();
@@ -1185,6 +1205,7 @@
     }
 
     function removeTemplate(id){
+      if (state.uiLocked) return;
       state.templates = state.templates.filter(t => t.id !== id);
 
       Object.keys(state.assignedDays).forEach(dateKey => {
@@ -1304,6 +1325,7 @@
     }
 
     function updateTpl(id, key, value){
+      if (state.uiLocked) return;
       const tpl = state.templates.find(t => t.id === id);
       if (!tpl) return;
       tpl[key] = value;
@@ -1313,6 +1335,7 @@
     }
 
     function toggleSplit(id, checked){
+      if (state.uiLocked) return;
       const tpl = state.templates.find(t => t.id === id);
       if (!tpl) return;
       tpl.isSplit = checked;
@@ -1323,6 +1346,7 @@
     }
 
     function goStep(step){
+      if (state.uiLocked) return;
       state.step = step;
       [1,2,3,4].forEach(n => {
         document.getElementById('step' + n).classList.toggle('hidden', n !== step);
@@ -1378,6 +1402,7 @@
         btn.style.borderColor = c.border;
         btn.innerHTML = formatTimeOnly(tpl).replaceAll('\n', '<br>');
         btn.onclick = () => {
+          if (state.uiLocked) return;
           state.selectedTemplateId = tpl.id;
           renderTemplatePalette();
         };
@@ -1388,6 +1413,7 @@
       offBtn.className = 'template-chip off' + (state.selectedTemplateId === 'OFF' ? ' active' : '');
       offBtn.innerHTML = `休假`;
       offBtn.onclick = () => {
+        if (state.uiLocked) return;
         state.selectedTemplateId = 'OFF';
         renderTemplatePalette();
       };
@@ -1472,7 +1498,9 @@
     }
 
     async function prepareStep3(){
+      if (state.uiLocked) return;
       showStep2Validating(true);
+      setUiLocked(true);
 
       try {
         await new Promise(r => setTimeout(r, 120));
@@ -1492,9 +1520,16 @@
         if (!state.selectedTemplateId && state.templates.length > 0) {
           state.selectedTemplateId = state.templates[0].id;
         }
-        goStep(3);
+        state.step = 3;
+        [1,2,3,4].forEach(n => {
+          document.getElementById('step' + n).classList.toggle('hidden', n !== 3);
+          document.getElementById('stepBadge' + n).classList.toggle('active', n === 3);
+        });
+        renderTemplatePalette();
+        renderStep3Calendar();
       } finally {
         showStep2Validating(false);
+        setUiLocked(false);
       }
     }
 
@@ -1598,7 +1633,8 @@
       const monthTitle = document.getElementById('step1MonthTitle');
       const tbody = document.getElementById('step1QueryGrid');
       const emptyBox = document.getElementById('step1QueryEmpty');
-      if (!box || !hint || !monthTitle || !tbody || !emptyBox) return;
+      const resultWrap = document.getElementById('step1QueryResult');
+      if (!box || !hint || !monthTitle || !tbody || !emptyBox || !resultWrap) return;
 
       if (!state.authAllowed) {
         box.classList.add('hidden');
@@ -1607,9 +1643,16 @@
 
       box.classList.remove('hidden');
       hint.textContent = `目前僅顯示下個月（${monthValue(state.viewYear, state.viewMonth)}）已送出資料`;
+
+      if (!state.queriedLoaded) {
+        resultWrap.classList.add('hidden');
+        return;
+      }
+
+      resultWrap.classList.remove('hidden');
       monthTitle.textContent = monthText(state.viewYear, state.viewMonth);
 
-      if (!state.queriedLoaded || !state.queriedFound) {
+      if (!state.queriedFound) {
         tbody.innerHTML = '';
         emptyBox.classList.remove('hidden');
         return;
@@ -1664,6 +1707,7 @@
     }
 
     function assignDate(dateKey){
+      if (state.uiLocked) return;
       if (!state.selectedTemplateId) return;
       state.assignedDays[dateKey] = state.selectedTemplateId;
       state.step3InvalidDates = new Set();
@@ -1824,14 +1868,17 @@
     }
 
     function openRuleModal(){
+      if (state.uiLocked) return;
       document.getElementById('ruleModal').classList.remove('hidden');
     }
 
     function closeRuleModal(){
+      if (state.uiLocked) return;
       document.getElementById('ruleModal').classList.add('hidden');
     }
 
     function closeRuleModalByBackdrop(e){
+      if (state.uiLocked) return;
       if (e.target.id === 'ruleModal') closeRuleModal();
     }
 
@@ -1886,20 +1933,28 @@
     async function loadSubmittedSchedule(){
       if (!state.authAllowed || !state.userId) return;
 
-      try {
-        showGlobalLoading(true, '查詢中，請稍候...');
-        const payload = {
-          action: 'getSubmittedSchedule',
-          uid: state.userId,
-          month: monthValue(state.viewYear, state.viewMonth)
-        };
-        const { data } = await postJsonToGas(payload);
+      const payload = {
+        action: 'getSubmittedSchedule',
+        uid: state.userId,
+        month: monthValue(state.viewYear, state.viewMonth)
+      };
+      const { data } = await postJsonToGas(payload);
 
-        state.queriedLoaded = true;
-        state.queriedFound = !!(data && data.ok && data.found);
-        state.queriedSchedules = Array.isArray(data?.schedules) ? data.schedules : [];
-        state.queryAppliedToEditor = false;
-        renderStep1QueryCalendar();
+      state.queriedLoaded = true;
+      state.queriedFound = !!(data && data.ok && data.found);
+      state.queriedSchedules = Array.isArray(data?.schedules) ? data.schedules : [];
+      state.queryAppliedToEditor = false;
+      renderStep1QueryCalendar();
+    }
+
+    async function handleQuerySubmittedSchedule(){
+      if (state.uiLocked) return;
+      if (!state.authAllowed || !state.userId) return;
+
+      setUiLocked(true);
+      showGlobalLoading(true, '查詢中，請稍候...');
+      try {
+        await loadSubmittedSchedule();
       } catch (_) {
         state.queriedLoaded = true;
         state.queriedFound = false;
@@ -1908,6 +1963,7 @@
         renderStep1QueryCalendar();
       } finally {
         showGlobalLoading(false);
+        setUiLocked(false);
       }
     }
 
@@ -1949,7 +2005,7 @@
           setAuthStatusText('驗證完成');
           showAuthBox('你已通過排班權限驗證，可以進入下一步。', 'ok');
           setGoStep2Enabled(true);
-          await loadSubmittedSchedule();
+          renderStep1QueryCalendar();
         } else {
           setAuthStatusText('驗證完成');
           showAuthBox(data.message || '尚未開通排班權限，請聯絡管理員。', 'err');
@@ -1981,6 +2037,7 @@
     }
 
     function goStepFromAuth(){
+      if (state.uiLocked) return;
       if (!canGoNextFromStep1()) return;
       applyQueriedScheduleToEditor();
       goStep(2);
@@ -2053,16 +2110,21 @@
     }
 
     async function runScheduleValidationOnly(){
+      if (state.uiLocked) return;
+      setUiLocked(true);
       showGlobalLoading(true, '驗證中，請稍候...');
       try {
         const result = await validateScheduleAgainstBackend();
         applyBackendValidationResult(result);
       } finally {
         showGlobalLoading(false);
+        setUiLocked(false);
       }
     }
 
     async function prepareStep4(){
+      if (state.uiLocked) return;
+      setUiLocked(true);
       showGlobalLoading(true, '驗證中，請稍候...');
       try {
         const result = await validateScheduleAgainstBackend();
@@ -2076,21 +2138,34 @@
         state.submittedSuccess = false;
         updateSubmitButtonState();
 
-        goStep(4);
+        state.step = 4;
+        [1,2,3,4].forEach(n => {
+          document.getElementById('step' + n).classList.toggle('hidden', n !== 4);
+          document.getElementById('stepBadge' + n).classList.toggle('active', n === 4);
+        });
         updateSubmitButtonState();
       } finally {
         showGlobalLoading(false);
+        setUiLocked(false);
       }
     }
 
     async function submitSchedule(){
+      if (state.uiLocked) return;
       if (state.submitBusy || state.submittedSuccess) return;
+
+      setUiLocked(true);
 
       const validateResult = await validateScheduleAgainstBackend();
       applyBackendValidationResult(validateResult);
 
       if (!validateResult.valid) {
-        goStep(3);
+        setUiLocked(false);
+        state.step = 3;
+        [1,2,3,4].forEach(n => {
+          document.getElementById('step' + n).classList.toggle('hidden', n !== 3);
+          document.getElementById('stepBadge' + n).classList.toggle('active', n === 3);
+        });
         return;
       }
 
@@ -2127,6 +2202,7 @@
         showSubmitResult(`送出失敗：${err.message || err}`, 'err');
       } finally {
         showGlobalLoading(false);
+        setUiLocked(false);
       }
     }
 
