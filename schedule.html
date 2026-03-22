@@ -1565,6 +1565,25 @@
       return `<div class="day-shift-text">${text}</div>`;
     }
 
+    function buildQueriedPatternColorMap(){
+      const patternColorMap = {};
+      let colorIndex = 0;
+
+      state.queriedSchedules.forEach(item => {
+        if (!item) return;
+        if (item.shift1Text === 'X' && !item.shift2Text) return;
+
+        const key = `${item.shift1Text || ''}__${item.shift2Text || ''}`;
+        if (patternColorMap[key]) return;
+
+        patternColorMap[key] = TEMPLATE_COLORS[colorIndex % TEMPLATE_COLORS.length];
+        colorIndex++;
+      });
+
+      return patternColorMap;
+    }
+
+
     function renderStep3Calendar(){
       const monthTitle = document.getElementById('step3MonthTitle');
       const tbody = document.getElementById('step3Grid');
@@ -1665,6 +1684,7 @@
 
       const queryMap = {};
       state.queriedSchedules.forEach(item => { queryMap[item.date] = item; });
+      const queryColorMap = buildQueriedPatternColorMap();
 
       const cells = getMonthMatrix(state.viewYear, state.viewMonth);
       const rows = chunkArray(cells, 7);
@@ -1693,6 +1713,17 @@
           else if (isHoliday) numCls += ' holiday';
           else if (weekday === 0) numCls += ' sun';
           else if (weekday === 6) numCls += ' sat';
+
+          if (item && item.shift1Text !== 'X') {
+            const colorKey = `${item.shift1Text || ''}__${item.shift2Text || ''}`;
+            const color = queryColorMap[colorKey];
+            if (color) {
+              td.style.background = color.bg;
+              if (isHoliday) {
+                td.style.background = `linear-gradient(180deg, var(--holiday-top) 0 18px, transparent 18px 100%), ${color.bg}`;
+              }
+            }
+          }
 
           td.innerHTML = `
             <div class="day-top">
