@@ -261,13 +261,21 @@
     .template-head{
       display:flex;
       justify-content:space-between;
-      align-items:center;
-      gap:10px;
-      flex-wrap:wrap;
+      align-items:flex-start;
+      gap:12px;
       margin-bottom:8px;
       padding-bottom:8px;
       border-bottom:1px solid #e8edf5;
       width:100%;
+    }
+
+    .template-head-left{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
+      gap:8px;
+      min-width:0;
+      flex:1 1 auto;
     }
 
     .template-name{
@@ -280,10 +288,9 @@
 
     .template-actions{
       display:flex;
-      align-items:center;
+      align-items:flex-start;
       justify-content:flex-end;
       gap:8px;
-      flex-wrap:wrap;
       flex-shrink:0;
       margin-left:auto;
     }
@@ -297,19 +304,22 @@
       white-space:nowrap;
       font-size:14px;
       line-height:1;
-      padding-top:2px;
+      padding-top:0;
+      margin:0;
     }
 
     .split-check input{
       width:18px;
       height:18px;
       margin:0;
+      flex:0 0 auto;
     }
 
     .template-actions .btn-danger{
       height:38px;
       padding:0 16px;
       border-radius:12px;
+      margin-top:0;
     }
 
     .template-flat-row{
@@ -810,7 +820,6 @@
 
     @media (max-width: 560px){
       .template-flat-row{ grid-template-columns:48px repeat(4, minmax(0, 1fr)); gap:5px; }
-      .template-actions{ width:100%; justify-content:space-between; }
       .field label{ font-size:9px; }
       select{ padding:0 6px; font-size:13px; }
       .seg-label{ padding-bottom:8px; }
@@ -1250,12 +1259,14 @@
         box.className = 'template-box';
         box.innerHTML = `
           <div class="template-head">
-            <div class="template-name">${tpl.label}</div>
-            <div class="template-actions">
+            <div class="template-head-left">
+              <div class="template-name">${tpl.label}</div>
               <label class="split-check">
                 <input type="checkbox" ${tpl.isSplit ? 'checked' : ''} onchange="toggleSplit('${tpl.id}', this.checked)">
                 <span>兩段班</span>
               </label>
+            </div>
+            <div class="template-actions">
               ${state.templates.length === 1 ? '' : `<button class="btn-danger" onclick="removeTemplate('${tpl.id}')">刪除</button>`}
             </div>
           </div>
