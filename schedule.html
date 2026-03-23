@@ -259,23 +259,14 @@
     }
 
     .template-head{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      gap:12px;
+      display:grid;
+      grid-template-columns:auto auto 1fr auto;
+      align-items:center;
+      gap:10px;
       margin-bottom:8px;
       padding-bottom:8px;
       border-bottom:1px solid #e8edf5;
       width:100%;
-    }
-
-    .template-head-left{
-      display:flex;
-      flex-direction:column;
-      align-items:flex-start;
-      gap:8px;
-      min-width:0;
-      flex:1 1 auto;
     }
 
     .template-name{
@@ -283,16 +274,12 @@
       font-weight:900;
       min-width:0;
       line-height:1.3;
-      padding-top:2px;
+      padding-top:0;
+      white-space:nowrap;
     }
 
     .template-actions{
-      display:flex;
-      align-items:flex-start;
-      justify-content:flex-end;
-      gap:8px;
-      flex-shrink:0;
-      margin-left:auto;
+      display:contents;
     }
 
     .split-check{
@@ -305,7 +292,8 @@
       font-size:14px;
       line-height:1;
       padding-top:0;
-      margin:0;
+      justify-self:start;
+      min-width:0;
     }
 
     .split-check input{
@@ -315,11 +303,16 @@
       flex:0 0 auto;
     }
 
-    .template-actions .btn-danger{
+    .template-head::after{
+      content:'';
+    }
+
+    .template-head .btn-danger{
       height:38px;
       padding:0 16px;
       border-radius:12px;
-      margin-top:0;
+      justify-self:end;
+      white-space:nowrap;
     }
 
     .template-flat-row{
@@ -820,6 +813,9 @@
 
     @media (max-width: 560px){
       .template-flat-row{ grid-template-columns:48px repeat(4, minmax(0, 1fr)); gap:5px; }
+      .template-head{ grid-template-columns:auto auto 1fr auto; gap:8px; }
+      .template-name{ font-size:15px; }
+      .split-check{ font-size:13px; gap:5px; }
       .field label{ font-size:9px; }
       select{ padding:0 6px; font-size:13px; }
       .seg-label{ padding-bottom:8px; }
@@ -1259,14 +1255,12 @@
         box.className = 'template-box';
         box.innerHTML = `
           <div class="template-head">
-            <div class="template-head-left">
-              <div class="template-name">${tpl.label}</div>
+            <div class="template-name">${tpl.label}</div>
+            <div class="template-actions">
               <label class="split-check">
                 <input type="checkbox" ${tpl.isSplit ? 'checked' : ''} onchange="toggleSplit('${tpl.id}', this.checked)">
                 <span>兩段班</span>
               </label>
-            </div>
-            <div class="template-actions">
               ${state.templates.length === 1 ? '' : `<button class="btn-danger" onclick="removeTemplate('${tpl.id}')">刪除</button>`}
             </div>
           </div>
