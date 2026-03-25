@@ -1066,7 +1066,7 @@
       canEditSchedule: false,
       canQuerySchedule: false,
       isSpecialAccess: false,
-      hasSubmittedSchedule: false,
+      hasSubmitted: false,
       queriedSchedules: [],
       queriedFound: false,
       queriedLoaded: false,
@@ -1094,10 +1094,6 @@
 
     function isLatePeriodNow(){
       return new Date().getDate() >= 26;
-    }
-
-    function shouldHideStep1QueryBox(){
-      return !!(!state.isSpecialAccess && isLatePeriodNow() && state.canEditSchedule && !state.hasSubmittedSchedule);
     }
 
     function showGlobalLoading(show, text){
@@ -1650,8 +1646,13 @@
       const resultWrap = document.getElementById('step1QueryResult');
       if (!box || !hint || !monthTitle || !tbody || !emptyBox || !resultWrap) return;
 
-      if (!state.canQuerySchedule || shouldHideStep1QueryBox()) {
+      const hideForLateSupplement = !state.isSpecialAccess && isLatePeriodNow() && state.canEditSchedule && !state.hasSubmitted;
+
+      if (!state.canQuerySchedule || hideForLateSupplement) {
         box.classList.add('hidden');
+        resultWrap.classList.add('hidden');
+        emptyBox.classList.add('hidden');
+        tbody.innerHTML = '';
         return;
       }
 
@@ -2009,7 +2010,7 @@
         state.canQuerySchedule = !!(data.allowed || data.canQuery);
         state.canEditSchedule = !!data.canEdit;
         state.isSpecialAccess = !!data.isSpecial;
-        state.hasSubmittedSchedule = !!data.hasSubmitted;
+        state.hasSubmitted = !!data.hasSubmitted;
         state.openPeriodAllowed = !!data.canEdit;
 
         setAuthStatusText('驗證完成');
@@ -2028,7 +2029,7 @@
         state.canQuerySchedule = false;
         state.canEditSchedule = false;
         state.isSpecialAccess = false;
-        state.hasSubmittedSchedule = false;
+        state.hasSubmitted = false;
         setAuthStatusText('驗證失敗');
         showAuthBox('登入或驗證失敗，請重新開啟後再試。', 'err');
         setGoStep2Enabled(false);
