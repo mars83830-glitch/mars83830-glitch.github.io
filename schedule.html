@@ -851,12 +851,23 @@
         <div class="status" id="authStatus">驗證中...</div>
         <div class="auth-box hidden" id="authBox"></div>
 
+        <div class="query-box hidden" id="monthSelectBox">
+          <div class="query-title">排班月份</div>
+          <div class="hint" id="monthSelectHint">special 權限可切換當月或下個月。</div>
+          <div class="footer-actions" style="justify-content:flex-start; margin-top:10px;">
+            <div class="field" style="min-width:180px; max-width:220px;">
+              <label for="monthSelect">選擇月份</label>
+              <select id="monthSelect" onchange="handleMonthSelectChange(this.value)"></select>
+            </div>
+          </div>
+        </div>
+
         <div class="query-box hidden" id="step1QueryBox">
-          <div class="query-title">下個月已送出排班查詢</div>
+          <div class="query-title">已送出排班查詢</div>
           <div class="hint" id="step1QueryHint"></div>
 
           <div class="footer-actions" style="justify-content:flex-start; margin-top:10px;">
-            <button class="btn-secondary" id="queryScheduleBtn" onclick="handleQuerySubmittedSchedule()">查詢下個月排班</button>
+            <button class="btn-secondary" id="queryScheduleBtn" onclick="handleQuerySubmittedSchedule()">查詢目前月份排班</button>
           </div>
 
           <div id="step1QueryResult" class="hidden">
@@ -1066,6 +1077,9 @@
       canEditSchedule: false,
       canQuerySchedule: false,
       isSpecialAccess: false,
+      selectableMonths: [],
+      currentMonthValue: '',
+      nextMonthValue: '',
       queriedSchedules: [],
       queriedFound: false,
       queriedLoaded: false,
@@ -1078,12 +1092,59 @@
     function monthText(y,m){ return `${m}月 ${y}`; }
     function monthValue(y,m){ return `${y}-${pad2(m)}`; }
 
+    function getCurrentMonthBase() {
+      const now = new Date();
+      return { year:now.getFullYear(), month:now.getMonth() + 1 };
+    }
+
     function getNextMonthBase() {
       const now = new Date();
       let y = now.getFullYear();
       let m = now.getMonth() + 2;
       if (m === 13) { y += 1; m = 1; }
       return { year:y, month:m };
+    }
+
+    function parseMonthValueText(monthValueText){
+      const m = String(monthValueText || '').trim().match(/^(\d{4})-(\d{2})$/);
+      if (!m) return null;
+      return { year:Number(m[1]), month:Number(m[2]) };
+    }
+
+    function setViewMonthByValue(monthValueText){
+      const info = parseMonthValueText(monthValueText);
+      if (!info) return;
+      state.viewYear = info.year;
+      state.viewMonth = info.month;
+    }
+
+    function getCurrentSelectedMonthValue(){
+      return monthValue(state.viewYear, state.viewMonth);
+    }
+
+    function resetEditorForMonthChange(){
+      state.assignedDays = {};
+      state.step3InvalidDates = new Set();
+      state.queriedSchedules = [];
+      state.queriedFound = false;
+      state.queriedLoaded = false;
+      state.queryAppliedToEditor = false;
+      state.submittedSuccess = false;
+      initTemplates();
+      hideStep2Errors();
+      hideStep3Errors();
+      hideStep3Success();
+      const submitBox = document.getElementById('submitResultBox');
+      if (submitBox) submitBox.classList.add('hidden');
+      updateSubmitButtonState();
+      renderStep1QueryCalendar();
+      renderStep3Calendar();
+    }
+
+    function getMonthOptionLabel(monthValueText){
+      if (monthValueText === state.currentMonthValue) return `${monthValueText}（當月）`;
+      if (monthValueText === state.nextMonthValue) return `${monthValueText}（下個月）`;
+      return monthValueText;
     }
 
     function isOpenPeriodNow(){
@@ -1651,7 +1712,7 @@
       }
 
       box.classList.remove('hidden');
-      hint.innerHTML = `僅供查詢下個月（${monthValue(state.viewYear, state.viewMonth)}）已送出的排班資訊。<br>查詢後進入下一步即可進行修改。`;
+      updateStep1MonthTexts();
 
       if (!state.queriedLoaded) {
         resultWrap.classList.add('hidden');
@@ -1914,6 +1975,46 @@
       el.classList.remove('hidden');
     }
 
+    function renderMonthSelector(){
+      const box = document.getElementById('monthSelectBox');
+      const select = document.getElementById('monthSelect');
+      const hint = document.getElementById('monthSelectHint');
+      if (!box || !select || !hint) return;
+
+      if (!state.isSpecialAccess || !Array.isArray(state.selectableMonths) || state.selectableMonths.length <= 1) {
+        box.classList.add('hidden');
+        select.innerHTML = '';
+        return;
+      }
+
+      box.classList.remove('hidden');
+      select.innerHTML = state.selectableMonths.map(item => {
+        const value = typeof item === 'string' ? item : item.value;
+        const label = (item && item.label) ? item.label : getMonthOptionLabel(value);
+        return `<option value="${value}" ${value === getCurrentSelectedMonthValue() ? 'selected' : ''}>${label}</option>`;
+      }).join('');
+      hint.textContent = 'special 權限可切換當月或下個月。';
+    }
+
+    function updateStep1MonthTexts(){
+      const selectedLabel = getMonthOptionLabel(getCurrentSelectedMonthValue());
+      const title = document.querySelector('#step1QueryBox .query-title');
+      const hint = document.getElementById('step1QueryHint');
+      const btn = document.getElementById('queryScheduleBtn');
+      if (title) title.textContent = '已送出排班查詢';
+      if (hint) hint.innerHTML = `僅供查詢目前選定月份（${selectedLabel}）已送出的排班資訊。<br>查詢後進入下一步即可進行修改。`;
+      if (btn) btn.textContent = `查詢${selectedLabel}排班`;
+    }
+
+    function handleMonthSelectChange(monthValueText){
+      if (state.uiLocked) return;
+      if (!monthValueText || monthValueText === getCurrentSelectedMonthValue()) return;
+      setViewMonthByValue(monthValueText);
+      resetEditorForMonthChange();
+      renderMonthSelector();
+      updateStep1MonthTexts();
+    }
+
     function updateSubmitButtonState(){
       const btn = document.getElementById('submitBtn');
       if (!btn) return;
@@ -2005,8 +2106,28 @@
         state.canEditSchedule = !!data.canEdit;
         state.isSpecialAccess = !!data.isSpecial;
         state.openPeriodAllowed = !!data.canEdit;
+        state.currentMonthValue = monthValue(getCurrentMonthBase().year, getCurrentMonthBase().month);
+        state.nextMonthValue = monthValue(getNextMonthBase().year, getNextMonthBase().month);
+        state.selectableMonths = Array.isArray(data?.selectableMonths) && data.selectableMonths.length
+          ? data.selectableMonths
+          : (state.isSpecialAccess
+              ? [
+                  { value: state.currentMonthValue, label: `${state.currentMonthValue}（當月）` },
+                  { value: state.nextMonthValue, label: `${state.nextMonthValue}（下個月）` }
+                ]
+              : [
+                  { value: state.nextMonthValue, label: `${state.nextMonthValue}（下個月）` }
+                ]);
+
+        if (data?.defaultMonth) {
+          setViewMonthByValue(data.defaultMonth);
+        } else {
+          setViewMonthByValue(state.nextMonthValue);
+        }
 
         setAuthStatusText('驗證完成');
+        renderMonthSelector();
+        updateStep1MonthTexts();
 
         if (state.canQuerySchedule) {
           showAuthBox(data.message || '你已通過排班權限驗證。', state.canEditSchedule ? 'ok' : 'err');
@@ -2022,6 +2143,7 @@
         state.canQuerySchedule = false;
         state.canEditSchedule = false;
         state.isSpecialAccess = false;
+        state.selectableMonths = [];
         setAuthStatusText('驗證失敗');
         showAuthBox('登入或驗證失敗，請重新開啟後再試。', 'err');
         setGoStep2Enabled(false);
@@ -2216,6 +2338,9 @@
 
     window.onload = async function(){
       const base = getNextMonthBase();
+      const currentBase = getCurrentMonthBase();
+      state.currentMonthValue = monthValue(currentBase.year, currentBase.month);
+      state.nextMonthValue = monthValue(base.year, base.month);
       state.viewYear = base.year;
       state.viewMonth = base.month;
 
