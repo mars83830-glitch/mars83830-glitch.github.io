@@ -853,7 +853,7 @@
 
         <div class="query-box hidden" id="monthSelectBox">
           <div class="query-title">排班月份</div>
-          <div class="hint" id="monthSelectHint">special 權限可切換當月或下個月。</div>
+          <div class="hint" id="monthSelectHint">此權限可切換當月或下個月。</div>
           <div class="footer-actions" style="justify-content:flex-start; margin-top:10px;">
             <div class="field" style="min-width:180px; max-width:220px;">
               <label for="monthSelect">選擇月份</label>
@@ -1993,7 +1993,7 @@
         const label = (item && item.label) ? item.label : getMonthOptionLabel(value);
         return `<option value="${value}" ${value === getCurrentSelectedMonthValue() ? 'selected' : ''}>${label}</option>`;
       }).join('');
-      hint.textContent = 'special 權限可切換當月或下個月。';
+      hint.textContent = '此權限可切換當月或下個月。';
     }
 
     function updateStep1MonthTexts(){
