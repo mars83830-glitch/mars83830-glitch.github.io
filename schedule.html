@@ -851,12 +851,20 @@
         <div class="status" id="authStatus">驗證中...</div>
         <div class="auth-box hidden" id="authBox"></div>
 
+
+        <div class="hidden" id="monthPickerBox" style="margin-top:12px;">
+          <div class="field" style="max-width:220px;">
+            <label>選擇排班月份</label>
+            <select id="monthPicker" onchange="handleMonthChange(this.value)"></select>
+          </div>
+        </div>
+
         <div class="query-box hidden" id="step1QueryBox">
-          <div class="query-title">下個月已送出排班查詢</div>
+          <div class="query-title" id="step1QueryTitle">已送出排班查詢</div>
           <div class="hint" id="step1QueryHint"></div>
 
           <div class="footer-actions" style="justify-content:flex-start; margin-top:10px;">
-            <button class="btn-secondary" id="queryScheduleBtn" onclick="handleQuerySubmittedSchedule()">查詢下個月排班</button>
+            <button class="btn-secondary" id="queryScheduleBtn" onclick="handleQuerySubmittedSchedule()">查詢排班</button>
           </div>
 
           <div id="step1QueryResult" class="hidden">
@@ -1067,6 +1075,9 @@
       canQuerySchedule: false,
       isSpecialAccess: false,
       hasSubmitted: false,
+      selectableMonths: [],
+      selectedMonthValue: '',
+      defaultMonthValue: '',
       queriedSchedules: [],
       queriedFound: false,
       queriedLoaded: false,
@@ -1078,6 +1089,63 @@
     function toDateKey(y,m,d){ return `${y}-${pad2(m)}-${pad2(d)}`; }
     function monthText(y,m){ return `${m}月 ${y}`; }
     function monthValue(y,m){ return `${y}-${pad2(m)}`; }
+
+
+    function parseMonthValue(monthStr){
+      const m = String(monthStr || '').match(/^(\d{4})-(\d{2})$/);
+      if (!m) return null;
+      return { year: Number(m[1]), month: Number(m[2]) };
+    }
+
+    function getSelectedMonthValue(){
+      return state.selectedMonthValue || monthValue(state.viewYear, state.viewMonth);
+    }
+
+    function syncViewMonthFromValue(monthStr){
+      const parsed = parseMonthValue(monthStr);
+      if (!parsed) return;
+      state.selectedMonthValue = monthStr;
+      state.viewYear = parsed.year;
+      state.viewMonth = parsed.month;
+    }
+
+    function renderMonthPicker(){
+      const box = document.getElementById('monthPickerBox');
+      const picker = document.getElementById('monthPicker');
+      if (!box || !picker) return;
+
+      const months = Array.isArray(state.selectableMonths) ? state.selectableMonths : [];
+      if (!state.isSpecialAccess || months.length <= 1) {
+        box.classList.add('hidden');
+        picker.innerHTML = '';
+        return;
+      }
+
+      picker.innerHTML = months.map(item => {
+        const value = item && item.value ? item.value : '';
+        const label = item && item.label ? item.label : value;
+        const selected = value === getSelectedMonthValue() ? ' selected' : '';
+        return `<option value="${value}"${selected}>${label}</option>`;
+      }).join('');
+
+      box.classList.remove('hidden');
+    }
+
+    function handleMonthChange(monthStr){
+      if (!monthStr || monthStr === getSelectedMonthValue()) return;
+      syncViewMonthFromValue(monthStr);
+      state.queriedSchedules = [];
+      state.queriedFound = false;
+      state.queriedLoaded = false;
+      state.queryAppliedToEditor = false;
+      state.assignedDays = {};
+      state.step3InvalidDates = new Set();
+      hideStep3Errors();
+      hideStep3Success();
+      renderMonthPicker();
+      renderStep1QueryCalendar();
+      renderStep3Calendar();
+    }
 
     function getNextMonthBase() {
       const now = new Date();
@@ -1657,7 +1725,12 @@
       }
 
       box.classList.remove('hidden');
-      hint.innerHTML = `僅供查詢下個月（${monthValue(state.viewYear, state.viewMonth)}）已送出的排班資訊。<br>查詢後進入下一步即可進行修改。`;
+      const selectedMonth = getSelectedMonthValue();
+      const queryTitle = document.getElementById('step1QueryTitle');
+      const queryBtn = document.getElementById('queryScheduleBtn');
+      if (queryTitle) queryTitle.textContent = '已送出排班查詢';
+      hint.innerHTML = `僅供查詢目前選定月份（${selectedMonth}）已送出的排班資訊。<br>查詢後進入下一步即可進行修改。`;
+      if (queryBtn) queryBtn.textContent = `查詢${selectedMonth}排班`;
 
       if (!state.queriedLoaded) {
         resultWrap.classList.add('hidden');
@@ -1952,7 +2025,7 @@
       const payload = {
         action: 'getSubmittedSchedule',
         uid: state.userId,
-        month: monthValue(state.viewYear, state.viewMonth)
+        month: getSelectedMonthValue()
       };
       const { data } = await postJsonToGas(payload);
 
@@ -2001,7 +2074,8 @@
         state.userId = profile.userId || '';
         state.displayName = profile.displayName || '';
 
-        const url = `${GAS_WEB_APP_URL}?action=checkPermission&uid=${encodeURIComponent(state.userId)}&displayName=${encodeURIComponent(state.displayName)}`;
+        const initialMonth = state.selectedMonthValue || monthValue(state.viewYear, state.viewMonth);
+        const url = `${GAS_WEB_APP_URL}?action=checkPermission&uid=${encodeURIComponent(state.userId)}&displayName=${encodeURIComponent(state.displayName)}&month=${encodeURIComponent(initialMonth)}`;
         const res = await fetch(url, { method:'GET' });
         const data = await res.json();
 
@@ -2011,6 +2085,10 @@
         state.canEditSchedule = !!data.canEdit;
         state.isSpecialAccess = !!data.isSpecial;
         state.hasSubmitted = !!data.hasSubmitted;
+        state.selectableMonths = Array.isArray(data.selectableMonths) ? data.selectableMonths : [];
+        state.defaultMonthValue = data.defaultMonth || '';
+        const initMonth = state.defaultMonthValue || state.selectedMonthValue || monthValue(state.viewYear, state.viewMonth);
+        syncViewMonthFromValue(initMonth);
         state.openPeriodAllowed = !!data.canEdit;
 
         setAuthStatusText('驗證完成');
@@ -2018,7 +2096,9 @@
         if (state.canQuerySchedule) {
           showAuthBox(data.message || '你已通過排班權限驗證。', state.canEditSchedule ? 'ok' : 'err');
           setGoStep2Enabled(state.canEditSchedule);
+          renderMonthPicker();
           renderStep1QueryCalendar();
+          renderStep3Calendar();
         } else {
           showAuthBox(data.message || '尚未開通排班權限，請聯絡管理員。', 'err');
           setGoStep2Enabled(false);
@@ -2030,6 +2110,8 @@
         state.canEditSchedule = false;
         state.isSpecialAccess = false;
         state.hasSubmitted = false;
+        state.selectableMonths = [];
+        state.defaultMonthValue = '';
         setAuthStatusText('驗證失敗');
         showAuthBox('登入或驗證失敗，請重新開啟後再試。', 'err');
         setGoStep2Enabled(false);
@@ -2095,7 +2177,7 @@
           action: 'validateSchedule',
           uid: state.userId,
           displayName: state.displayName,
-          month: monthValue(state.viewYear, state.viewMonth),
+          month: getSelectedMonthValue(),
           schedules: buildSchedulesPayload()
         };
 
@@ -2195,7 +2277,7 @@
           action: 'submitSchedule',
           uid: state.userId,
           displayName: state.displayName,
-          month: monthValue(state.viewYear, state.viewMonth),
+          month: getSelectedMonthValue(),
           schedules: buildSchedulesPayload()
         };
 
@@ -2226,6 +2308,7 @@
       const base = getNextMonthBase();
       state.viewYear = base.year;
       state.viewMonth = base.month;
+      state.selectedMonthValue = monthValue(base.year, base.month);
 
       initTemplates();
       renderTemplatePalette();
