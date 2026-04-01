@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>排班系統</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    :root {
+      --bg: #eef1f5;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --primary: #4b89dc;
+      --shadow: 0 8px 24px rgba(0,0,0,.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0; padding: 0;
+      width: 100%; min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      padding: 36px 28px;
+      width: min(360px, 92vw);
+      text-align: center;
+    }
+
+    .logo {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 900;
+      margin: 0 0 8px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: var(--muted);
+      margin: 0 0 28px;
+    }
+
+    .status-box {
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      text-align: left;
+    }
+
+    .status-box.loading {
+      background: #f8fbff;
+      border: 1px solid #bfd3f2;
+      color: #1d4ed8;
+    }
+
+    .status-box.error {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #9a3412;
+    }
+
+    .status-box.blocked {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+    }
+
+    .status-box.pending {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #92400e;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 20px; height: 20px;
+      border: 3px solid #bfd3f2;
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      margin-bottom: 12px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">📅</div>
+    <h1>排班系統</h1>
+    <p class="subtitle">桃園營運處</p>
+    <div class="spinner" id="spinner"></div>
+    <div class="status-box loading" id="statusBox">驗證中，請稍候...</div>
+  </div>
+
+  <script>
+    // ╔══════════════════════════════════════════╗
+    // ║  請填入你的設定值                         ║
+    // ╚══════════════════════════════════════════╝
+    const LIFF_ID     = '請填入入口頁的 LIFF ID';
+    const GAS_URL     = 'https://script.google.com/macros/s/AKfycbzhkIEyJyFNZy0T7ZiG9ns4-Ldy25hm0bMwnDMFwls27jsJG7D7kbhJXB3BuwJq24kq/exec';
+
+    // pt.html 和 ft.html 的完整網址
+    // 部署到 GitHub Pages 後，格式會是：
+    // https://【你的帳號】.github.io/【repository名稱】/pt.html
+    const PT_URL      = '請填入 pt.html 的完整網址';
+    const FT_URL      = '請填入 ft.html 的完整網址';
+    // ═══════════════════════════════════════════
+
+    const statusBox = document.getElementById('statusBox');
+    const spinner   = document.getElementById('spinner');
+
+    function showStatus(message, type) {
+      spinner.style.display = 'none';
+      statusBox.className   = 'status-box ' + type;
+      statusBox.textContent = message;
+    }
+
+    async function init() {
+      try {
+        await liff.init({ liffId: LIFF_ID });
+
+        if (!liff.isLoggedIn()) {
+          liff.login();
+          return;
+        }
+
+        const profile     = await liff.getProfile();
+        const userId      = profile.userId      || '';
+        const displayName = profile.displayName || '';
+
+        // 打後端驗證身份
+        const url = `${GAS_URL}?action=checkPermission`
+          + `&uid=${encodeURIComponent(userId)}`
+          + `&displayName=${encodeURIComponent(displayName)}`;
+
+        const res  = await fetch(url);
+        const data = await res.json();
+
+        if (!data.ok) {
+          showStatus('系統錯誤，請稍後再試。\n\n' + (data.message || ''), 'error');
+          return;
+        }
+
+        // 依狀態處理
+        switch (data.status) {
+
+          case 'not_found':
+            showStatus(
+              '📋 尚未開通排班權限\n\n' +
+              '你的申請已自動送出，\n請等待管理員開通後再試。',
+              'pending'
+            );
+            break;
+
+          case 'pending':
+            showStatus(
+              '⏳ 審核中\n\n' +
+              '你的申請正在審核，\n請等待管理員開通後再試。',
+              'pending'
+            );
+            break;
+
+          case 'blocked':
+            showStatus(
+              '🚫 帳號已停用\n\n' +
+              '請聯絡管理員處理。',
+              'blocked'
+            );
+            break;
+
+          case 'invalid_role':
+            showStatus(
+              '⚠️ 身分別設定異常\n\n' +
+              '請聯絡管理員確認你的身分別設定。',
+              'error'
+            );
+            break;
+
+          case 'active':
+            // 驗證通過，依身分跳轉
+            if (!data.canEdit) {
+              // 不在排班視窗內
+              showStatus(
+                '🔒 目前不在排班時間\n\n' +
+                (data.message || ''),
+                'pending'
+              );
+              return;
+            }
+
+            if (data.role === 'PT') {
+              // 跳轉 PT 排班頁，帶上必要參數
+              const target = PT_URL
+                + '?uid='         + encodeURIComponent(userId)
+                + '&displayName=' + encodeURIComponent(displayName)
+                + '&isSP='        + (data.isSP ? 'true' : 'false')
+                + '&month='       + encodeURIComponent(data.targetMonth || '');
+              window.location.href = target;
+              return;
+            }
+
+            if (data.role === 'FT') {
+              const target = FT_URL
+                + '?uid='         + encodeURIComponent(userId)
+                + '&displayName=' + encodeURIComponent(displayName)
+                + '&isSP='        + (data.isSP ? 'true' : 'false')
+                + '&month='       + encodeURIComponent(data.targetMonth || '');
+              window.location.href = target;
+              return;
+            }
+
+            showStatus('身分別異常，請聯絡管理員。', 'error');
+            break;
+
+          default:
+            showStatus('發生未知錯誤，請重新開啟後再試。', 'error');
+        }
+
+      } catch (err) {
+        showStatus(
+          '登入或驗證失敗，\n請重新開啟後再試。\n\n' + (err.message || err),
+          'error'
+        );
+      }
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
