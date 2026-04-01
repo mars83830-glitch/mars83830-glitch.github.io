@@ -1,0 +1,997 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>FT 排假｜桃園營運處</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    :root {
+      --bg: #eef1f5;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #d9dee7;
+      --line-soft: #e7edf7;
+      --primary: #4b89dc;
+      --red: #dc2626;
+      --red-soft: #fee2e2;
+      --green: #15803d;
+      --green-soft: #f0fdf4;
+      --green-line: #bbf7d0;
+      --sun: #fdecec;
+      --sat: #eef4ff;
+      --holiday-red: #c2410c;
+      --holiday-soft: #fff4f4;
+      --holiday-top: #f8dede;
+      --shadow: 0 8px 24px rgba(0,0,0,.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0; padding: 0;
+      width: 100%; max-width: 100%;
+      overflow-x: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      background: #fff;
+      text-align: center;
+      padding: 14px 12px 10px;
+      box-shadow: 0 1px 0 rgba(0,0,0,.05);
+    }
+
+    .topbar h1 { margin: 0; font-size: 22px; font-weight: 900; }
+
+    .step-tabs {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      margin: 10px 12px 0;
+      border: 1px solid #bfd3f2;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .step-tab {
+      border: none;
+      background: #fff;
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 900;
+      padding: 10px 4px;
+      height: 48px;
+      cursor: pointer;
+    }
+
+    .step-tab.active {
+      background: linear-gradient(180deg, #5d9af0 0%, #4b89dc 100%);
+      color: #fff;
+    }
+
+    .page { padding: 12px 12px 24px; }
+
+    .card {
+      background: var(--card);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      padding: 16px 14px;
+      margin-bottom: 14px;
+    }
+
+    .section-title { margin: 0 0 10px; font-size: 20px; font-weight: 900; }
+
+    .hint { color: var(--muted); font-size: 14px; line-height: 1.7; }
+
+    .auth-box {
+      margin-top: 12px;
+      border-radius: 14px;
+      padding: 12px;
+      font-size: 14px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+      color: #374151;
+    }
+
+    .auth-box.ok { background: #f0fdf4; border-color: #bbf7d0; color: #166534; font-weight: 900; }
+    .auth-box.err { background: #fff7ed; border-color: #fed7aa; color: #9a3412; font-weight: 900; }
+
+    select, button {
+      height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      padding: 0 10px;
+      font-size: 15px;
+    }
+
+    button { cursor: pointer; font-weight: 900; }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+
+    .btn-primary {
+      background: linear-gradient(180deg, #5d9af0 0%, #4b89dc 100%);
+      color: #fff; border: none;
+    }
+
+    .btn-secondary { background: #fff; color: #111827; }
+    .btn-danger { background: #fff; color: var(--red); border: 1px solid #fecaca; }
+
+    .footer-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .hidden { display: none !important; }
+
+    /* ── 假別選擇器 ── */
+    .leave-type-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .leave-chip {
+      border: 2px solid #dbe3ef;
+      border-radius: 14px;
+      padding: 10px 6px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 900;
+      color: #334155;
+      background: #fff;
+      cursor: pointer;
+      transition: all .15s;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .leave-chip.active {
+      background: #dbeafe;
+      border-color: #60a5fa;
+      color: #1e3a8a;
+      outline: 3px solid #60a5fa;
+      outline-offset: -3px;
+    }
+
+    .leave-chip.required-off {
+      background: #fef9c3;
+      border-color: #facc15;
+      color: #713f12;
+    }
+
+    .leave-chip.required-off.active {
+      outline-color: #facc15;
+      background: #fef08a;
+    }
+
+    .current-leave {
+      font-size: 13px;
+      color: #374151;
+      margin-top: 8px;
+      line-height: 1.6;
+    }
+
+    .current-leave b { color: #1d4ed8; }
+
+    .leave-rule-box {
+      margin: 10px 0;
+      background: #f8fbff;
+      border: 1px solid #bfd3f2;
+      border-radius: 14px;
+      padding: 12px;
+      font-size: 13px;
+      color: #374151;
+      line-height: 1.8;
+    }
+
+    .leave-rule-box b { color: #1d4ed8; }
+
+    /* ── 月曆 ── */
+    .calendar-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+
+    .month-title {
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--primary);
+      text-align: center;
+      flex: 1;
+    }
+
+    .calendar-table-wrap {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .calendar-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .calendar-table thead th {
+      height: 48px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      font-size: 12px;
+      font-weight: 900;
+      text-align: center;
+      background: #fff;
+    }
+
+    .calendar-table thead th:last-child { border-right: none; }
+    .calendar-table thead .sun { color: #c2410c; }
+    .calendar-table thead .sat { color: #2563eb; }
+
+    .calendar-table td {
+      position: relative;
+      height: 72px;
+      vertical-align: top;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: 4px 5px;
+      overflow: hidden;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .calendar-table td:last-child { border-right: none; }
+    .calendar-table tbody tr:last-child td { border-bottom: none; }
+
+    .day-cell.outside { background: #f3f4f6; cursor: default; }
+    .day-cell.sun-bg { background: linear-gradient(0deg,rgba(255,255,255,1) 78%,var(--sun) 78%); }
+    .day-cell.sat-bg { background: linear-gradient(0deg,rgba(255,255,255,1) 78%,var(--sat) 78%); }
+    .day-cell.holiday-bg {
+      background: linear-gradient(180deg,var(--holiday-top) 0 18px,transparent 18px 100%),var(--holiday-soft);
+    }
+    .day-cell.has-leave { outline: 2px solid #60a5fa; outline-offset: -2px; }
+    .day-cell.invalid { box-shadow: inset 0 0 0 2px var(--red); background: var(--red-soft) !important; }
+
+    .day-top { display: flex; align-items: flex-start; min-height: 18px; }
+
+    .day-num { font-size: 15px; font-weight: 900; color: #6b7280; line-height: 1; }
+    .day-num.sun { color: #c2410c; }
+    .day-num.sat { color: #2563eb; }
+    .day-num.holiday { color: var(--holiday-red); }
+    .day-num.outside { color: #c9ced7; }
+
+    .day-body {
+      margin-top: 3px;
+      font-size: 10px;
+      font-weight: 900;
+      color: #1d4ed8;
+      line-height: 1.2;
+      overflow: hidden;
+      word-break: break-all;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: calc(100% - 20px);
+    }
+
+    .day-body.required-off-text { color: #713f12; }
+    .day-body.holiday-text { color: var(--holiday-red); font-size: 11px; }
+
+    /* ── 錯誤 / 成功 ── */
+    .error-box {
+      margin-top: 12px;
+      border: 1px solid #fecaca;
+      background: #fff1f2;
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .error-title { color: #991b1b; font-weight: 900; margin-bottom: 6px; }
+    .error-item { color: #991b1b; margin: 6px 0; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+
+    .success-box {
+      margin-top: 12px;
+      border: 1px solid var(--green-line);
+      background: var(--green-soft);
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .success-item { color: var(--green); font-size: 14px; font-weight: 900; }
+
+    /* ── 預覽表格 ── */
+    .preview-table-wrap {
+      margin-top: 12px;
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+    }
+
+    .preview-table { width: 100%; border-collapse: collapse; min-width: 260px; }
+
+    .preview-table th,
+    .preview-table td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 12px;
+      text-align: left;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .preview-table th { background: #f8fbff; font-weight: 900; }
+    .preview-table tbody tr:last-child td { border-bottom: none; }
+
+    /* ── Loading ── */
+    .loading-mask {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,.32);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 20000;
+    }
+
+    .loading-card {
+      width: min(320px, 92vw);
+      background: #fff;
+      border-radius: 22px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.22);
+      padding: 20px 18px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: 900;
+      color: #1d4ed8;
+      line-height: 1.5;
+    }
+
+    /* ── 統計列 ── */
+    .leave-stats {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 10px 0;
+    }
+
+    .stat-chip {
+      background: #f0f4ff;
+      border: 1px solid #c7d7f5;
+      border-radius: 10px;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 900;
+      color: #1e3a8a;
+    }
+
+    .stat-chip.warn { background: #fff7ed; border-color: #fed7aa; color: #9a3412; }
+
+    .query-box { margin-top: 16px; border-top: 1px solid #e5e7eb; padding-top: 14px; }
+    .query-title { font-size: 18px; font-weight: 900; margin: 0 0 8px; }
+    .query-empty {
+      margin-top: 10px;
+      border: 1px dashed #cbd5e1;
+      background: #f8fafc;
+      border-radius: 14px;
+      padding: 14px;
+      text-align: center;
+      color: #64748b;
+      font-weight: 900;
+    }
+
+    .ui-locked .page,
+    .ui-locked .step-tabs,
+    .ui-locked .topbar { pointer-events: none; }
+  </style>
+</head>
+<body>
+  <div class="app" id="appRoot">
+    <div class="topbar">
+      <h1>桃園營運處｜FT 排假</h1>
+    </div>
+
+    <div class="step-tabs">
+      <button class="step-tab active" id="stepBadge1">1 驗證</button>
+      <button class="step-tab"        id="stepBadge2">2 排假</button>
+    </div>
+
+    <div class="loading-mask hidden" id="globalLoadingMask">
+      <div class="loading-card" id="globalLoadingText">處理中，請稍候...</div>
+    </div>
+
+    <div class="page">
+
+      <!-- Step 1：驗證 -->
+      <div class="card" id="step1">
+        <h2 class="section-title">第 1 步｜驗證排假權限</h2>
+        <div class="hint" id="step1Hint">系統驗證中...</div>
+        <div class="auth-box hidden" id="authBox"></div>
+
+        <div class="query-box hidden" id="step1QueryBox">
+          <div class="query-title">已送出假單查詢</div>
+          <div class="hint" id="step1QueryHint"></div>
+          <div class="footer-actions" style="justify-content:flex-start; margin-top:10px;">
+            <button class="btn-secondary" onclick="handleQueryLeaves()">查詢假單</button>
+          </div>
+          <div id="step1QueryResult" class="hidden">
+            <div class="calendar-toolbar" style="margin-top:10px;">
+              <div class="month-title" id="step1MonthTitle"></div>
+            </div>
+            <div class="calendar-table-wrap">
+              <table class="calendar-table">
+                <thead>
+                  <tr>
+                    <th class="sun">日</th><th>一</th><th>二</th>
+                    <th>三</th><th>四</th><th>五</th><th class="sat">六</th>
+                  </tr>
+                </thead>
+                <tbody id="step1QueryGrid"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="query-empty hidden" id="step1QueryEmpty">本月尚未請假</div>
+        </div>
+
+        <div class="footer-actions">
+          <button class="btn-primary" id="goStep2Btn" onclick="goStep(2)" disabled>進入排假</button>
+        </div>
+      </div>
+
+      <!-- Step 2：排假月曆 + 送出 -->
+      <div class="card hidden" id="step2">
+        <h2 class="section-title">第 2 步｜選擇請假日期</h2>
+
+        <div class="leave-rule-box">
+          📋 必休規則：每月最多 <b>4 天</b>，其中六日合計最多 <b>2 天</b>
+        </div>
+
+        <!-- 假別選擇 -->
+        <div style="margin-bottom:8px;">
+          <div class="palette-title" style="font-size:14px;font-weight:900;margin-bottom:8px;color:#374151;">選擇假別後點擊日期</div>
+          <div class="leave-type-grid" id="leaveTypeGrid"></div>
+          <div class="current-leave" id="currentLeaveText">目前選中：<b>請先選擇假別</b></div>
+        </div>
+
+        <!-- 統計 -->
+        <div class="leave-stats" id="leaveStats"></div>
+
+        <!-- 月曆 -->
+        <div class="calendar-toolbar">
+          <div class="month-title" id="step2MonthTitle"></div>
+        </div>
+
+        <div class="calendar-table-wrap">
+          <table class="calendar-table">
+            <thead>
+              <tr>
+                <th class="sun">日</th><th>一</th><th>二</th>
+                <th>三</th><th>四</th><th>五</th><th class="sat">六</th>
+              </tr>
+            </thead>
+            <tbody id="step2Grid"></tbody>
+          </table>
+        </div>
+
+        <div class="hint" style="margin-top:8px;">點擊已請假的日期可取消該天假單。</div>
+
+        <!-- 成功 / 錯誤 -->
+        <div class="success-box hidden" id="step2SuccessBox">
+          <div class="success-item">✅ 假單符合規則，可以送出</div>
+        </div>
+
+        <div class="error-box hidden" id="step2Errors">
+          <div class="error-title">檢查結果</div>
+          <div id="step2ErrorList"></div>
+        </div>
+
+        <!-- 預覽 -->
+        <div style="margin-top:16px;border-top:1px solid #e5e7eb;padding-top:14px;">
+          <div style="font-size:15px;font-weight:900;margin-bottom:8px;" id="submitMonthText"></div>
+          <div class="preview-table-wrap">
+            <table class="preview-table">
+              <thead><tr><th style="width:42%;">日期</th><th>假別</th></tr></thead>
+              <tbody id="submitPreviewBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="auth-box hidden" id="submitResultBox"></div>
+
+        <div class="footer-actions">
+          <button class="btn-secondary" onclick="goStep(1)">上一步</button>
+          <button class="btn-secondary" onclick="runValidateOnly()">重新檢查</button>
+          <button class="btn-primary"   id="submitBtn" onclick="submitLeaves()">正式送出</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // ╔══════════════════════════════════════════╗
+    // ║  請填入你的設定值                         ║
+    // ╚══════════════════════════════════════════╝
+    const LIFF_ID = '2009174277-wCfVKJE3';
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbzhkIEyJyFNZy0T7ZiG9ns4-Ldy25hm0bMwnDMFwls27jsJG7D7kbhJXB3BuwJq24kq/exec';
+    // ═══════════════════════════════════════════
+
+    const LEAVE_TYPES = [
+      '必休','選休','喪假','病假','慰勞假',
+      '事假','公假','婚假','生理假','產假','陪產假','家庭照護'
+    ];
+
+    const HOLIDAYS = new Set([
+      '2026-01-01',
+      '2026-02-16','2026-02-17','2026-02-18','2026-02-19','2026-02-20',
+      '2026-02-28','2026-04-04','2026-04-05','2026-05-01',
+      '2026-09-25','2026-09-28','2026-10-10',
+      '2026-10-24','2026-10-25','2026-10-26','2026-12-25'
+    ]);
+
+    const state = {
+      uid: '', displayName: '', isSP: false,
+      targetMonth: '', viewYear: 0, viewMonth: 0,
+      selectedLeaveType: '',
+      assignedLeaves: {}, // { 'yyyy-MM-dd': '假別' }
+      invalidDates: new Set(),
+      queriedLeaves: [], queriedLoaded: false, queriedFound: false,
+      submitBusy: false, submittedSuccess: false, validateBusy: false,
+      uiLocked: false
+    };
+
+    // ── 工具 ──
+    function pad2(n) { return String(n).padStart(2,'0'); }
+    function toDateKey(y,m,d) { return `${y}-${pad2(m)}-${pad2(d)}`; }
+    function monthText(y,m) { return `${y} 年 ${m} 月`; }
+
+    function isWeekend(dateKey) {
+      const d = new Date(dateKey+'T00:00:00');
+      return d.getDay()===0||d.getDay()===6;
+    }
+
+    function formatShortDate(dateKey) {
+      const d=new Date(dateKey+'T00:00:00');
+      return `${d.getMonth()+1}/${d.getDate()}`;
+    }
+
+    function getMonthMatrix(year,month) {
+      const first=new Date(year,month-1,1);
+      const lastDate=new Date(year,month,0).getDate();
+      const startWD=first.getDay();
+      const prevLast=new Date(year,month-1,0).getDate();
+      const cells=[];
+      for(let i=startWD-1;i>=0;i--){
+        let py=year,pm=month-1;
+        if(pm===0){py--;pm=12;}
+        cells.push({year:py,month:pm,day:prevLast-i,outside:true});
+      }
+      for(let d=1;d<=lastDate;d++) cells.push({year,month,day:d,outside:false});
+      let nd=1;
+      while(cells.length%7!==0){
+        let ny=year,nm=month+1;
+        if(nm===13){ny++;nm=1;}
+        cells.push({year:ny,month:nm,day:nd++,outside:true});
+      }
+      return cells;
+    }
+
+    function chunkArray(arr,size){
+      const out=[];
+      for(let i=0;i<arr.length;i+=size) out.push(arr.slice(i,i+size));
+      return out;
+    }
+
+    function getMonthLeaves() {
+      const prefix=`${pad2(state.viewYear)}-${pad2(state.viewMonth)}-`;
+      return Object.keys(state.assignedLeaves)
+        .filter(k=>k.startsWith(state.targetMonth+'-'))
+        .map(k=>({date:k,leaveType:state.assignedLeaves[k]}))
+        .sort((a,b)=>a.date.localeCompare(b.date));
+    }
+
+    // ── UI 鎖定 ──
+    function setUiLocked(locked){
+      state.uiLocked=!!locked;
+      document.getElementById('appRoot').classList.toggle('ui-locked',locked);
+    }
+
+    function showGlobalLoading(show,text){
+      document.getElementById('globalLoadingMask').classList.toggle('hidden',!show);
+      document.getElementById('globalLoadingText').textContent=text||'處理中，請稍候...';
+    }
+
+    // ── 步驟切換 ──
+    function goStep(step){
+      if(state.uiLocked) return;
+      state.step=step;
+      [1,2].forEach(n=>{
+        document.getElementById('step'+n).classList.toggle('hidden',n!==step);
+        document.getElementById('stepBadge'+n).classList.toggle('active',n===step);
+      });
+      if(step===2){
+        renderLeaveTypeGrid();
+        renderStep2Calendar();
+        renderLeaveStats();
+        renderPreviewTable();
+      }
+    }
+
+    function showAuthBox(msg,type){
+      const el=document.getElementById('authBox');
+      el.className='auth-box '+(type||'');
+      el.textContent=msg||'';
+      el.classList.remove('hidden');
+    }
+
+    function showSubmitResult(msg,type){
+      const el=document.getElementById('submitResultBox');
+      el.className='auth-box '+(type||'');
+      el.textContent=msg||'';
+      el.classList.remove('hidden');
+    }
+
+    // ── 假別選擇器 ──
+    function renderLeaveTypeGrid(){
+      const grid=document.getElementById('leaveTypeGrid');
+      if(!grid) return;
+      grid.innerHTML='';
+      LEAVE_TYPES.forEach(type=>{
+        const btn=document.createElement('button');
+        btn.className='leave-chip'+(type==='必休'?' required-off':'')+(state.selectedLeaveType===type?' active':'');
+        btn.textContent=type;
+        btn.onclick=()=>{
+          if(state.uiLocked) return;
+          state.selectedLeaveType=type;
+          renderLeaveTypeGrid();
+          document.getElementById('currentLeaveText').innerHTML=`目前選中：<b>${type}</b>`;
+        };
+        grid.appendChild(btn);
+      });
+    }
+
+    // ── 統計列 ──
+    function renderLeaveStats(){
+      const el=document.getElementById('leaveStats');
+      if(!el) return;
+      const leaves=getMonthLeaves();
+      const required=leaves.filter(l=>l.leaveType==='必休');
+      const reqWeekend=required.filter(l=>isWeekend(l.date));
+      const reqWarn=required.length>4||reqWeekend.length>2;
+
+      el.innerHTML=`
+        <div class="stat-chip${required.length>4?' warn':''}">必休：${required.length} / 4 天</div>
+        <div class="stat-chip${reqWeekend.length>2?' warn':''}">必休六日：${reqWeekend.length} / 2 天</div>
+        <div class="stat-chip">總假單：${leaves.length} 筆</div>
+      `;
+    }
+
+    // ── Step 2 月曆 ──
+    function renderStep2Calendar(){
+      const title=document.getElementById('step2MonthTitle');
+      const tbody=document.getElementById('step2Grid');
+      if(!title||!tbody) return;
+      title.textContent=monthText(state.viewYear,state.viewMonth);
+
+      const cells=getMonthMatrix(state.viewYear,state.viewMonth);
+      tbody.innerHTML='';
+      chunkArray(cells,7).forEach(row=>{
+        const tr=document.createElement('tr');
+        row.forEach(c=>{
+          const dateKey=toDateKey(c.year,c.month,c.day);
+          const wd=new Date(c.year,c.month-1,c.day).getDay();
+          const leaveType=state.assignedLeaves[dateKey];
+          const isInvalid=state.invalidDates.has(dateKey);
+          const isHoliday=HOLIDAYS.has(dateKey);
+          const td=document.createElement('td');
+
+          let cls='day-cell';
+          if(c.outside) cls+=' outside';
+          else if(isHoliday) cls+=' holiday-bg';
+          else if(wd===0) cls+=' sun-bg';
+          else if(wd===6) cls+=' sat-bg';
+          if(!c.outside&&leaveType) cls+=' has-leave';
+          if(!c.outside&&isInvalid) cls+=' invalid';
+          td.className=cls;
+
+          let numCls='day-num';
+          if(c.outside) numCls+=' outside';
+          else if(isHoliday) numCls+=' holiday';
+          else if(wd===0) numCls+=' sun';
+          else if(wd===6) numCls+=' sat';
+
+          let bodyHtml='';
+          if(!c.outside){
+            if(leaveType){
+              const bodyClass=leaveType==='必休'?'day-body required-off-text':'day-body';
+              bodyHtml=`<div class="${bodyClass}">${leaveType}</div>`;
+            } else if(isHoliday){
+              bodyHtml='<div class="day-body holiday-text">國假</div>';
+            } else {
+              bodyHtml='<div class="day-body"></div>';
+            }
+          }
+
+          td.innerHTML=`<div class="day-top"><div class="${numCls}">${c.day}</div></div>${bodyHtml}`;
+
+          if(!c.outside){
+            td.onclick=()=>toggleLeave(dateKey);
+          }
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+    }
+
+    // 點擊日期：有假則取消，無假則套用目前選中假別
+    function toggleLeave(dateKey){
+      if(state.uiLocked) return;
+      if(state.assignedLeaves[dateKey]){
+        delete state.assignedLeaves[dateKey];
+      } else {
+        if(!state.selectedLeaveType){
+          alert('請先選擇假別！');
+          return;
+        }
+        state.assignedLeaves[dateKey]=state.selectedLeaveType;
+      }
+      state.invalidDates=new Set();
+      hideErrors(); hideSuccess();
+      renderStep2Calendar();
+      renderLeaveStats();
+      renderPreviewTable();
+    }
+
+    // ── 預覽表格 ──
+    function renderPreviewTable(){
+      const tbody=document.getElementById('submitPreviewBody');
+      const monthEl=document.getElementById('submitMonthText');
+      if(!tbody||!monthEl) return;
+      monthEl.textContent=`月份：${state.targetMonth}`;
+      const leaves=getMonthLeaves();
+      if(!leaves.length){
+        tbody.innerHTML='<tr><td colspan="2">尚未請假</td></tr>';
+        return;
+      }
+      tbody.innerHTML=leaves.map(l=>`<tr><td>${formatShortDate(l.date)}</td><td>${l.leaveType}</td></tr>`).join('');
+    }
+
+    // ── 錯誤 / 成功 ──
+    function hideErrors(){
+      document.getElementById('step2Errors').classList.add('hidden');
+      document.getElementById('step2ErrorList').innerHTML='';
+    }
+
+    function hideSuccess(){document.getElementById('step2SuccessBox').classList.add('hidden');}
+    function showSuccess(){document.getElementById('step2SuccessBox').classList.remove('hidden');}
+
+    function applyValidationResult(data){
+      const invalids=Array.isArray(data?.invalidDates)?data.invalidDates:[];
+      const errors=Array.isArray(data?.errors)&&data.errors.length?data.errors:(data?.message?[data.message]:[]);
+      state.invalidDates=new Set(invalids);
+
+      const errorBox=document.getElementById('step2Errors');
+      const errorList=document.getElementById('step2ErrorList');
+      if(errors.length){
+        hideSuccess();
+        errorList.innerHTML=errors.map(e=>`<div class="error-item">${e}</div>`).join('');
+        errorBox.classList.remove('hidden');
+      } else {
+        errorList.innerHTML='';
+        errorBox.classList.add('hidden');
+        showSuccess();
+      }
+      renderStep2Calendar();
+    }
+
+    // ── 查詢已送出假單 ──
+    async function handleQueryLeaves(){
+      if(state.uiLocked) return;
+      setUiLocked(true);
+      showGlobalLoading(true,'查詢中，請稍候...');
+      try {
+        const res=await fetch(`${GAS_URL}?action=getFtLeaves&uid=${encodeURIComponent(state.uid)}&month=${encodeURIComponent(state.targetMonth)}`);
+        const data=await res.json();
+        state.queriedLoaded=true;
+        state.queriedFound=!!(data&&data.ok&&data.found);
+        state.queriedLeaves=Array.isArray(data?.leaves)?data.leaves:[];
+        renderStep1QueryCalendar();
+      } catch(_){
+        state.queriedLoaded=true; state.queriedFound=false; state.queriedLeaves=[];
+        renderStep1QueryCalendar();
+      } finally {
+        showGlobalLoading(false); setUiLocked(false);
+      }
+    }
+
+    function renderStep1QueryCalendar(){
+      const box=document.getElementById('step1QueryBox');
+      const hint=document.getElementById('step1QueryHint');
+      const result=document.getElementById('step1QueryResult');
+      const empty=document.getElementById('step1QueryEmpty');
+      const title=document.getElementById('step1MonthTitle');
+      const tbody=document.getElementById('step1QueryGrid');
+      if(!box) return;
+
+      box.classList.remove('hidden');
+      hint.textContent=`查詢 ${state.targetMonth} 已送出的假單。`;
+
+      if(!state.queriedLoaded){result.classList.add('hidden');empty.classList.add('hidden');return;}
+      if(!state.queriedFound){result.classList.add('hidden');empty.classList.remove('hidden');return;}
+
+      result.classList.remove('hidden');
+      empty.classList.add('hidden');
+      title.textContent=monthText(state.viewYear,state.viewMonth);
+
+      const qMap={};
+      state.queriedLeaves.forEach(l=>{qMap[l.date]=l.leaveType;});
+
+      const cells=getMonthMatrix(state.viewYear,state.viewMonth);
+      tbody.innerHTML='';
+      chunkArray(cells,7).forEach(row=>{
+        const tr=document.createElement('tr');
+        row.forEach(c=>{
+          const dateKey=toDateKey(c.year,c.month,c.day);
+          const wd=new Date(c.year,c.month-1,c.day).getDay();
+          const leaveType=qMap[dateKey]||null;
+          const isHoliday=HOLIDAYS.has(dateKey);
+          const td=document.createElement('td');
+
+          let cls='day-cell';
+          if(c.outside) cls+=' outside';
+          else if(isHoliday) cls+=' holiday-bg';
+          else if(wd===0) cls+=' sun-bg';
+          else if(wd===6) cls+=' sat-bg';
+          if(!c.outside&&leaveType) cls+=' has-leave';
+          td.className=cls;
+
+          let numCls='day-num';
+          if(c.outside) numCls+=' outside';
+          else if(isHoliday) numCls+=' holiday';
+          else if(wd===0) numCls+=' sun';
+          else if(wd===6) numCls+=' sat';
+
+          let bodyHtml='';
+          if(!c.outside){
+            if(leaveType){
+              const bodyClass=leaveType==='必休'?'day-body required-off-text':'day-body';
+              bodyHtml=`<div class="${bodyClass}">${leaveType}</div>`;
+            } else if(isHoliday){
+              bodyHtml='<div class="day-body holiday-text">國假</div>';
+            } else {
+              bodyHtml='<div class="day-body"></div>';
+            }
+          }
+          td.innerHTML=`<div class="day-top"><div class="${numCls}">${c.day}</div></div>${bodyHtml}`;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+
+      // 帶入查詢結果到編輯器
+      state.assignedLeaves={};
+      state.queriedLeaves.forEach(l=>{state.assignedLeaves[l.date]=l.leaveType;});
+    }
+
+    // ── 後端驗證 ──
+    async function validateWithBackend(){
+      if(state.validateBusy) return {ok:false,valid:false,errors:['驗證中，請稍候'],invalidDates:[]};
+      try {
+        state.validateBusy=true;
+        const leaves=getMonthLeaves();
+        const payload={action:'validateFt',uid:state.uid,displayName:state.displayName,month:state.targetMonth,leaves};
+        const res=await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
+        const data=await res.json();
+        state.validateBusy=false;
+        return data;
+      } catch(err){
+        state.validateBusy=false;
+        return {ok:false,valid:false,errors:[`驗證失敗：${err.message||err}`],invalidDates:[]};
+      }
+    }
+
+    async function runValidateOnly(){
+      if(state.uiLocked) return;
+      setUiLocked(true); showGlobalLoading(true,'驗證中，請稍候...');
+      try { applyValidationResult(await validateWithBackend()); }
+      finally { showGlobalLoading(false); setUiLocked(false); }
+    }
+
+    // ── 送出 ──
+    async function submitLeaves(){
+      if(state.uiLocked||state.submitBusy||state.submittedSuccess) return;
+      setUiLocked(true); showGlobalLoading(true,'驗證中，請稍候...');
+
+      const validateResult=await validateWithBackend();
+      applyValidationResult(validateResult);
+
+      if(!validateResult.valid){
+        showGlobalLoading(false); setUiLocked(false); return;
+      }
+
+      try {
+        state.submitBusy=true;
+        document.getElementById('submitBtn').disabled=true;
+        document.getElementById('submitBtn').textContent='送出中...';
+        showGlobalLoading(true,'送出中，請稍候...');
+        document.getElementById('submitResultBox').classList.add('hidden');
+
+        const leaves=getMonthLeaves();
+        const payload={action:'submitFt',uid:state.uid,displayName:state.displayName,month:state.targetMonth,leaves};
+        const res=await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
+        const data=await res.json();
+
+        if(!data||!data.ok){
+          state.submitBusy=false;
+          document.getElementById('submitBtn').disabled=false;
+          document.getElementById('submitBtn').textContent='正式送出';
+          showSubmitResult(`送出失敗：${data?.message||'未知錯誤'}`,'err');
+          return;
+        }
+
+        state.submitBusy=false;
+        state.submittedSuccess=true;
+        document.getElementById('submitBtn').disabled=true;
+        document.getElementById('submitBtn').textContent='已送出';
+        showSubmitResult(`✅ 送出成功！\n月份：${state.targetMonth}\n筆數：${data.writeCount||0}`,'ok');
+      } catch(err){
+        state.submitBusy=false;
+        document.getElementById('submitBtn').disabled=false;
+        document.getElementById('submitBtn').textContent='正式送出';
+        showSubmitResult(`送出失敗：${err.message||err}`,'err');
+      } finally {
+        showGlobalLoading(false); setUiLocked(false);
+      }
+    }
+
+    // ── 初始化 ──
+    async function init(){
+      const params=new URLSearchParams(window.location.search);
+      state.uid         = params.get('uid')         || '';
+      state.displayName = params.get('displayName') || '';
+      state.isSP        = params.get('isSP')        === 'true';
+      state.targetMonth = params.get('month')       || '';
+
+      if(!state.uid||!state.targetMonth){
+        document.getElementById('step1Hint').textContent='參數錯誤，請從 LINE 重新開啟。';
+        showAuthBox('請從 LINE 官方帳號重新開啟排班系統。','err');
+        return;
+      }
+
+      const [y,m]=state.targetMonth.split('-').map(Number);
+      state.viewYear=y; state.viewMonth=m;
+
+      document.getElementById('step1Hint').textContent=`歡迎，${state.displayName}！`;
+      showAuthBox(
+        `✅ 身份驗證成功\n`+
+        `身分：FT${state.isSP?'（SP）':''}\n`+
+        `排假月份：${state.targetMonth}`,
+        'ok'
+      );
+
+      document.getElementById('goStep2Btn').disabled=false;
+      renderStep1QueryCalendar();
+    }
+
+    window.onload=init;
+  </script>
+</body>
+</html>
