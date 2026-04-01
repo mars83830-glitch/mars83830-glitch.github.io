@@ -152,12 +152,11 @@
   </div>
 
   <script>
-    const LIFF_ID = '2009174277-yJdVzIb0';
+    const LIFF_ID = '2009174277-Dwu3ebuB';
     const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbynmvNtFOWo3_cT9WtPjLCx3iGjp1lP99Q5SOLUba3SbE7oltxPUJc0tX4zI-B_M0vN/exec';
 
-    // 這兩個網址請改成你實際要跳轉的前台網址
-    const PT_FRONTEND_URL = '請改成_PT_前台網址';
-    const FT_FRONTEND_URL = '請改成_FT_前台網址';
+    const PT_FRONTEND_URL = 'https://mars83830-glitch.github.io/schedule.html';
+    const FT_FRONTEND_URL = '';
 
     const state = {
       userId: '',
@@ -193,12 +192,21 @@
     }
 
     function openResolvedTarget(){
+      const type = String(state.resolved?.frontendType || '').trim().toUpperCase();
       const url = getResolvedTargetUrl(state.resolved);
-      if (!url || /^請改成/.test(url)) {
-        setStatus('判定完成，但你還沒把入口頁中的 PT / FT 前台網址改成正式網址。', 'err');
+
+      if (type === 'FT' && !url) {
+        setStatus('FT 前台尚未完成，請先聯絡管理員。', 'err');
         toggle('retryBtn', true);
         return;
       }
+
+      if (!url) {
+        setStatus('判定完成，但前台網址尚未設定完成。', 'err');
+        toggle('retryBtn', true);
+        return;
+      }
+
       window.location.href = url;
     }
 
@@ -244,10 +252,17 @@
           return;
         }
 
+        const targetType = String(data.frontendType || '').trim().toUpperCase();
         const targetUrl = getResolvedTargetUrl(data);
-        if (!targetUrl || /^請改成/.test(targetUrl)) {
-          setStatus('判定完成，但你還沒設定前台網址。', 'err');
-          toggle('openBtn', true);
+
+        if (targetType === 'FT' && !targetUrl) {
+          setStatus('你的權限是 FT，但 FT 前台尚未完成。', 'err');
+          toggle('retryBtn', true);
+          return;
+        }
+
+        if (!targetUrl) {
+          setStatus('判定完成，但前台網址尚未設定完成。', 'err');
           toggle('retryBtn', true);
           return;
         }
