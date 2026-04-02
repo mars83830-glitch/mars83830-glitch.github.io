@@ -133,6 +133,23 @@
       statusBox.textContent = message;
     }
 
+    function buildRedirectUrl(baseUrl, userId, displayName, data) {
+      const p = new URLSearchParams();
+      p.set('uid', userId || '');
+      p.set('displayName', displayName || '');
+      p.set('role', data.role || '');
+      p.set('status', data.status || '');
+      p.set('isSP', String(!!data.isSP));
+      p.set('canQuery', String(!!data.canQuery));
+      p.set('canEdit', String(!!data.canEdit));
+      p.set('month', data.targetMonth || data.defaultMonth || '');
+      p.set('targetMonth', data.targetMonth || data.defaultMonth || '');
+      p.set('defaultMonth', data.defaultMonth || data.targetMonth || '');
+      p.set('hasSubmitted', String(!!data.hasSubmitted));
+      p.set('selectableMonths', JSON.stringify(Array.isArray(data.selectableMonths) ? data.selectableMonths : []));
+      return `${baseUrl}?${p.toString()}`;
+    }
+
     async function init() {
       try {
         await liff.init({ liffId: LIFF_ID });
@@ -206,12 +223,12 @@
             }
 
             if (data.role === 'PT') {
-              window.location.href = PT_URL;
+              window.location.href = buildRedirectUrl(PT_URL, userId, displayName, data);
               return;
             }
 
             if (data.role === 'FT') {
-              window.location.href = FT_URL;
+              window.location.href = buildRedirectUrl(FT_URL, userId, displayName, data);
               return;
             }
 
