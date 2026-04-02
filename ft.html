@@ -144,10 +144,12 @@
     .leave-chip {
       border: 2px solid #dbe3ef;
       border-radius: 14px;
-      padding: 10px 6px;
+      padding: 8px 12px;
       text-align: center;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 900;
+      line-height: 1.2;
+      white-space: pre-line;
       color: #334155;
       background: #fff;
       cursor: pointer;
@@ -198,6 +200,27 @@
     }
 
     .leave-rule-box b { color: #1d4ed8; }
+
+    .rule-row { display:flex; justify-content:flex-end; margin: 6px 0 10px; }
+    .btn-rule { padding: 0 14px; height: 38px; font-size: 13px; font-weight: 900; }
+
+    .leave-grid-block { margin: 12px 0 0; }
+    .leave-toggle-row { margin: 8px 0 0; }
+    .leave-toggle-btn { width: 100%; }
+
+    .modal {
+      position: fixed; inset: 0; background: rgba(15,23,42,.45);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px; z-index: 25000;
+    }
+    .modal-card {
+      width: min(520px, 94vw); background: #fff; border-radius: 18px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.22); padding: 18px 16px;
+    }
+    .modal-title { font-size: 18px; font-weight: 900; color: #111827; margin-bottom: 10px; }
+    .modal-body { font-size: 14px; color: #374151; line-height: 1.8; }
+    .modal-rule-item { margin: 6px 0; white-space: pre-wrap; }
+
 
     /* ── 月曆 ── */
     .calendar-toolbar {
@@ -412,6 +435,7 @@
     <div class="step-tabs">
       <button class="step-tab active" id="stepBadge1">1 驗證</button>
       <button class="step-tab"        id="stepBadge2">2 排假</button>
+      <button class="step-tab"        id="stepBadge3">3 送出</button>
     </div>
 
     <div class="loading-mask hidden" id="globalLoadingMask">
@@ -426,16 +450,11 @@
         <div class="hint" id="step1Hint">系統驗證中...</div>
         <div class="auth-box hidden" id="authBox"></div>
 
-        <div class="month-picker-row hidden" id="monthPickerBox">
-          <label>選擇排假月份</label>
-          <select id="monthPicker" onchange="handleMonthChange(this.value)"></select>
-        </div>
-
         <div class="query-box hidden" id="step1QueryBox">
-          <div class="query-title">已送出假單查詢</div>
+          <div class="query-title">已送出排假查詢</div>
           <div class="hint" id="step1QueryHint"></div>
           <div class="footer-actions" style="justify-content:flex-start; margin-top:10px;">
-            <button class="btn-secondary" onclick="handleQueryLeaves()">查詢假單</button>
+            <button class="btn-secondary" onclick="handleQueryLeaves()">查詢排假</button>
           </div>
           <div id="step1QueryResult" class="hidden">
             <div class="calendar-toolbar" style="margin-top:10px;">
@@ -453,7 +472,7 @@
               </table>
             </div>
           </div>
-          <div class="query-empty hidden" id="step1QueryEmpty">本月尚未請假</div>
+          <div class="query-empty hidden" id="step1QueryEmpty">本月尚未排假</div>
         </div>
 
         <div class="footer-actions">
@@ -461,25 +480,22 @@
         </div>
       </div>
 
-      <!-- Step 2：排假月曆 + 送出 -->
+      <!-- Step 2：排假月曆 -->
       <div class="card hidden" id="step2">
-        <h2 class="section-title">第 2 步｜選擇請假日期</h2>
+        <h2 class="section-title">第 2 步｜選擇排假日期</h2>
 
-        <div class="leave-rule-box">
-          📋 必休規則：每月最多 <b>4 天</b>，其中六日合計最多 <b>2 天</b>
+        <div class="rule-row">
+          <button class="btn-secondary btn-rule" type="button" onclick="openRuleModal()">排假規則</button>
         </div>
 
-        <!-- 假別選擇 -->
         <div style="margin-bottom:8px;">
           <div class="palette-title" style="font-size:14px;font-weight:900;margin-bottom:8px;color:#374151;">選擇假別後點擊日期</div>
-          <div class="leave-type-grid" id="leaveTypeGrid"></div>
+          <div id="leaveTypeSection"></div>
           <div class="current-leave" id="currentLeaveText">目前選中：<b>請先選擇假別</b></div>
         </div>
 
-        <!-- 統計 -->
         <div class="leave-stats" id="leaveStats"></div>
 
-        <!-- 月曆 -->
         <div class="calendar-toolbar">
           <div class="month-title" id="step2MonthTitle"></div>
         </div>
@@ -496,11 +512,10 @@
           </table>
         </div>
 
-        <div class="hint" style="margin-top:8px;">點擊已請假的日期可取消該天假單。</div>
+        <div class="hint" style="margin-top:8px;">點擊已排假的日期可取消該天假單。</div>
 
-        <!-- 成功 / 錯誤 -->
         <div class="success-box hidden" id="step2SuccessBox">
-          <div class="success-item">✅ 假單符合規則，可以送出</div>
+          <div class="success-item">✅ 排假符合規則，可以進行下一步</div>
         </div>
 
         <div class="error-box hidden" id="step2Errors">
@@ -508,8 +523,18 @@
           <div id="step2ErrorList"></div>
         </div>
 
-        <!-- 預覽 -->
-        <div style="margin-top:16px;border-top:1px solid #e5e7eb;padding-top:14px;">
+        <div class="footer-actions">
+          <button class="btn-secondary" onclick="goStep(1)">上一步</button>
+          <button class="btn-secondary" onclick="runValidateOnly()">重新檢查</button>
+          <button class="btn-primary" id="step2NextBtn" onclick="prepareStep3()">下一步</button>
+        </div>
+      </div>
+
+      <!-- Step 3：預覽送出 -->
+      <div class="card hidden" id="step3">
+        <h2 class="section-title">第 3 步｜最後送出</h2>
+
+        <div style="margin-top:4px;">
           <div style="font-size:15px;font-weight:900;margin-bottom:8px;" id="submitMonthText"></div>
           <div class="preview-table-wrap">
             <table class="preview-table">
@@ -522,12 +547,26 @@
         <div class="auth-box hidden" id="submitResultBox"></div>
 
         <div class="footer-actions">
-          <button class="btn-secondary" onclick="goStep(1)">上一步</button>
-          <button class="btn-secondary" onclick="runValidateOnly()">重新檢查</button>
-          <button class="btn-primary"   id="submitBtn" onclick="submitLeaves()">正式送出</button>
+          <button class="btn-secondary" onclick="goStep(2)">上一步</button>
+          <button class="btn-primary" id="submitBtn" onclick="submitLeaves()">正式送出</button>
         </div>
       </div>
 
+    </div>
+  </div>
+
+  <div class="modal hidden" id="ruleModal" onclick="closeRuleModalByBackdrop(event)">
+    <div class="modal-card">
+      <div class="modal-title">排假規則</div>
+      <div class="modal-body">
+        <div class="modal-rule-item">1. 必休每月最多 4 天，其中六日合計最多 2 天</div>
+        <div class="modal-rule-item">2. 選休天數依每月「YB桃園總群」公告為準，若超出上限則喪失選休權利</div>
+        <div class="modal-rule-item">3. 特殊假上限依勞基法規定為準，請自行計算勿超休</div>
+        <div class="modal-rule-item">4. 如遇問題請先詢問主管再行排班，以保障自身權益</div>
+      </div>
+      <div class="footer-actions" style="margin-top:10px;">
+        <button class="btn-primary" type="button" onclick="closeRuleModal()">關閉</button>
+      </div>
     </div>
   </div>
 
@@ -539,10 +578,9 @@
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbw5nLu4db1KvJkOl1j98srOVCsR8AgZh3TByl1SrQDAZgn0LROV6CHdhA5PwwVd6miA/exec';
     // ═══════════════════════════════════════════
 
-    const LEAVE_TYPES = [
-      '必休','選休','喪假','病假','慰勞假',
-      '事假','公假','婚假','生理假','產假','陪產假','家庭照護'
-    ];
+    const MAIN_LEAVE_TYPES = ['必休','選休'];
+    const EXTRA_LEAVE_TYPES = ['喪假','病假','慰勞假','事假','公假','婚假','生理假','產假','陪產假','家庭照護'];
+    const LEAVE_TYPES = [...MAIN_LEAVE_TYPES, ...EXTRA_LEAVE_TYPES];
 
     const HOLIDAYS = new Set([
       '2026-01-01',
@@ -553,17 +591,14 @@
     ]);
 
     const state = {
-      uid: '', displayName: '',
-      isSP: false, isSpecialAccess: false,
-      canQuerySchedule: false, canEditSchedule: false,
-      targetMonth: '', selectedMonthValue: '', defaultMonthValue: '',
-      selectableMonths: [], hasSubmitted: false,
-      viewYear: 0, viewMonth: 0,
+      uid: '', displayName: '', isSP: false,
+      targetMonth: '', viewYear: 0, viewMonth: 0,
       selectedLeaveType: '',
       assignedLeaves: {}, // { 'yyyy-MM-dd': '假別' }
       invalidDates: new Set(),
       queriedLeaves: [], queriedLoaded: false, queriedFound: false,
       submitBusy: false, submittedSuccess: false, validateBusy: false,
+      extraLeaveOpen: false, step2NextBusy: false,
       uiLocked: false
     };
 
@@ -571,140 +606,6 @@
     function pad2(n) { return String(n).padStart(2,'0'); }
     function toDateKey(y,m,d) { return `${y}-${pad2(m)}-${pad2(d)}`; }
     function monthText(y,m) { return `${y} 年 ${m} 月`; }
-    function monthValue(y,m){ return `${y}-${pad2(m)}`; }
-
-    function parseMonthValue(monthStr){
-      const m = String(monthStr||'').match(/^(\d{4})-(\d{2})$/);
-      if (!m) return null;
-      return { year:Number(m[1]), month:Number(m[2]) };
-    }
-
-    function syncViewMonthFromValue(monthStr){
-      const parsed = parseMonthValue(monthStr);
-      if (!parsed) return;
-      state.selectedMonthValue = monthStr;
-      state.targetMonth = monthStr;
-      state.viewYear = parsed.year;
-      state.viewMonth = parsed.month;
-    }
-
-    function getSelectedMonthValue(){
-      return state.selectedMonthValue || state.targetMonth || monthValue(state.viewYear, state.viewMonth);
-    }
-
-
-    function parseBoolParam(v){ return String(v).toLowerCase() === 'true'; }
-    function parseSelectableMonthsParam(v){
-      try {
-        const arr = JSON.parse(v || '[]');
-        return Array.isArray(arr) ? arr : [];
-      } catch(_) {
-        return [];
-      }
-    }
-    function getAuthContextFromQuery(){
-      const params = new URLSearchParams(window.location.search);
-      const uid = params.get('uid') || '';
-      if (!uid) return null;
-      return {
-        ok: true,
-        status: params.get('status') || 'active',
-        role: params.get('role') || 'FT',
-        uid,
-        displayName: params.get('displayName') || '',
-        isSP: parseBoolParam(params.get('isSP')),
-        canQuery: parseBoolParam(params.get('canQuery')),
-        canEdit: parseBoolParam(params.get('canEdit')),
-        targetMonth: params.get('targetMonth') || params.get('month') || '',
-        defaultMonth: params.get('defaultMonth') || params.get('month') || '',
-        hasSubmitted: parseBoolParam(params.get('hasSubmitted')),
-        selectableMonths: parseSelectableMonthsParam(params.get('selectableMonths'))
-      };
-    }
-    function applyAuthContext(ctx){
-      state.uid = ctx.uid || '';
-      state.displayName = ctx.displayName || '';
-      state.isSP = !!ctx.isSP;
-      state.isSpecialAccess = !!ctx.isSP;
-      state.canQuerySchedule = !!ctx.canQuery;
-      state.canEditSchedule = !!ctx.canEdit;
-      state.hasSubmitted = !!ctx.hasSubmitted;
-      state.selectableMonths = Array.isArray(ctx.selectableMonths) ? ctx.selectableMonths : [];
-      let selected = ctx.defaultMonth || ctx.targetMonth || ctx.month || '';
-      if (!selected) {
-        const now = new Date();
-        const y = now.getFullYear();
-        const m = now.getMonth() + 2;
-        const nextY = m === 13 ? y + 1 : y;
-        const nextM = m === 13 ? 1 : m;
-        selected = `${nextY}-${String(nextM).padStart(2,'0')}`;
-      }
-      if (state.isSpecialAccess && state.selectableMonths.length === 0) {
-        const now = new Date();
-        const cur = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-        const y = now.getFullYear();
-        const m = now.getMonth() + 2;
-        const nextY = m === 13 ? y + 1 : y;
-        const nextM = m === 13 ? 1 : m;
-        const next = `${nextY}-${String(nextM).padStart(2,'0')}`;
-        state.selectableMonths = [
-          { value: cur, label: `${cur}（當月）` },
-          { value: next, label: `${next}（下個月）` }
-        ];
-      }
-      if (!state.selectableMonths.some(item => item && item.value === selected)) {
-        state.selectableMonths.unshift({ value: selected, label: selected });
-      }
-      state.defaultMonthValue = selected;
-      syncViewMonthFromValue(selected);
-      document.getElementById('step1Hint').textContent = `歡迎，${state.displayName}！`;
-      showAuthBox(
-        `✅ 身份驗證成功
-身分：FT${state.isSpecialAccess ? '（SP）' : ''}
-月份：${getSelectedMonthValue()}`,
-        'ok'
-      );
-      document.getElementById('goStep2Btn').disabled = !state.canEditSchedule;
-      renderMonthPicker();
-      renderStep1QueryCalendar();
-    }
-
-    function renderMonthPicker(){
-      const box = document.getElementById('monthPickerBox');
-      const picker = document.getElementById('monthPicker');
-      if (!box || !picker) return;
-      const months = Array.isArray(state.selectableMonths) ? state.selectableMonths : [];
-      if (!state.isSpecialAccess || months.length <= 1){
-        box.classList.add('hidden');
-        return;
-      }
-      picker.innerHTML = months.map(item => {
-        const value = item && item.value ? item.value : '';
-        const label = item && item.label ? item.label : value;
-        return `<option value="${value}"${value === getSelectedMonthValue() ? ' selected' : ''}>${label}</option>`;
-      }).join('');
-      box.classList.remove('hidden');
-    }
-
-    function handleMonthChange(monthStr){
-      if (state.uiLocked) return;
-      if (!monthStr || monthStr === getSelectedMonthValue()) return;
-      syncViewMonthFromValue(monthStr);
-      state.queriedLeaves = [];
-      state.queriedLoaded = false;
-      state.queriedFound = false;
-      state.assignedLeaves = {};
-      state.invalidDates = new Set();
-      hideErrors();
-      hideSuccess();
-      renderMonthPicker();
-      renderStep1QueryCalendar();
-      if (document.getElementById('step2') && !document.getElementById('step2').classList.contains('hidden')) {
-        renderStep2Calendar();
-        renderLeaveStats();
-        renderPreviewTable();
-      }
-    }
 
     function isWeekend(dateKey) {
       const d = new Date(dateKey+'T00:00:00');
@@ -744,9 +645,9 @@
     }
 
     function getMonthLeaves() {
-      const monthPrefix = getSelectedMonthValue() + '-';
+      const prefix=`${pad2(state.viewYear)}-${pad2(state.viewMonth)}-`;
       return Object.keys(state.assignedLeaves)
-        .filter(k=>k.startsWith(monthPrefix))
+        .filter(k=>k.startsWith(state.targetMonth+'-'))
         .map(k=>({date:k,leaveType:state.assignedLeaves[k]}))
         .sort((a,b)=>a.date.localeCompare(b.date));
     }
@@ -766,14 +667,17 @@
     function goStep(step){
       if(state.uiLocked) return;
       state.step=step;
-      [1,2].forEach(n=>{
+      [1,2,3].forEach(n=>{
         document.getElementById('step'+n).classList.toggle('hidden',n!==step);
         document.getElementById('stepBadge'+n).classList.toggle('active',n===step);
       });
       if(step===2){
-        renderLeaveTypeGrid();
+        renderLeaveTypeSection();
         renderStep2Calendar();
         renderLeaveStats();
+        updateStep2NextButton();
+      }
+      if(step===3){
         renderPreviewTable();
       }
     }
@@ -792,23 +696,60 @@
       el.classList.remove('hidden');
     }
 
+    function updateStep2NextButton(){
+      const btn=document.getElementById('step2NextBtn');
+      if(!btn) return;
+      btn.disabled=!!(state.uiLocked||state.step2NextBusy);
+      btn.textContent=state.step2NextBusy?'處理中...':'下一步';
+    }
+
+    function selectLeaveType(type){
+      if(state.uiLocked) return;
+      state.selectedLeaveType=type;
+      renderLeaveTypeSection();
+      document.getElementById('currentLeaveText').innerHTML=`目前選中：<b>${type}</b>`;
+    }
+
+    function buildLeaveChip(type){
+      const btn=document.createElement('button');
+      btn.type='button';
+      btn.className='leave-chip'+(type==='必休'?' required-off':'')+(state.selectedLeaveType===type?' active':'');
+      btn.textContent=type;
+      btn.onclick=()=>selectLeaveType(type);
+      return btn;
+    }
+
     // ── 假別選擇器 ──
-    function renderLeaveTypeGrid(){
-      const grid=document.getElementById('leaveTypeGrid');
-      if(!grid) return;
-      grid.innerHTML='';
-      LEAVE_TYPES.forEach(type=>{
-        const btn=document.createElement('button');
-        btn.className='leave-chip'+(type==='必休'?' required-off':'')+(state.selectedLeaveType===type?' active':'');
-        btn.textContent=type;
-        btn.onclick=()=>{
-          if(state.uiLocked) return;
-          state.selectedLeaveType=type;
-          renderLeaveTypeGrid();
-          document.getElementById('currentLeaveText').innerHTML=`目前選中：<b>${type}</b>`;
-        };
-        grid.appendChild(btn);
-      });
+    function renderLeaveTypeSection(){
+      const wrap=document.getElementById('leaveTypeSection');
+      if(!wrap) return;
+      wrap.innerHTML='';
+
+      const mainBlock=document.createElement('div');
+      mainBlock.className='leave-grid-block leave-type-grid';
+      MAIN_LEAVE_TYPES.forEach(type=>mainBlock.appendChild(buildLeaveChip(type)));
+      wrap.appendChild(mainBlock);
+
+      const toggleRow=document.createElement('div');
+      toggleRow.className='leave-toggle-row';
+      const toggleBtn=document.createElement('button');
+      toggleBtn.type='button';
+      toggleBtn.className='btn-secondary leave-toggle-btn';
+      toggleBtn.textContent=`其他假別 ${state.extraLeaveOpen?'▲':'▼'}`;
+      toggleBtn.onclick=()=>{
+        if(state.uiLocked) return;
+        state.extraLeaveOpen=!state.extraLeaveOpen;
+        renderLeaveTypeSection();
+      };
+      toggleRow.appendChild(toggleBtn);
+      wrap.appendChild(toggleRow);
+
+      if(state.extraLeaveOpen){
+        const extraBlock=document.createElement('div');
+        extraBlock.className='leave-grid-block leave-type-grid';
+        EXTRA_LEAVE_TYPES.forEach(type=>extraBlock.appendChild(buildLeaveChip(type)));
+        wrap.appendChild(extraBlock);
+      }
     }
 
     // ── 統計列 ──
@@ -867,7 +808,7 @@
               const bodyClass=leaveType==='必休'?'day-body required-off-text':'day-body';
               bodyHtml=`<div class="${bodyClass}">${leaveType}</div>`;
             } else if(isHoliday){
-              bodyHtml='<div class="day-body holiday-text">國假</div>';
+              bodyHtml='<div class="day-body"></div>';
             } else {
               bodyHtml='<div class="day-body"></div>';
             }
@@ -900,7 +841,6 @@
       hideErrors(); hideSuccess();
       renderStep2Calendar();
       renderLeaveStats();
-      renderPreviewTable();
     }
 
     // ── 預覽表格 ──
@@ -908,7 +848,7 @@
       const tbody=document.getElementById('submitPreviewBody');
       const monthEl=document.getElementById('submitMonthText');
       if(!tbody||!monthEl) return;
-      monthEl.textContent=`月份：${getSelectedMonthValue()}`;
+      monthEl.textContent=`月份：${state.targetMonth}`;
       const leaves=getMonthLeaves();
       if(!leaves.length){
         tbody.innerHTML='<tr><td colspan="2">尚未請假</td></tr>';
@@ -951,7 +891,7 @@
       setUiLocked(true);
       showGlobalLoading(true,'查詢中，請稍候...');
       try {
-        const res=await fetch(`${GAS_URL}?action=getFtLeaves&uid=${encodeURIComponent(state.uid)}&month=${encodeURIComponent(getSelectedMonthValue())}`);
+        const res=await fetch(`${GAS_URL}?action=getFtLeaves&uid=${encodeURIComponent(state.uid)}&month=${encodeURIComponent(state.targetMonth)}`);
         const data=await res.json();
         state.queriedLoaded=true;
         state.queriedFound=!!(data&&data.ok&&data.found);
@@ -975,7 +915,7 @@
       if(!box) return;
 
       box.classList.remove('hidden');
-      hint.textContent=`查詢 ${getSelectedMonthValue()} 已送出的假單。`;
+      hint.textContent=`查詢 ${state.targetMonth} 已送出的排假。`;
 
       if(!state.queriedLoaded){result.classList.add('hidden');empty.classList.add('hidden');return;}
       if(!state.queriedFound){result.classList.add('hidden');empty.classList.remove('hidden');return;}
@@ -1018,7 +958,7 @@
               const bodyClass=leaveType==='必休'?'day-body required-off-text':'day-body';
               bodyHtml=`<div class="${bodyClass}">${leaveType}</div>`;
             } else if(isHoliday){
-              bodyHtml='<div class="day-body holiday-text">國假</div>';
+              bodyHtml='<div class="day-body"></div>';
             } else {
               bodyHtml='<div class="day-body"></div>';
             }
@@ -1034,13 +974,28 @@
       state.queriedLeaves.forEach(l=>{state.assignedLeaves[l.date]=l.leaveType;});
     }
 
+    function openRuleModal(){
+      if(state.uiLocked) return;
+      document.getElementById('ruleModal').classList.remove('hidden');
+    }
+
+    function closeRuleModal(){
+      if(state.uiLocked) return;
+      document.getElementById('ruleModal').classList.add('hidden');
+    }
+
+    function closeRuleModalByBackdrop(e){
+      if(state.uiLocked) return;
+      if(e.target && e.target.id==='ruleModal') closeRuleModal();
+    }
+
     // ── 後端驗證 ──
     async function validateWithBackend(){
       if(state.validateBusy) return {ok:false,valid:false,errors:['驗證中，請稍候'],invalidDates:[]};
       try {
         state.validateBusy=true;
         const leaves=getMonthLeaves();
-        const payload={action:'validateFt',uid:state.uid,displayName:state.displayName,month:getSelectedMonthValue(),leaves};
+        const payload={action:'validateFt',uid:state.uid,displayName:state.displayName,month:state.targetMonth,leaves};
         const res=await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
         const data=await res.json();
         state.validateBusy=false;
@@ -1056,6 +1011,27 @@
       setUiLocked(true); showGlobalLoading(true,'驗證中，請稍候...');
       try { applyValidationResult(await validateWithBackend()); }
       finally { showGlobalLoading(false); setUiLocked(false); }
+    }
+
+    async function prepareStep3(){
+      if(state.uiLocked||state.step2NextBusy) return;
+      state.step2NextBusy=true;
+      updateStep2NextButton();
+      setUiLocked(true);
+      showGlobalLoading(true,'驗證中，請稍候...');
+      try {
+        const validateResult=await validateWithBackend();
+        applyValidationResult(validateResult);
+        if(!validateResult.valid) return;
+        setUiLocked(false);
+        goStep(3);
+        setUiLocked(true);
+      } finally {
+        state.step2NextBusy=false;
+        showGlobalLoading(false);
+        setUiLocked(false);
+        updateStep2NextButton();
+      }
     }
 
     // ── 送出 ──
@@ -1078,7 +1054,7 @@
         document.getElementById('submitResultBox').classList.add('hidden');
 
         const leaves=getMonthLeaves();
-        const payload={action:'submitFt',uid:state.uid,displayName:state.displayName,month:getSelectedMonthValue(),leaves};
+        const payload={action:'submitFt',uid:state.uid,displayName:state.displayName,month:state.targetMonth,leaves};
         const res=await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
         const data=await res.json();
 
@@ -1107,41 +1083,31 @@
 
     // ── 初始化 ──
     async function init(){
-      const queryCtx = getAuthContextFromQuery();
-      if (queryCtx) {
-        applyAuthContext(queryCtx);
+      const params=new URLSearchParams(window.location.search);
+      state.uid         = params.get('uid')         || '';
+      state.displayName = params.get('displayName') || '';
+      state.isSP        = params.get('isSP')        === 'true';
+      state.targetMonth = params.get('month')       || '';
+
+      if(!state.uid||!state.targetMonth){
+        document.getElementById('step1Hint').textContent='參數錯誤，請從 LINE 重新開啟。';
+        showAuthBox('請從 LINE 官方帳號重新開啟排班系統。','err');
         return;
       }
 
-      try {
-        await liff.init({ liffId: LIFF_ID });
-        if (!liff.isLoggedIn()){ liff.login(); return; }
+      const [y,m]=state.targetMonth.split('-').map(Number);
+      state.viewYear=y; state.viewMonth=m;
 
-        const profile = await liff.getProfile();
-        state.uid = profile.userId || '';
-        state.displayName = profile.displayName || '';
+      document.getElementById('step1Hint').textContent=`歡迎，${state.displayName}！`;
+      showAuthBox(
+        `✅ 身份驗證成功\n`+
+        `身分：FT${state.isSP?'（SP）':''}\n`+
+        `排假月份：${state.targetMonth}`,
+        'ok'
+      );
 
-        const now = new Date();
-        const y = now.getFullYear();
-        const m = now.getMonth() + 2;
-        const nextY = m === 13 ? y + 1 : y;
-        const nextM = m === 13 ? 1 : m;
-        state.targetMonth = `${nextY}-${String(nextM).padStart(2,'0')}`;
-
-        const res = await fetch(`${GAS_URL}?action=checkPermission&uid=${encodeURIComponent(state.uid)}&displayName=${encodeURIComponent(state.displayName)}&month=${encodeURIComponent(state.targetMonth)}`);
-        const data = await res.json();
-        if (!data || !data.ok) {
-          document.getElementById('step1Hint').textContent='驗證失敗';
-          showAuthBox(data?.message || '請從 LINE 官方帳號重新開啟排班系統。','err');
-          return;
-        }
-        applyAuthContext({ ...data, uid: state.uid, displayName: state.displayName });
-      } catch(err) {
-        document.getElementById('step1Hint').textContent='驗證失敗';
-        showAuthBox(`請從 LINE 官方帳號重新開啟排班系統。
-
-${err.message||err}`,'err');
-      }
+      document.getElementById('goStep2Btn').disabled=false;
+      renderStep1QueryCalendar();
     }
 
     window.onload=init;
