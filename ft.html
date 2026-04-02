@@ -426,6 +426,11 @@
         <div class="hint" id="step1Hint">系統驗證中...</div>
         <div class="auth-box hidden" id="authBox"></div>
 
+        <div class="month-picker-row hidden" id="monthPickerBox">
+          <label>選擇排假月份</label>
+          <select id="monthPicker" onchange="handleMonthChange(this.value)"></select>
+        </div>
+
         <div class="query-box hidden" id="step1QueryBox">
           <div class="query-title">已送出假單查詢</div>
           <div class="hint" id="step1QueryHint"></div>
@@ -548,8 +553,12 @@
     ]);
 
     const state = {
-      uid: '', displayName: '', isSP: false,
-      targetMonth: '', viewYear: 0, viewMonth: 0,
+      uid: '', displayName: '',
+      isSP: false, isSpecialAccess: false,
+      canQuerySchedule: false, canEditSchedule: false,
+      targetMonth: '', selectedMonthValue: '', defaultMonthValue: '',
+      selectableMonths: [], hasSubmitted: false,
+      viewYear: 0, viewMonth: 0,
       selectedLeaveType: '',
       assignedLeaves: {}, // { 'yyyy-MM-dd': '假別' }
       invalidDates: new Set(),
@@ -562,6 +571,63 @@
     function pad2(n) { return String(n).padStart(2,'0'); }
     function toDateKey(y,m,d) { return `${y}-${pad2(m)}-${pad2(d)}`; }
     function monthText(y,m) { return `${y} 年 ${m} 月`; }
+    function monthValue(y,m){ return `${y}-${pad2(m)}`; }
+
+    function parseMonthValue(monthStr){
+      const m = String(monthStr||'').match(/^(\d{4})-(\d{2})$/);
+      if (!m) return null;
+      return { year:Number(m[1]), month:Number(m[2]) };
+    }
+
+    function syncViewMonthFromValue(monthStr){
+      const parsed = parseMonthValue(monthStr);
+      if (!parsed) return;
+      state.selectedMonthValue = monthStr;
+      state.targetMonth = monthStr;
+      state.viewYear = parsed.year;
+      state.viewMonth = parsed.month;
+    }
+
+    function getSelectedMonthValue(){
+      return state.selectedMonthValue || state.targetMonth || monthValue(state.viewYear, state.viewMonth);
+    }
+
+    function renderMonthPicker(){
+      const box = document.getElementById('monthPickerBox');
+      const picker = document.getElementById('monthPicker');
+      if (!box || !picker) return;
+      const months = Array.isArray(state.selectableMonths) ? state.selectableMonths : [];
+      if (!state.isSpecialAccess || months.length <= 1){
+        box.classList.add('hidden');
+        return;
+      }
+      picker.innerHTML = months.map(item => {
+        const value = item && item.value ? item.value : '';
+        const label = item && item.label ? item.label : value;
+        return `<option value="${value}"${value === getSelectedMonthValue() ? ' selected' : ''}>${label}</option>`;
+      }).join('');
+      box.classList.remove('hidden');
+    }
+
+    function handleMonthChange(monthStr){
+      if (state.uiLocked) return;
+      if (!monthStr || monthStr === getSelectedMonthValue()) return;
+      syncViewMonthFromValue(monthStr);
+      state.queriedLeaves = [];
+      state.queriedLoaded = false;
+      state.queriedFound = false;
+      state.assignedLeaves = {};
+      state.invalidDates = new Set();
+      hideErrors();
+      hideSuccess();
+      renderMonthPicker();
+      renderStep1QueryCalendar();
+      if (document.getElementById('step2') && !document.getElementById('step2').classList.contains('hidden')) {
+        renderStep2Calendar();
+        renderLeaveStats();
+        renderPreviewTable();
+      }
+    }
 
     function isWeekend(dateKey) {
       const d = new Date(dateKey+'T00:00:00');
@@ -601,9 +667,9 @@
     }
 
     function getMonthLeaves() {
-      const prefix=`${pad2(state.viewYear)}-${pad2(state.viewMonth)}-`;
+      const monthPrefix = getSelectedMonthValue() + '-';
       return Object.keys(state.assignedLeaves)
-        .filter(k=>k.startsWith(state.targetMonth+'-'))
+        .filter(k=>k.startsWith(monthPrefix))
         .map(k=>({date:k,leaveType:state.assignedLeaves[k]}))
         .sort((a,b)=>a.date.localeCompare(b.date));
     }
@@ -765,7 +831,7 @@
       const tbody=document.getElementById('submitPreviewBody');
       const monthEl=document.getElementById('submitMonthText');
       if(!tbody||!monthEl) return;
-      monthEl.textContent=`月份：${state.targetMonth}`;
+      monthEl.textContent=`月份：${getSelectedMonthValue()}`;
       const leaves=getMonthLeaves();
       if(!leaves.length){
         tbody.innerHTML='<tr><td colspan="2">尚未請假</td></tr>';
@@ -808,7 +874,7 @@
       setUiLocked(true);
       showGlobalLoading(true,'查詢中，請稍候...');
       try {
-        const res=await fetch(`${GAS_URL}?action=getFtLeaves&uid=${encodeURIComponent(state.uid)}&month=${encodeURIComponent(state.targetMonth)}`);
+        const res=await fetch(`${GAS_URL}?action=getFtLeaves&uid=${encodeURIComponent(state.uid)}&month=${encodeURIComponent(getSelectedMonthValue())}`);
         const data=await res.json();
         state.queriedLoaded=true;
         state.queriedFound=!!(data&&data.ok&&data.found);
@@ -832,7 +898,7 @@
       if(!box) return;
 
       box.classList.remove('hidden');
-      hint.textContent=`查詢 ${state.targetMonth} 已送出的假單。`;
+      hint.textContent=`查詢 ${getSelectedMonthValue()} 已送出的假單。`;
 
       if(!state.queriedLoaded){result.classList.add('hidden');empty.classList.add('hidden');return;}
       if(!state.queriedFound){result.classList.add('hidden');empty.classList.remove('hidden');return;}
@@ -897,7 +963,7 @@
       try {
         state.validateBusy=true;
         const leaves=getMonthLeaves();
-        const payload={action:'validateFt',uid:state.uid,displayName:state.displayName,month:state.targetMonth,leaves};
+        const payload={action:'validateFt',uid:state.uid,displayName:state.displayName,month:getSelectedMonthValue(),leaves};
         const res=await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
         const data=await res.json();
         state.validateBusy=false;
@@ -935,7 +1001,7 @@
         document.getElementById('submitResultBox').classList.add('hidden');
 
         const leaves=getMonthLeaves();
-        const payload={action:'submitFt',uid:state.uid,displayName:state.displayName,month:state.targetMonth,leaves};
+        const payload={action:'submitFt',uid:state.uid,displayName:state.displayName,month:getSelectedMonthValue(),leaves};
         const res=await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
         const data=await res.json();
 
