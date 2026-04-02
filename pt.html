@@ -385,6 +385,30 @@
         return [];
       }
     }
+    function getAuthContextFromSession(){
+      try {
+        const raw = sessionStorage.getItem('schedule_auth_context') || '';
+        if (!raw) return null;
+        const obj = JSON.parse(raw);
+        if (!obj || obj.target !== 'PT' || !obj.uid) return null;
+        return {
+          ok: true,
+          status: obj.status || 'active',
+          role: obj.role || 'PT',
+          uid: obj.uid || '',
+          displayName: obj.displayName || '',
+          isSP: !!obj.isSP,
+          canQuery: !!obj.canQuery,
+          canEdit: !!obj.canEdit,
+          targetMonth: obj.targetMonth || obj.month || '',
+          defaultMonth: obj.defaultMonth || obj.month || '',
+          hasSubmitted: !!obj.hasSubmitted,
+          selectableMonths: Array.isArray(obj.selectableMonths) ? obj.selectableMonths : []
+        };
+      } catch(_) {
+        return null;
+      }
+    }
     function getAuthContextFromQuery(){
       const params = new URLSearchParams(window.location.search);
       const uid = params.get('uid') || '';
@@ -1155,6 +1179,12 @@
         document.getElementById('authStatus').textContent = '驗證中...';
         setGoStep2Enabled(false);
 
+        const sessionCtx = getAuthContextFromSession();
+        if (sessionCtx) {
+          applyAuthContext(sessionCtx);
+          return;
+        }
+
         const queryCtx = getAuthContextFromQuery();
         if (queryCtx) {
           applyAuthContext(queryCtx);
@@ -1184,7 +1214,7 @@
       }
     }
 
-    window.onloadwindow.onload = async function(){
+    window.onload = async function(){
       const base = getNextMonthBase();
       state.viewYear  = base.year;
       state.viewMonth = base.month;
