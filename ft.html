@@ -309,9 +309,10 @@
     .day-cell.holiday-bg {
       background: linear-gradient(180deg,var(--holiday-top) 0 18px,transparent 18px 100%),var(--holiday-soft);
     }
-    .day-cell.has-leave { outline: 2px solid #60a5fa; outline-offset: -2px; }
-    .day-cell.has-leave-other { background: #fff4f4 !important; outline: 2px solid #f5c2c7; outline-offset: -2px; }
-    .day-cell.has-leave-required { background: #fef2f2 !important; }
+    .day-cell.has-leave { outline-offset: -2px; }
+    .day-cell.has-leave-required { outline: 2px solid #fecaca; }
+    .day-cell.has-leave-selected { outline: 2px solid #2563eb; }
+    .day-cell.has-leave-other { outline: 2px solid #7c3aed; }
     .day-cell.invalid { box-shadow: inset 0 0 0 2px var(--red); background: var(--red-soft) !important; }
 
     .day-top { display: flex; align-items: flex-start; min-height: 18px; }
@@ -338,7 +339,9 @@
       height: calc(100% - 20px);
     }
 
-    .day-body.required-off-text { color: #713f12; }
+    .day-body.required-off-text { color: #dc2626; }
+    .day-body.selected-off-text { color: #2563eb; }
+    .day-body.extra-leave-text { color: #7c3aed; }
     .day-body.holiday-text { color: var(--holiday-red); font-size: 11px; }
 
     /* ── 錯誤 / 成功 ── */
@@ -886,7 +889,12 @@
           else if(isHoliday) cls+=' holiday-bg';
           else if(wd===0) cls+=' sun-bg';
           else if(wd===6) cls+=' sat-bg';
-          if(!c.outside&&leaveType){ cls+=' has-leave'; if(leaveType==='必休') cls+=' has-leave-required'; else cls+=' has-leave-other'; }
+          if(!c.outside&&leaveType){
+            cls+=' has-leave';
+            if(leaveType==='必休') cls+=' has-leave-required';
+            else if(leaveType==='選休') cls+=' has-leave-selected';
+            else cls+=' has-leave-other';
+          }
           if(!c.outside&&isInvalid) cls+=' invalid';
           td.className=cls;
 
@@ -899,7 +907,10 @@
           let bodyHtml='';
           if(!c.outside){
             if(leaveType){
-              const bodyClass=leaveType==='必休'?'day-body required-off-text':'day-body';
+              let bodyClass='day-body';
+              if(leaveType==='必休') bodyClass+=' required-off-text';
+              else if(leaveType==='選休') bodyClass+=' selected-off-text';
+              else bodyClass+=' extra-leave-text';
               bodyHtml=`<div class="${bodyClass}">${leaveType}</div>`;
             } else if(isHoliday){
               bodyHtml='<div class="day-body"></div>';
@@ -1037,7 +1048,12 @@
           else if(isHoliday) cls+=' holiday-bg';
           else if(wd===0) cls+=' sun-bg';
           else if(wd===6) cls+=' sat-bg';
-          if(!c.outside&&leaveType){ cls+=' has-leave'; if(leaveType==='必休') cls+=' has-leave-required'; else cls+=' has-leave-other'; }
+          if(!c.outside&&leaveType){
+            cls+=' has-leave';
+            if(leaveType==='必休') cls+=' has-leave-required';
+            else if(leaveType==='選休') cls+=' has-leave-selected';
+            else cls+=' has-leave-other';
+          }
           td.className=cls;
 
           let numCls='day-num';
@@ -1049,7 +1065,10 @@
           let bodyHtml='';
           if(!c.outside){
             if(leaveType){
-              const bodyClass=leaveType==='必休'?'day-body required-off-text':'day-body';
+              let bodyClass='day-body';
+              if(leaveType==='必休') bodyClass+=' required-off-text';
+              else if(leaveType==='選休') bodyClass+=' selected-off-text';
+              else bodyClass+=' extra-leave-text';
               bodyHtml=`<div class="${bodyClass}">${leaveType}</div>`;
             } else if(isHoliday){
               bodyHtml='<div class="day-body"></div>';
