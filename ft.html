@@ -293,6 +293,8 @@
       background: linear-gradient(180deg,var(--holiday-top) 0 18px,transparent 18px 100%),var(--holiday-soft);
     }
     .day-cell.has-leave { outline: 2px solid #60a5fa; outline-offset: -2px; }
+    .day-cell.has-leave-other { background: #fff4f4 !important; outline: 2px solid #f5c2c7; outline-offset: -2px; }
+    .day-cell.has-leave-required { background: #fef2f2 !important; }
     .day-cell.invalid { box-shadow: inset 0 0 0 2px var(--red); background: var(--red-soft) !important; }
 
     .day-top { display: flex; align-items: flex-start; min-height: 18px; }
@@ -455,6 +457,11 @@
         <div class="hint" id="step1Hint">系統驗證中...</div>
         <div class="auth-box hidden" id="authBox"></div>
 
+        <div class="hidden" id="monthPickerBox" style="margin-top:10px;">
+          <div class="hint" style="margin-bottom:6px;">排假月份</div>
+          <select id="monthSelect" onchange="handleMonthChange(this.value)" style="min-width:160px;"></select>
+        </div>
+
         <div class="query-box hidden" id="step1QueryBox">
           <div class="query-title">已送出排假查詢</div>
           <div class="hint" id="step1QueryHint"></div>
@@ -567,7 +574,7 @@
       <div class="modal-body">
         <div class="modal-rule-item">1. 必休每月最多 4 天，其中六日合計最多 2 天</div>
         <div class="modal-rule-item">2. 選休天數依每月「YB桃園總群」公告為準，若超出上限則喪失選休權利</div>
-        <div class="modal-rule-item">3. 特殊假上限依勞基法規定為準，請自行計算勿超休</div>
+        <div class="modal-rule-item">3. 其他假別上限依勞基法規定為準，請自行計算勿超休</div>
         <div class="modal-rule-item">4. 如遇問題請先詢問主管再行排班，以保障自身權益</div>
       </div>
       <div class="footer-actions" style="margin-top:10px;">
@@ -605,13 +612,77 @@
       queriedLeaves: [], queriedLoaded: false, queriedFound: false,
       submitBusy: false, submittedSuccess: false, validateBusy: false,
       extraLeaveOpen: false, step2NextBusy: false,
-      uiLocked: false
+      uiLocked: false,
+      selectableMonths: []
     };
 
     // ── 工具 ──
     function pad2(n) { return String(n).padStart(2,'0'); }
     function toDateKey(y,m,d) { return `${y}-${pad2(m)}-${pad2(d)}`; }
     function monthText(y,m) { return `${y} 年 ${m} 月`; }
+    function getCurrentMonthValue(){
+      const now=new Date();
+      return `${now.getFullYear()}-${pad2(now.getMonth()+1)}`;
+    }
+
+    function getNextMonthValue(){
+      const now=new Date();
+      const d=new Date(now.getFullYear(), now.getMonth()+1, 1);
+      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
+    }
+
+    function updateMonthDependentViews(){
+      const [y,m]=state.targetMonth.split('-').map(Number);
+      state.viewYear=y; state.viewMonth=m;
+      state.queriedLeaves=[];
+      state.queriedLoaded=false;
+      state.queriedFound=false;
+      state.assignedLeaves={};
+      state.invalidDates=new Set();
+      hideErrors(); hideSuccess();
+      const qResult=document.getElementById('step1QueryResult');
+      const qEmpty=document.getElementById('step1QueryEmpty');
+      if(qResult) qResult.classList.add('hidden');
+      if(qEmpty) qEmpty.classList.add('hidden');
+      if(state.step===2){
+        renderStep2Calendar();
+        renderLeaveStats();
+      }
+      if(state.step===3){
+        renderPreviewTable();
+      }
+    }
+
+    function populateMonthSelector(){
+      const box=document.getElementById('monthPickerBox');
+      const sel=document.getElementById('monthSelect');
+      if(!box||!sel) return;
+      if(!state.isSP || !state.selectableMonths.length){
+        box.classList.add('hidden');
+        sel.innerHTML='';
+        return;
+      }
+      box.classList.remove('hidden');
+      sel.innerHTML=state.selectableMonths.map(v=>{
+        const [y,m]=v.split('-').map(Number);
+        return `<option value="${v}">${monthText(y,m)}</option>`;
+      }).join('');
+      sel.value=state.targetMonth;
+    }
+
+    function handleMonthChange(value){
+      if(state.uiLocked || !value || value===state.targetMonth) return;
+      state.targetMonth=value;
+      updateMonthDependentViews();
+      renderStep1QueryCalendar();
+      document.getElementById('step1QueryHint').textContent=`查詢 ${state.targetMonth} 已送出的排假。`;
+      showAuthBox(
+        `✅ 身份驗證成功\n`+
+        `身分：FT${state.isSP?'（SP）':''}\n`+
+        `排假月份：${state.targetMonth}`,
+        'ok'
+      );
+    }
 
     function isWeekend(dateKey) {
       const d = new Date(dateKey+'T00:00:00');
@@ -798,7 +869,7 @@
           else if(isHoliday) cls+=' holiday-bg';
           else if(wd===0) cls+=' sun-bg';
           else if(wd===6) cls+=' sat-bg';
-          if(!c.outside&&leaveType) cls+=' has-leave';
+          if(!c.outside&&leaveType){ cls+=' has-leave'; if(leaveType==='必休') cls+=' has-leave-required'; else cls+=' has-leave-other'; }
           if(!c.outside&&isInvalid) cls+=' invalid';
           td.className=cls;
 
@@ -949,7 +1020,7 @@
           else if(isHoliday) cls+=' holiday-bg';
           else if(wd===0) cls+=' sun-bg';
           else if(wd===6) cls+=' sat-bg';
-          if(!c.outside&&leaveType) cls+=' has-leave';
+          if(!c.outside&&leaveType){ cls+=' has-leave'; if(leaveType==='必休') cls+=' has-leave-required'; else cls+=' has-leave-other'; }
           td.className=cls;
 
           let numCls='day-num';
