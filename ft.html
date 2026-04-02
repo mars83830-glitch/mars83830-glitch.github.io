@@ -592,6 +592,83 @@
       return state.selectedMonthValue || state.targetMonth || monthValue(state.viewYear, state.viewMonth);
     }
 
+
+    function parseBoolParam(v){ return String(v).toLowerCase() === 'true'; }
+    function parseSelectableMonthsParam(v){
+      try {
+        const arr = JSON.parse(v || '[]');
+        return Array.isArray(arr) ? arr : [];
+      } catch(_) {
+        return [];
+      }
+    }
+    function getAuthContextFromQuery(){
+      const params = new URLSearchParams(window.location.search);
+      const uid = params.get('uid') || '';
+      if (!uid) return null;
+      return {
+        ok: true,
+        status: params.get('status') || 'active',
+        role: params.get('role') || 'FT',
+        uid,
+        displayName: params.get('displayName') || '',
+        isSP: parseBoolParam(params.get('isSP')),
+        canQuery: parseBoolParam(params.get('canQuery')),
+        canEdit: parseBoolParam(params.get('canEdit')),
+        targetMonth: params.get('targetMonth') || params.get('month') || '',
+        defaultMonth: params.get('defaultMonth') || params.get('month') || '',
+        hasSubmitted: parseBoolParam(params.get('hasSubmitted')),
+        selectableMonths: parseSelectableMonthsParam(params.get('selectableMonths'))
+      };
+    }
+    function applyAuthContext(ctx){
+      state.uid = ctx.uid || '';
+      state.displayName = ctx.displayName || '';
+      state.isSP = !!ctx.isSP;
+      state.isSpecialAccess = !!ctx.isSP;
+      state.canQuerySchedule = !!ctx.canQuery;
+      state.canEditSchedule = !!ctx.canEdit;
+      state.hasSubmitted = !!ctx.hasSubmitted;
+      state.selectableMonths = Array.isArray(ctx.selectableMonths) ? ctx.selectableMonths : [];
+      let selected = ctx.defaultMonth || ctx.targetMonth || ctx.month || '';
+      if (!selected) {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = now.getMonth() + 2;
+        const nextY = m === 13 ? y + 1 : y;
+        const nextM = m === 13 ? 1 : m;
+        selected = `${nextY}-${String(nextM).padStart(2,'0')}`;
+      }
+      if (state.isSpecialAccess && state.selectableMonths.length === 0) {
+        const now = new Date();
+        const cur = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+        const y = now.getFullYear();
+        const m = now.getMonth() + 2;
+        const nextY = m === 13 ? y + 1 : y;
+        const nextM = m === 13 ? 1 : m;
+        const next = `${nextY}-${String(nextM).padStart(2,'0')}`;
+        state.selectableMonths = [
+          { value: cur, label: `${cur}（當月）` },
+          { value: next, label: `${next}（下個月）` }
+        ];
+      }
+      if (!state.selectableMonths.some(item => item && item.value === selected)) {
+        state.selectableMonths.unshift({ value: selected, label: selected });
+      }
+      state.defaultMonthValue = selected;
+      syncViewMonthFromValue(selected);
+      document.getElementById('step1Hint').textContent = `歡迎，${state.displayName}！`;
+      showAuthBox(
+        `✅ 身份驗證成功
+身分：FT${state.isSpecialAccess ? '（SP）' : ''}
+月份：${getSelectedMonthValue()}`,
+        'ok'
+      );
+      document.getElementById('goStep2Btn').disabled = !state.canEditSchedule;
+      renderMonthPicker();
+      renderStep1QueryCalendar();
+    }
+
     function renderMonthPicker(){
       const box = document.getElementById('monthPickerBox');
       const picker = document.getElementById('monthPicker');
@@ -1030,9 +1107,9 @@
 
     // ── 初始化 ──
     async function init(){
-      const stored = getStoredAuthContext();
-      if (stored) {
-        applyAuthContext(stored);
+      const queryCtx = getAuthContextFromQuery();
+      if (queryCtx) {
+        applyAuthContext(queryCtx);
         return;
       }
 
