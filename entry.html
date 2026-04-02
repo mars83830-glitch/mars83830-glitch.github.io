@@ -196,10 +196,9 @@
 
           case 'active':
             // 驗證通過，依身分跳轉
-            if (!data.canEdit) {
-              // 不在排班視窗內
+            if (!data.canQuery) {
               showStatus(
-                '🔒 目前不在排班時間\n\n' +
+                '🔒 目前無法查詢或排班\n\n' +
                 (data.message || ''),
                 'pending'
               );
@@ -207,23 +206,12 @@
             }
 
             if (data.role === 'PT') {
-              // 跳轉 PT 排班頁，帶上必要參數
-              const target = PT_URL
-                + '?uid='         + encodeURIComponent(userId)
-                + '&displayName=' + encodeURIComponent(displayName)
-                + '&isSP='        + (data.isSP ? 'true' : 'false')
-                + '&month='       + encodeURIComponent(data.targetMonth || '');
-              window.location.href = target;
+              window.location.href = PT_URL;
               return;
             }
 
             if (data.role === 'FT') {
-              const target = FT_URL
-                + '?uid='         + encodeURIComponent(userId)
-                + '&displayName=' + encodeURIComponent(displayName)
-                + '&isSP='        + (data.isSP ? 'true' : 'false')
-                + '&month='       + encodeURIComponent(data.targetMonth || '');
-              window.location.href = target;
+              window.location.href = FT_URL;
               return;
             }
 
