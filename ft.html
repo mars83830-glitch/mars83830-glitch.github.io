@@ -50,7 +50,7 @@
 
     .step-tabs {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       margin: 10px 12px 0;
       border: 1px solid #bfd3f2;
       border-radius: 16px;
@@ -62,10 +62,11 @@
       border: none;
       background: #fff;
       color: var(--primary);
-      font-size: 13px;
+      font-size: clamp(12px, 3.2vw, 15px);
       font-weight: 900;
-      padding: 10px 4px;
+      padding: 10px 2px;
       height: 48px;
+      white-space: nowrap;
       cursor: pointer;
     }
 
@@ -136,7 +137,7 @@
     /* ── 假別選擇器 ── */
     .leave-type-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px;
       margin: 12px 0;
     }
@@ -179,6 +180,10 @@
       background: #fef08a;
     }
 
+    @media (min-width: 420px) {
+      .leave-type-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+
     .current-leave {
       font-size: 13px;
       color: #374151;
@@ -201,7 +206,7 @@
 
     .leave-rule-box b { color: #1d4ed8; }
 
-    .rule-row { display:flex; justify-content:flex-end; margin: 6px 0 10px; }
+    .rule-row { display:flex; justify-content:flex-end; align-items:center; margin: 0 0 10px; }
     .btn-rule { padding: 0 14px; height: 38px; font-size: 13px; font-weight: 900; }
 
     .leave-grid-block { margin: 12px 0 0; }
@@ -482,10 +487,11 @@
 
       <!-- Step 2：排假月曆 -->
       <div class="card hidden" id="step2">
-        <h2 class="section-title">第 2 步｜選擇排假日期</h2>
-
-        <div class="rule-row">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:6px;">
+          <h2 class="section-title" style="margin:0;">第 2 步｜選擇排假日期</h2>
+          <div class="rule-row" style="margin:0; flex:none;">
           <button class="btn-secondary btn-rule" type="button" onclick="openRuleModal()">排假規則</button>
+          </div>
         </div>
 
         <div style="margin-bottom:8px;">
@@ -579,7 +585,7 @@
     // ═══════════════════════════════════════════
 
     const MAIN_LEAVE_TYPES = ['必休','選休'];
-    const EXTRA_LEAVE_TYPES = ['喪假','病假','慰勞假','事假','公假','婚假','生理假','產假','陪產假','家庭照護'];
+    const EXTRA_LEAVE_TYPES = ['慰勞假','病假','事假','公假','生理假','婚假','產假','陪產假','家庭照護'];
     const LEAVE_TYPES = [...MAIN_LEAVE_TYPES, ...EXTRA_LEAVE_TYPES];
 
     const HOLIDAYS = new Set([
