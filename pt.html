@@ -1084,6 +1084,12 @@
         document.getElementById('authStatus').textContent = '驗證中...';
         setGoStep2Enabled(false);
 
+        const stored = getStoredAuthContext();
+        if (stored) {
+          applyAuthContext(stored);
+          return;
+        }
+
         await liff.init({ liffId: LIFF_ID });
         if (!liff.isLoggedIn()){ liff.login(); return; }
 
@@ -1095,42 +1101,7 @@
         const url = `${GAS_WEB_APP_URL}?action=checkPermission&uid=${encodeURIComponent(state.userId)}&displayName=${encodeURIComponent(state.displayName)}&month=${encodeURIComponent(initMonth)}`;
         const res  = await fetch(url, { method:'GET' });
         const data = await res.json();
-
-        state.authChecked      = true;
-        state.authAllowed      = !!data.allowed;
-        state.canQuerySchedule = !!(data.allowed||data.canQuery);
-        state.canEditSchedule  = !!data.canEdit;
-        state.isSpecialAccess  = !!data.isSpecial;
-        state.hasSubmitted     = !!data.hasSubmitted;
-        state.selectableMonths = Array.isArray(data.selectableMonths) ? data.selectableMonths : [];
-        state.defaultMonthValue= data.defaultMonth||'';
-
-        // SP：提供當月和下個月選項
-        if (state.isSpecialAccess && state.selectableMonths.length === 0){
-          const now = new Date();
-          const cy=now.getFullYear(), cm=now.getMonth()+1;
-          const ny=cm===12?cy+1:cy, nm=cm===12?1:cm+1;
-          state.selectableMonths = [
-            { value:`${cy}-${pad2(cm)}`, label:`${cy} 年 ${cm} 月（當月）` },
-            { value:`${ny}-${pad2(nm)}`, label:`${ny} 年 ${nm} 月（下個月）` }
-          ];
-        }
-
-        const finalMonth = state.defaultMonthValue || state.selectedMonthValue || monthValue(state.viewYear, state.viewMonth);
-        syncViewMonthFromValue(finalMonth);
-
-        document.getElementById('authStatus').textContent = '驗證完成';
-
-        if (state.canQuerySchedule){
-          showAuthBox(data.message||'你已通過排班權限驗證。', state.canEditSchedule?'ok':'err');
-          setGoStep2Enabled(state.canEditSchedule);
-          renderMonthPicker();
-          renderStep1QueryCalendar();
-          renderStep3Calendar();
-        } else {
-          showAuthBox(data.message||'尚未開通排班權限，請聯絡管理員。','err');
-          setGoStep2Enabled(false);
-        }
+        applyAuthContext({ ...data, uid: state.userId, displayName: state.displayName });
       } catch(_){
         state.authChecked=true; state.authAllowed=false;
         state.canQuerySchedule=false; state.canEditSchedule=false;
@@ -1142,7 +1113,7 @@
       }
     }
 
-    window.onload = async function(){
+    window.onloadwindow.onload = async function(){
       const base = getNextMonthBase();
       state.viewYear  = base.year;
       state.viewMonth = base.month;
