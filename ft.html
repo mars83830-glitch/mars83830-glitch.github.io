@@ -137,9 +137,17 @@
     /* ── 假別選擇器 ── */
     .leave-type-grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px;
       margin: 12px 0;
+    }
+
+    .leave-type-grid-main {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .leave-type-grid-extra {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px;
     }
 
     .leave-chip {
@@ -159,6 +167,14 @@
       display: flex;
       align-items: center;
       justify-content: center;
+    }
+
+    .leave-chip.leave-chip-extra {
+      min-height: 38px;
+      padding: 6px 4px;
+      font-size: 11px;
+      border-radius: 12px;
+      letter-spacing: -.2px;
     }
 
     .leave-chip.active {
@@ -181,7 +197,8 @@
     }
 
     @media (min-width: 420px) {
-      .leave-type-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .leave-type-grid-main { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .leave-type-grid-extra { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     }
 
     .current-leave {
@@ -787,10 +804,10 @@
       document.getElementById('currentLeaveText').innerHTML=`目前選中：<b>${type}</b>`;
     }
 
-    function buildLeaveChip(type){
+    function buildLeaveChip(type, isExtra=false){
       const btn=document.createElement('button');
       btn.type='button';
-      btn.className='leave-chip'+(type==='必休'?' required-off':'')+(state.selectedLeaveType===type?' active':'');
+      btn.className='leave-chip'+(isExtra?' leave-chip-extra':'')+(type==='必休'?' required-off':'')+(state.selectedLeaveType===type?' active':'');
       btn.textContent=type;
       btn.onclick=()=>selectLeaveType(type);
       return btn;
@@ -803,8 +820,8 @@
       wrap.innerHTML='';
 
       const mainBlock=document.createElement('div');
-      mainBlock.className='leave-grid-block leave-type-grid';
-      MAIN_LEAVE_TYPES.forEach(type=>mainBlock.appendChild(buildLeaveChip(type)));
+      mainBlock.className='leave-grid-block leave-type-grid leave-type-grid-main';
+      MAIN_LEAVE_TYPES.forEach(type=>mainBlock.appendChild(buildLeaveChip(type, false)));
       wrap.appendChild(mainBlock);
 
       const toggleRow=document.createElement('div');
@@ -823,8 +840,8 @@
 
       if(state.extraLeaveOpen){
         const extraBlock=document.createElement('div');
-        extraBlock.className='leave-grid-block leave-type-grid';
-        EXTRA_LEAVE_TYPES.forEach(type=>extraBlock.appendChild(buildLeaveChip(type)));
+        extraBlock.className='leave-grid-block leave-type-grid leave-type-grid-extra';
+        EXTRA_LEAVE_TYPES.forEach(type=>extraBlock.appendChild(buildLeaveChip(type, true)));
         wrap.appendChild(extraBlock);
       }
     }
