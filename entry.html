@@ -147,7 +147,30 @@
       p.set('defaultMonth', data.defaultMonth || data.targetMonth || '');
       p.set('hasSubmitted', String(!!data.hasSubmitted));
       p.set('selectableMonths', JSON.stringify(Array.isArray(data.selectableMonths) ? data.selectableMonths : []));
+      p.set('fromEntry', '1');
       return `${baseUrl}?${p.toString()}`;
+    }
+
+    function saveAuthContextForRedirect(target, userId, displayName, data) {
+      try {
+        const payload = {
+          target: target || '',
+          ts: Date.now(),
+          uid: userId || '',
+          displayName: displayName || '',
+          role: data.role || '',
+          status: data.status || '',
+          isSP: !!data.isSP,
+          canQuery: !!data.canQuery,
+          canEdit: !!data.canEdit,
+          month: data.targetMonth || data.defaultMonth || '',
+          targetMonth: data.targetMonth || data.defaultMonth || '',
+          defaultMonth: data.defaultMonth || data.targetMonth || '',
+          hasSubmitted: !!data.hasSubmitted,
+          selectableMonths: Array.isArray(data.selectableMonths) ? data.selectableMonths : []
+        };
+        sessionStorage.setItem('schedule_auth_context', JSON.stringify(payload));
+      } catch (_) {}
     }
 
     async function init() {
