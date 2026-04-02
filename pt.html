@@ -1173,7 +1173,7 @@
     function closeRuleModal(){ if(state.uiLocked)return; document.getElementById('ruleModal').classList.add('hidden'); }
     function closeRuleModalByBackdrop(e){ if(state.uiLocked)return; if(e.target.id==='ruleModal') closeRuleModal(); }
 
-    // ── 初始化（從 LIFF 取得身份）──
+    // ── 初始化（只吃入口頁帶來的驗證結果，不再重複驗證）──
     async function initLiffAndCheckPermission(){
       try {
         document.getElementById('authStatus').textContent = '驗證中...';
@@ -1191,25 +1191,28 @@
           return;
         }
 
-        await liff.init({ liffId: LIFF_ID });
-        if (!liff.isLoggedIn()){ liff.login(); return; }
-
-        const profile = await liff.getProfile();
-        state.userId      = profile.userId      || '';
-        state.displayName = profile.displayName || '';
-
-        const initMonth = state.selectedMonthValue || monthValue(state.viewYear, state.viewMonth);
-        const url = `${GAS_WEB_APP_URL}?action=checkPermission&uid=${encodeURIComponent(state.userId)}&displayName=${encodeURIComponent(state.displayName)}&month=${encodeURIComponent(initMonth)}`;
-        const res  = await fetch(url, { method:'GET' });
-        const data = await res.json();
-        applyAuthContext({ ...data, uid: state.userId, displayName: state.displayName });
+        state.authChecked = true;
+        state.authAllowed = false;
+        state.canQuerySchedule = false;
+        state.canEditSchedule = false;
+        state.isSpecialAccess = false;
+        state.hasSubmitted = false;
+        state.selectableMonths = [];
+        state.defaultMonthValue = '';
+        document.getElementById('authStatus').textContent = '尚未取得入口驗證資料';
+        showAuthBox('請先從排班系統入口頁進入，再使用 PT 排班功能。', 'err');
+        setGoStep2Enabled(false);
       } catch(_){
-        state.authChecked=true; state.authAllowed=false;
-        state.canQuerySchedule=false; state.canEditSchedule=false;
-        state.isSpecialAccess=false; state.hasSubmitted=false;
-        state.selectableMonths=[]; state.defaultMonthValue='';
-        document.getElementById('authStatus').textContent='驗證失敗';
-        showAuthBox('登入或驗證失敗，請重新開啟後再試。','err');
+        state.authChecked = true;
+        state.authAllowed = false;
+        state.canQuerySchedule = false;
+        state.canEditSchedule = false;
+        state.isSpecialAccess = false;
+        state.hasSubmitted = false;
+        state.selectableMonths = [];
+        state.defaultMonthValue = '';
+        document.getElementById('authStatus').textContent = '驗證失敗';
+        showAuthBox('請先從排班系統入口頁進入，再使用 PT 排班功能。', 'err');
         setGoStep2Enabled(false);
       }
     }
