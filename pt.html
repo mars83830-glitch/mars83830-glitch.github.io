@@ -375,6 +375,77 @@
       return { year:y, month:m };
     }
 
+
+    function parseBoolParam(v){ return String(v).toLowerCase() === 'true'; }
+    function parseSelectableMonthsParam(v){
+      try {
+        const arr = JSON.parse(v || '[]');
+        return Array.isArray(arr) ? arr : [];
+      } catch(_) {
+        return [];
+      }
+    }
+    function getAuthContextFromQuery(){
+      const params = new URLSearchParams(window.location.search);
+      const uid = params.get('uid') || '';
+      if (!uid) return null;
+      return {
+        ok: true,
+        status: params.get('status') || 'active',
+        role: params.get('role') || 'PT',
+        uid,
+        displayName: params.get('displayName') || '',
+        isSP: parseBoolParam(params.get('isSP')),
+        canQuery: parseBoolParam(params.get('canQuery')),
+        canEdit: parseBoolParam(params.get('canEdit')),
+        targetMonth: params.get('targetMonth') || params.get('month') || '',
+        defaultMonth: params.get('defaultMonth') || params.get('month') || '',
+        hasSubmitted: parseBoolParam(params.get('hasSubmitted')),
+        selectableMonths: parseSelectableMonthsParam(params.get('selectableMonths'))
+      };
+    }
+    function applyAuthContext(ctx){
+      state.userId = ctx.uid || ctx.userId || '';
+      state.displayName = ctx.displayName || '';
+      state.authChecked = true;
+      state.authAllowed = (ctx.status || '') === 'active';
+      state.canQuerySchedule = !!ctx.canQuery;
+      state.canEditSchedule = !!ctx.canEdit;
+      state.isSpecialAccess = !!ctx.isSP;
+      state.hasSubmitted = !!ctx.hasSubmitted;
+      state.selectableMonths = Array.isArray(ctx.selectableMonths) ? ctx.selectableMonths : [];
+      let selected = ctx.defaultMonth || ctx.targetMonth || ctx.month || '';
+      if (!selected) {
+        const base = getNextMonthBase();
+        selected = monthValue(base.year, base.month);
+      }
+      if (state.isSpecialAccess && state.selectableMonths.length === 0) {
+        const now = new Date();
+        const cur = monthValue(now.getFullYear(), now.getMonth()+1);
+        const nextBase = getNextMonthBase();
+        const next = monthValue(nextBase.year, nextBase.month);
+        state.selectableMonths = [
+          { value: cur, label: `${cur}（當月）` },
+          { value: next, label: `${next}（下個月）` }
+        ];
+      }
+      if (!state.selectableMonths.some(item => item && item.value === selected)) {
+        state.selectableMonths.unshift({ value: selected, label: selected });
+      }
+      state.defaultMonthValue = selected;
+      syncViewMonthFromValue(selected);
+      document.getElementById('authStatus').textContent = '驗證完成';
+      showAuthBox(
+        `✅ 身份驗證成功
+身分：PT${state.isSpecialAccess ? '（SP）' : ''}
+月份：${getSelectedMonthValue()}`,
+        'ok'
+      );
+      setGoStep2Enabled(state.canEditSchedule);
+      if (typeof renderMonthPicker === 'function') renderMonthPicker();
+      renderStep1QueryCalendar();
+    }
+
     function isOpenPeriodNow(){ const d = new Date().getDate(); return d >= 15 && d <= 25; }
     function isLatePeriodNow(){ return new Date().getDate() >= 26; }
 
@@ -1084,9 +1155,9 @@
         document.getElementById('authStatus').textContent = '驗證中...';
         setGoStep2Enabled(false);
 
-        const stored = getStoredAuthContext();
-        if (stored) {
-          applyAuthContext(stored);
+        const queryCtx = getAuthContextFromQuery();
+        if (queryCtx) {
+          applyAuthContext(queryCtx);
           return;
         }
 
