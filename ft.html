@@ -1030,31 +1030,41 @@
 
     // ── 初始化 ──
     async function init(){
-      const params=new URLSearchParams(window.location.search);
-      state.uid         = params.get('uid')         || '';
-      state.displayName = params.get('displayName') || '';
-      state.isSP        = params.get('isSP')        === 'true';
-      state.targetMonth = params.get('month')       || '';
-
-      if(!state.uid||!state.targetMonth){
-        document.getElementById('step1Hint').textContent='參數錯誤，請從 LINE 重新開啟。';
-        showAuthBox('請從 LINE 官方帳號重新開啟排班系統。','err');
+      const stored = getStoredAuthContext();
+      if (stored) {
+        applyAuthContext(stored);
         return;
       }
 
-      const [y,m]=state.targetMonth.split('-').map(Number);
-      state.viewYear=y; state.viewMonth=m;
+      try {
+        await liff.init({ liffId: LIFF_ID });
+        if (!liff.isLoggedIn()){ liff.login(); return; }
 
-      document.getElementById('step1Hint').textContent=`歡迎，${state.displayName}！`;
-      showAuthBox(
-        `✅ 身份驗證成功\n`+
-        `身分：FT${state.isSP?'（SP）':''}\n`+
-        `排假月份：${state.targetMonth}`,
-        'ok'
-      );
+        const profile = await liff.getProfile();
+        state.uid = profile.userId || '';
+        state.displayName = profile.displayName || '';
 
-      document.getElementById('goStep2Btn').disabled=false;
-      renderStep1QueryCalendar();
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = now.getMonth() + 2;
+        const nextY = m === 13 ? y + 1 : y;
+        const nextM = m === 13 ? 1 : m;
+        state.targetMonth = `${nextY}-${String(nextM).padStart(2,'0')}`;
+
+        const res = await fetch(`${GAS_URL}?action=checkPermission&uid=${encodeURIComponent(state.uid)}&displayName=${encodeURIComponent(state.displayName)}&month=${encodeURIComponent(state.targetMonth)}`);
+        const data = await res.json();
+        if (!data || !data.ok) {
+          document.getElementById('step1Hint').textContent='驗證失敗';
+          showAuthBox(data?.message || '請從 LINE 官方帳號重新開啟排班系統。','err');
+          return;
+        }
+        applyAuthContext({ ...data, uid: state.uid, displayName: state.displayName });
+      } catch(err) {
+        document.getElementById('step1Hint').textContent='驗證失敗';
+        showAuthBox(`請從 LINE 官方帳號重新開啟排班系統。
+
+${err.message||err}`,'err');
+      }
     }
 
     window.onload=init;
