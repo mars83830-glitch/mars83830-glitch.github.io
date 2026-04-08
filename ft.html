@@ -956,7 +956,7 @@
       monthEl.textContent=`月份：${state.targetMonth}`;
       const leaves=getMonthLeaves();
       if(!leaves.length){
-        tbody.innerHTML='<tr><td colspan="2">尚未請假</td></tr>';
+        tbody.innerHTML='<tr><td colspan="2">本月無排假需求</td></tr>';
         return;
       }
       tbody.innerHTML=leaves.map(l=>`<tr><td>${formatShortDate(l.date)}</td><td>${l.leaveType}</td></tr>`).join('');
