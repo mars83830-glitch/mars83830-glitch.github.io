@@ -603,6 +603,18 @@
     </div>
   </div>
 
+
+
+  <div class="modal hidden" id="noticeModal" onclick="closeNoticeModalByBackdrop(event)">
+    <div class="modal-card" style="width:min(420px,92vw); text-align:center;">
+      <div class="modal-title" id="noticeModalTitle">提醒</div>
+      <div class="modal-body" id="noticeModalMessage" style="font-size:16px; line-height:1.8;">請先選擇假別！</div>
+      <div class="footer-actions" style="justify-content:center; margin-top:14px;">
+        <button class="btn-primary" type="button" onclick="closeNoticeModal()">確定</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ╔══════════════════════════════════════════╗
     // ║  請填入你的設定值                         ║
@@ -930,6 +942,26 @@
       });
     }
 
+
+    function showNoticeModal(message, title){
+      const modal=document.getElementById('noticeModal');
+      const titleEl=document.getElementById('noticeModalTitle');
+      const msgEl=document.getElementById('noticeModalMessage');
+      if(!modal||!titleEl||!msgEl) return;
+      titleEl.textContent=title||'提醒';
+      msgEl.textContent=message||'';
+      modal.classList.remove('hidden');
+    }
+
+    function closeNoticeModal(){
+      const modal=document.getElementById('noticeModal');
+      if(modal) modal.classList.add('hidden');
+    }
+
+    function closeNoticeModalByBackdrop(event){
+      if(event.target && event.target.id==='noticeModal') closeNoticeModal();
+    }
+
     // 點擊日期：有假則取消，無假則套用目前選中假別
     function toggleLeave(dateKey){
       if(state.uiLocked) return;
@@ -937,7 +969,7 @@
         delete state.assignedLeaves[dateKey];
       } else {
         if(!state.selectedLeaveType){
-          alert('請先選擇假別！');
+          showNoticeModal('請先選擇假別！');
           return;
         }
         state.assignedLeaves[dateKey]=state.selectedLeaveType;
