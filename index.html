@@ -261,8 +261,9 @@ const GEO_OPTIONS_RETRY = {
   maximumAge: 0
 };
 
-const GEO_RETRY_IF_OVER_M = 80;
-const GEO_ACCEPT_MAX_M = 120;
+// ★ 修改：降低觸發第二次高精度定位的門檻（80→50），縮小最大接受誤差（120→100）
+const GEO_RETRY_IF_OVER_M = 50;
+const GEO_ACCEPT_MAX_M = 100;
 
 const $status = document.getElementById("status");
 const $debug = document.getElementById("debug");
@@ -393,6 +394,7 @@ async function getLocationSmart(){
     attempts.push({ step: "first", ok: false, error: String(e && e.message ? e.message : e) });
   }
 
+  // ★ 誤差 <= 50m 才直接用，否則補一次高精度定位
   if (isGoodLocation(first) && first.accuracy <= GEO_RETRY_IF_OVER_M) {
     return { loc: first, attempts };
   }
