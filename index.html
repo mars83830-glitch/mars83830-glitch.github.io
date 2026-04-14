@@ -9,137 +9,166 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --dispatch-a: #4ade80;
-      --dispatch-l: #166534;
-      --level1-a:   #fbbf24;
-      --level1-l:   #92400e;
-      --swap-a:     #60a5fa;
-      --swap-l:     #1e3a8a;
-      --pump-a:     #f472b6;
-      --pump-l:     #831843;
-      --clean-a:    #2dd4bf;
-      --clean-l:    #134e4a;
-      --rest-a:     #c084fc;
-      --rest-l:     #3b0764;
+      --bg:       #f4f6f9;
+      --card:     #ffffff;
+      --border:   #e2e8f0;
+      --text:     #1a202c;
+      --muted:    #718096;
+
+      --dispatch-a: #22c55e;
+      --dispatch-l: #15803d;
+      --level1-a:   #f59e0b;
+      --level1-l:   #b45309;
+      --swap-a:     #3b82f6;
+      --swap-l:     #1d4ed8;
+      --pump-a:     #ec4899;
+      --pump-l:     #9d174d;
+      --clean-a:    #14b8a6;
+      --clean-l:    #0f766e;
+      --rest-a:     #334155;
+      --rest-l:     #0f172a;
     }
 
     html, body {
       height: 100%;
-      width: 100%;
-      background: #0f172a;
+      background: var(--bg);
       font-family: system-ui, -apple-system, "Noto Sans TC", sans-serif;
       -webkit-font-smoothing: antialiased;
+      color: var(--text);
     }
 
+    /* ── Shell ─────────────────────────────── */
     .shell {
-      min-height: 100dvh;
-      min-height: 100svh;
+      height: 100dvh;
+      height: 100svh;
       display: flex;
       flex-direction: column;
-      padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+      padding: env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);
+      overflow: hidden;
     }
 
+    /* ── Header ────────────────────────────── */
     .hd {
       flex: 0 0 auto;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 16px 6px;
+      padding: 12px 16px 8px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
     }
+    .hd-title { font-size: 16px; font-weight: 800; color: var(--text); letter-spacing: .2px; }
+    .hd-user  { font-size: 13px; color: var(--muted); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    .hd-title {
-      font-size: 15px;
-      font-weight: 700;
-      color: #f1f5f9;
-      letter-spacing: .3px;
-    }
-
-    .hd-user {
-      font-size: 12px;
-      color: #94a3b8;
-      max-width: 160px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .status-bar {
+    /* ── Info strip (2 rows) ───────────────── */
+    .info-strip {
       flex: 0 0 auto;
-      min-height: 34px;
-      margin: 0 12px 6px;
-      padding: 6px 12px;
-      border-radius: 10px;
-      background: #1e293b;
-      font-size: 13px;
-      font-weight: 600;
-      color: #94a3b8;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      padding: 7px 12px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .strip-row {
       display: flex;
       align-items: center;
-      gap: 6px;
-      line-height: 1.4;
+      gap: 7px;
+      min-height: 26px;
+      font-size: 13px;
+      font-weight: 600;
     }
-    .status-bar.ok    { color: #4ade80; background: #052e16; }
-    .status-bar.err   { color: #f87171; background: #2d0a0a; }
-    .status-bar.muted { color: #94a3b8; background: #1e293b; }
 
-    .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: currentColor; }
+    .strip-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .strip-dot.green  { background: #22c55e; }
+    .strip-dot.red    { background: #ef4444; }
+    .strip-dot.gray   { background: #94a3b8; }
+    .strip-dot.clock  { background: #a78bfa; }
 
+    .strip-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      white-space: nowrap;
+      letter-spacing: .3px;
+    }
+    .strip-val { color: var(--text); }
+    .strip-val.ok  { color: #16a34a; }
+    .strip-val.err { color: #dc2626; }
+    .strip-val.muted { color: var(--muted); }
+
+    /* ── Auth box ──────────────────────────── */
     .auth-box {
       display: none;
-      margin: 0 12px 6px;
+      margin: 6px 12px 0;
       padding: 8px 12px;
       border-radius: 10px;
-      background: #2d1f00;
-      border: 1px solid #78350f;
-      color: #fbbf24;
-      font-size: 12px;
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      color: #92400e;
+      font-size: 13px;
       font-weight: 600;
       line-height: 1.5;
     }
 
+    /* ── Grid ──────────────────────────────── */
     .grid {
       flex: 1 1 auto;
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      grid-template-rows: 1fr 1fr;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr 1fr;
       gap: 8px;
-      padding: 0 12px 8px;
+      padding: 8px 10px;
       min-height: 0;
     }
 
+    /* ── Job cell ──────────────────────────── */
     .job {
       display: flex;
       flex-direction: column;
-      border-radius: 14px;
+      border-radius: 16px;
       overflow: hidden;
+      border: 1.5px solid var(--border);
+      background: var(--card);
       min-height: 0;
+      box-shadow: 0 1px 4px rgba(0,0,0,.05);
+    }
+    .job.rest-job {
+      background: #0f172a;
+      border-color: #1e293b;
     }
 
     .job-label {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: .4px;
+      font-size: clamp(17px, 4.8vw, 23px);
+      font-weight: 800;
       text-align: center;
-      padding: 5px 4px 3px;
-      color: #cbd5e1;
-      background: #1e293b;
+      padding: 7px 4px 5px;
+      color: var(--text);
       flex-shrink: 0;
+      letter-spacing: .3px;
     }
+    .rest-job .job-label { color: #f1f5f9; }
 
     .job-btns {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       flex: 1;
-      gap: 3px;
-      padding: 3px;
-      background: #1e293b;
+      gap: 5px;
+      padding: 0 6px 6px;
+      min-height: 0;
     }
 
+    /* ── Punch buttons ─────────────────────── */
     .btn {
       flex: 1;
       border: none;
-      border-radius: 9px;
-      font-size: clamp(13px, 3.5vw, 16px);
+      border-radius: 12px;
+      font-size: clamp(15px, 4vw, 20px);
       font-weight: 800;
       cursor: pointer;
       display: flex;
@@ -148,16 +177,17 @@
       justify-content: center;
       gap: 2px;
       min-height: 0;
-      transition: opacity .12s, transform .1s;
+      transition: transform .1s, opacity .1s;
       -webkit-tap-highlight-color: transparent;
-      line-height: 1.1;
+      line-height: 1.15;
+      letter-spacing: .2px;
     }
-    .btn:disabled { opacity: .4; cursor: not-allowed; transform: none !important; }
-    .btn:active:not(:disabled) { transform: scale(0.95); opacity: .85; }
+    .btn:disabled { opacity: .35; cursor: not-allowed; transform: none !important; }
+    .btn:active:not(:disabled) { transform: scale(0.94); opacity: .82; }
 
-    .btn-sub { font-size: 10px; font-weight: 600; opacity: .75; }
+    .btn-sub { font-size: clamp(10px, 2.5vw, 13px); font-weight: 600; opacity: .75; }
 
-    .arr { color: #0f172a; }
+    .arr { color: #fff; }
     .lve { color: #fff; }
 
     .d-a  { background: var(--dispatch-a); }
@@ -170,62 +200,148 @@
     .pm-l { background: var(--pump-l);     }
     .cl-a { background: var(--clean-a);    }
     .cl-l { background: var(--clean-l);    }
-    .rs-a { background: var(--rest-a);     }
-    .rs-l { background: var(--rest-l);     }
+    .rs-a { background: #475569;           }
+    .rs-l { background: #1e293b; border: 1.5px solid #475569; }
 
+    /* ── Loading / Result overlay ──────────── */
+    .overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,.92);
+      z-index: 100;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      padding: 24px;
+    }
+    .overlay.show { display: flex; }
+
+    .ov-icon {
+      font-size: 52px;
+      line-height: 1;
+    }
+    .ov-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text);
+      text-align: center;
+    }
+    .ov-msg {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.6;
+      max-width: 280px;
+    }
+    .ov-detail {
+      font-size: 16px;
+      font-weight: 700;
+      text-align: center;
+      padding: 10px 20px;
+      border-radius: 12px;
+      line-height: 1.6;
+    }
+    .ov-detail.ok  { background: #f0fdf4; color: #15803d; }
+    .ov-detail.err { background: #fef2f2; color: #dc2626; }
+
+    .ov-countdown {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .ov-retry-btn {
+      font-size: 16px;
+      font-weight: 800;
+      padding: 13px 32px;
+      border: none;
+      border-radius: 14px;
+      background: #1a202c;
+      color: #fff;
+      cursor: pointer;
+      letter-spacing: .3px;
+    }
+    .ov-retry-btn:active { opacity: .8; transform: scale(.97); }
+
+    /* spinner */
+    .spinner {
+      width: 44px; height: 44px;
+      border: 4px solid #e2e8f0;
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Idle ──────────────────────────────── */
     .idle-wrap {
       display: none;
       flex: 0 0 auto;
-      margin: 0 12px 6px;
+      margin: 0 10px 6px;
       padding: 8px 12px;
       border-radius: 10px;
-      background: #1e293b;
-      border: 1px dashed #334155;
+      background: #fffbeb;
+      border: 1px dashed #fcd34d;
     }
-    .idle-wrap p { font-size: 12px; color: #94a3b8; line-height: 1.5; margin-bottom: 6px; }
+    .idle-wrap p { font-size: 12px; color: #92400e; line-height: 1.5; margin-bottom: 6px; }
     .idle-btn {
-      font-size: 12px; font-weight: 700;
-      padding: 6px 14px;
-      border: none; border-radius: 8px;
-      background: #f1f5f9; color: #0f172a;
-      cursor: pointer;
+      font-size: 13px; font-weight: 700;
+      padding: 6px 14px; border: none; border-radius: 8px;
+      background: #1a202c; color: #fff; cursor: pointer;
     }
 
-    details { flex: 0 0 auto; padding: 0 12px 10px; }
-    summary { font-size: 11px; color: #475569; cursor: pointer; }
+    /* ── Debug ─────────────────────────────── */
+    details { flex: 0 0 auto; padding: 0 12px 8px; }
+    summary { font-size: 11px; color: #94a3b8; cursor: pointer; }
     .debug-box {
-      margin-top: 6px; padding: 8px; border-radius: 8px;
-      background: #0b1120; color: #7dd3fc;
+      margin-top: 5px; padding: 8px; border-radius: 8px;
+      background: #0f172a; color: #7dd3fc;
       font-size: 11px; font-family: ui-monospace, monospace;
-      max-height: 160px; overflow: auto; white-space: pre-wrap;
+      max-height: 140px; overflow: auto; white-space: pre-wrap;
     }
+
+    /* overlay must sit over the whole page */
+    body { position: relative; }
   </style>
 </head>
 
 <body>
   <div class="shell">
 
+    <!-- Header -->
     <div class="hd">
       <span class="hd-title">桃園營運處｜打卡系統</span>
       <span class="hd-user" id="hdUser">驗證中…</span>
     </div>
 
-    <div class="status-bar muted" id="status">
-      <span class="dot"></span>
-      <span id="statusText">登入驗證中…</span>
+    <!-- Info strip: status + last punch -->
+    <div class="info-strip">
+      <div class="strip-row">
+        <span class="strip-dot gray" id="statusDot"></span>
+        <span class="strip-label">狀態</span>
+        <span class="strip-val muted" id="statusVal">登入驗證中…</span>
+      </div>
+      <div class="strip-row">
+        <span class="strip-dot clock" id="lastDot"></span>
+        <span class="strip-label">上次打卡</span>
+        <span class="strip-val muted" id="lastVal">—</span>
+      </div>
     </div>
 
     <div class="auth-box" id="authBox"></div>
 
+    <!-- Main grid -->
     <div class="grid">
       <div class="job">
         <div class="job-label">調度</div>
         <div class="job-btns">
-          <button class="btn arr d-a"  id="btnDA">到站<span class="btn-sub">打卡</span></button>
-          <button class="btn lve d-l"  id="btnDL">離站<span class="btn-sub">打卡</span></button>
+          <button class="btn arr d-a" id="btnDA">到站<span class="btn-sub">打卡</span></button>
+          <button class="btn lve d-l" id="btnDL">離站<span class="btn-sub">打卡</span></button>
         </div>
       </div>
-
       <div class="job">
         <div class="job-label">一級</div>
         <div class="job-btns">
@@ -233,7 +349,6 @@
           <button class="btn lve l1-l" id="btnL1L">離站<span class="btn-sub">打卡</span></button>
         </div>
       </div>
-
       <div class="job">
         <div class="job-label">換電</div>
         <div class="job-btns">
@@ -241,7 +356,6 @@
           <button class="btn lve sw-l" id="btnSL">離站<span class="btn-sub">打卡</span></button>
         </div>
       </div>
-
       <div class="job">
         <div class="job-label">打氣</div>
         <div class="job-btns">
@@ -249,7 +363,6 @@
           <button class="btn lve pm-l" id="btnPL">離站<span class="btn-sub">打卡</span></button>
         </div>
       </div>
-
       <div class="job">
         <div class="job-label">清潔</div>
         <div class="job-btns">
@@ -257,8 +370,7 @@
           <button class="btn lve cl-l" id="btnCL">離站<span class="btn-sub">打卡</span></button>
         </div>
       </div>
-
-      <div class="job">
+      <div class="job rest-job">
         <div class="job-label">休息</div>
         <div class="job-btns">
           <button class="btn arr rs-a" id="btnRA">到站<span class="btn-sub">打卡</span></button>
@@ -277,6 +389,26 @@
       <div class="debug-box" id="debug"></div>
     </details>
 
+  </div><!-- /shell -->
+
+  <!-- ── Full-screen overlay (loading / result) ── -->
+  <div class="overlay" id="overlay">
+    <!-- loading state -->
+    <div id="ovLoading">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:18px;">
+        <div class="spinner"></div>
+        <div class="ov-title" id="ovLoadTitle">定位中…</div>
+        <div class="ov-msg" id="ovLoadMsg">請稍候</div>
+      </div>
+    </div>
+    <!-- result state -->
+    <div id="ovResult" style="display:none;flex-direction:column;align-items:center;gap:14px;">
+      <div class="ov-icon" id="ovIcon">✅</div>
+      <div class="ov-title" id="ovResultTitle">打卡成功</div>
+      <div class="ov-detail ok" id="ovDetail"></div>
+      <div class="ov-countdown" id="ovCountdown"></div>
+      <button class="ov-retry-btn" id="ovRetryBtn" style="display:none;" onclick="closeOverlay()">重新打卡</button>
+    </div>
   </div>
 
 <script>
@@ -288,23 +420,90 @@ const GEO_ACCEPT = 150;
 const GEO_FAST   = { enableHighAccuracy: false, timeout: 7000,  maximumAge: 10000 };
 const GEO_PREC   = { enableHighAccuracy: true,  timeout: 10000, maximumAge: 0 };
 
-const $status     = document.getElementById("status");
-const $statusText = document.getElementById("statusText");
-const $hdUser     = document.getElementById("hdUser");
-const $authBox    = document.getElementById("authBox");
-const $idleWrap   = document.getElementById("idleWrap");
-const $debug      = document.getElementById("debug");
-const $dbgWrap    = document.getElementById("dbgWrap");
+const $hdUser    = document.getElementById("hdUser");
+const $authBox   = document.getElementById("authBox");
+const $idleWrap  = document.getElementById("idleWrap");
+const $debug     = document.getElementById("debug");
+const $dbgWrap   = document.getElementById("dbgWrap");
+const $statusDot = document.getElementById("statusDot");
+const $statusVal = document.getElementById("statusVal");
+const $lastVal   = document.getElementById("lastVal");
+const $lastDot   = document.getElementById("lastDot");
+const $overlay       = document.getElementById("overlay");
+const $ovLoading     = document.getElementById("ovLoading");
+const $ovLoadTitle   = document.getElementById("ovLoadTitle");
+const $ovLoadMsg     = document.getElementById("ovLoadMsg");
+const $ovResult      = document.getElementById("ovResult");
+const $ovIcon        = document.getElementById("ovIcon");
+const $ovResultTitle = document.getElementById("ovResultTitle");
+const $ovDetail      = document.getElementById("ovDetail");
+const $ovCountdown   = document.getElementById("ovCountdown");
+const $ovRetryBtn    = document.getElementById("ovRetryBtn");
 
 const ALL_IDS = ["btnDA","btnDL","btnL1A","btnL1L","btnSA","btnSL","btnPA","btnPL","btnCA","btnCL","btnRA","btnRL"];
 const allBtns = ALL_IDS.map(id => document.getElementById(id));
 
-let PROFILE = null, AUTH_READY = false, lastAct = Date.now(), idleShown = false;
+let PROFILE = null, AUTH_READY = false;
+let lastAct = Date.now(), idleShown = false;
+let countdownTimer = null;
 
+/* ── Status strip helpers ───────────────────── */
 function setStatus(msg, type) {
-  $status.className = "status-bar " + (type || "muted");
-  $statusText.textContent = msg || "";
+  $statusDot.className = "strip-dot " + (type === "ok" ? "green" : type === "err" ? "red" : "gray");
+  $statusVal.className = "strip-val " + (type || "muted");
+  $statusVal.textContent = msg || "";
 }
+
+function setLastPunch(text) {
+  $lastVal.className = "strip-val";
+  $lastVal.textContent = text || "—";
+}
+
+/* ── Overlay helpers ───────────────────────── */
+function showLoading(title, msg) {
+  $ovLoading.style.display = "";
+  $ovResult.style.display = "none";
+  $ovLoadTitle.textContent = title || "處理中…";
+  $ovLoadMsg.textContent = msg || "請稍候";
+  $overlay.classList.add("show");
+}
+
+function showResult(ok, title, detail, onClose) {
+  $ovLoading.style.display = "none";
+  $ovResult.style.display = "flex";
+  $ovIcon.textContent = ok ? "✅" : "❌";
+  $ovResultTitle.textContent = title;
+  $ovDetail.textContent = detail;
+  $ovDetail.className = "ov-detail " + (ok ? "ok" : "err");
+  $ovRetryBtn.style.display = ok ? "none" : "";
+  $ovCountdown.textContent = "";
+  $overlay.classList.add("show");
+
+  if (countdownTimer) clearInterval(countdownTimer);
+
+  if (ok) {
+    let sec = 5;
+    $ovCountdown.textContent = `${sec} 秒後自動關閉`;
+    countdownTimer = setInterval(() => {
+      sec--;
+      if (sec <= 0) {
+        clearInterval(countdownTimer);
+        closeOverlay();
+        if (onClose) onClose();
+      } else {
+        $ovCountdown.textContent = `${sec} 秒後自動關閉`;
+      }
+    }, 1000);
+  }
+}
+
+function closeOverlay() {
+  if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+  $overlay.classList.remove("show");
+  setBtns(false);
+}
+
+/* ── General helpers ───────────────────────── */
 function setBtns(d) { allBtns.forEach(b => b.disabled = d); }
 function touch() { lastAct = Date.now(); if (idleShown) { $idleWrap.style.display="none"; idleShown=false; } }
 function hardReload() { try { const u=new URL(location.href); u.searchParams.set("v",Date.now()); location.replace(u.toString()); } catch(_){ location.reload(true); } }
@@ -318,9 +517,11 @@ function getMergedParams() {
 const isTest = () => getMergedParams().get("test")==="1";
 function showDbg(o){if(!isTest())return;$dbgWrap.style.display="";$debug.textContent=JSON.stringify(o,null,2);}
 function jobLabel(j){return{dispatch:"調度",level1:"一級",swap:"換電",pump:"打氣",clean:"清潔",rest:"休息"}[j]||j;}
+function stepLabel(s){return s==="arrive"?"到站":"離站";}
 
 setInterval(()=>{if((Date.now()-lastAct)/60000>=IDLE_MIN&&!idleShown){idleShown=true;$idleWrap.style.display="";}},15000);
 
+/* ── Geolocation ───────────────────────────── */
 function geoOnce(opts){
   return new Promise((res,rej)=>{
     if(!navigator.geolocation)return rej(new Error("此裝置不支援定位"));
@@ -344,11 +545,13 @@ async function smartGeo(){
   return{loc:best,log};
 }
 
+/* ── Network ───────────────────────────────── */
 async function postGas(payload){
   const r=await fetch(GAS_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});
   const txt=await r.text();let data={};try{data=JSON.parse(txt);}catch(_){}return{r,txt,data};
 }
 
+/* ── Auth gate ─────────────────────────────── */
 async function initAuth(){
   setBtns(true); AUTH_READY=false; setStatus("登入驗證中…","muted");
   try{
@@ -359,8 +562,16 @@ async function initAuth(){
     const{data}=await postGas({action:"checkAuth",userId:PROFILE.userId||"",displayName:PROFILE.displayName||"",test:isTest()?"1":"0",ts:Date.now()});
     showDbg({step:"checkAuth",profile:PROFILE,result:data});
     if(!data||!data.ok){$authBox.style.display="";$authBox.textContent="授權檢查失敗，請稍後再試";setStatus("授權檢查失敗","err");return;}
-    if(data.canPunch){$authBox.style.display="none";AUTH_READY=true;setBtns(false);setStatus("已登入，可開始打卡","muted");}
-    else{$authBox.style.display="";$authBox.textContent=data.message||"尚未開通打卡權限，請聯絡管理員";setStatus("目前無法打卡","err");}
+    if(data.canPunch){
+      $authBox.style.display="none";
+      AUTH_READY=true;
+      setBtns(false);
+      setStatus("可以打卡","ok");
+    } else {
+      $authBox.style.display="";
+      $authBox.textContent=data.message||"尚未開通打卡權限，請聯絡管理員";
+      setStatus("目前無法打卡","err");
+    }
   }catch(e){
     const msg=e&&e.message||"";
     if(msg==="redirect_login")return;
@@ -370,46 +581,73 @@ async function initAuth(){
   }
 }
 
-async function punch(job,step){
+/* ── Punch ─────────────────────────────────── */
+async function punch(job, step){
   touch();
-  if(!AUTH_READY||!PROFILE){setStatus("尚未完成登入，請稍後再試","err");return;}
+  if(!AUTH_READY||!PROFILE){ setStatus("尚未完成登入，請稍後再試","err"); return; }
+
   setBtns(true);
-  setStatus(`定位中… ${jobLabel(job)} ${step==="arrive"?"到站":"離站"}`,"muted");
-  const p=getMergedParams();
+  const jl = jobLabel(job);
+  const sl = stepLabel(step);
+
+  showLoading(`${jl}・${sl}`, "定位中，請稍候…");
+
+  const p = getMergedParams();
+
   try{
     const{loc,log}=await smartGeo();
     showDbg({step:"geo",log,best:loc});
-    if(!isFinite(loc.accuracy)||loc.accuracy<=0||loc.accuracy>GEO_ACCEPT){setStatus("定位異常，請再試一次","err");setBtns(false);return;}
-    setStatus("送出打卡中…","muted");
+
+    if(!isFinite(loc.accuracy)||loc.accuracy<=0||loc.accuracy>GEO_ACCEPT){
+      showResult(false,"定位異常","精度不足，請稍後再試");
+      return;
+    }
+
+    $ovLoadMsg.textContent = "已定位，送出中…";
+
     const payload={job,step,userId:PROFILE.userId||"",displayName:PROFILE.displayName||"",lat:loc.lat,lng:loc.lng,accuracy:loc.accuracy,bypassKey:p.get("key")||"",test:p.get("test")||"",v:p.get("v")||"",href:location.href,ts:Date.now()};
     showDbg({step:"request",payload});
     const{data}=await postGas(payload);
     showDbg({step:"response",data});
+
     if(!data.ok){
-      const msg=data.message||"打卡失敗，請稍後再試";
-      if(!msg.includes("離場站過遠")&&!msg.includes("尚未到站")&&!msg.includes("定位異常")){$idleWrap.style.display="";idleShown=true;}
-      setStatus(msg,"err"); setBtns(false); return;
+      const errMsg = data.message||"打卡失敗，請稍後再試";
+      showResult(false,"打卡失敗", errMsg);
+      if(!errMsg.includes("離場站過遠")&&!errMsg.includes("尚未到站")&&!errMsg.includes("定位異常")){
+        $idleWrap.style.display=""; idleShown=true;
+      }
+      return;
     }
-    const station=data.stationName?`・${data.stationName}`:"";
-    setStatus(`完成 ${jobLabel(job)} ${step==="arrive"?"到站":"離站"}${station}`,"ok");
-    setTimeout(()=>{try{liff.closeWindow();}catch(_){}},900);
+
+    const station = data.stationName || "";
+    const detail  = [station, jl, sl + "打卡"].filter(Boolean).join("　");
+
+    /* update last punch strip */
+    setLastPunch(detail);
+
+    showResult(true, "打卡成功！", detail, ()=>{
+      try{ liff.closeWindow(); }catch(_){}
+    });
+
   }catch(e){
     const msg=e&&e.message||"";
-    if(msg==="redirect_login"){setBtns(false);return;}
+    if(msg==="redirect_login"){ closeOverlay(); return; }
+    let errDisplay = "打卡失敗，請稍後再試";
     if(!isTest()){
-      if(msg==="liff_profile_failed"){setStatus("頁面放置過久，請重新整理後再打卡","err");$idleWrap.style.display="";idleShown=true;}
-      else if(msg.toLowerCase().includes("timeout")){setStatus("定位逾時，請開啟定位後再試","err");}
-      else if(msg.includes("定位失敗")){setStatus("定位異常，請再試一次","err");}
-      else{setStatus("打卡失敗，請稍後再試","err");$idleWrap.style.display="";idleShown=true;}
-    }else{
-      setStatus(`錯誤：${msg}`,"err");
+      if(msg==="liff_profile_failed"){ errDisplay="頁面放置過久，請重新整理後再打卡"; $idleWrap.style.display=""; idleShown=true; }
+      else if(msg.toLowerCase().includes("timeout")){ errDisplay="定位逾時，請開啟定位後再試"; }
+      else if(msg.includes("定位失敗")){ errDisplay="定位異常，請再試一次"; }
+      else { $idleWrap.style.display=""; idleShown=true; }
+    } else {
+      errDisplay=`錯誤：${msg}`;
       showDbg({step:"catch",error:String(e),stack:e.stack||""});
-      $idleWrap.style.display="";idleShown=true;
+      $idleWrap.style.display=""; idleShown=true;
     }
-    setBtns(false);
+    showResult(false,"打卡失敗", errDisplay);
   }
 }
 
+/* ── Bind buttons ──────────────────────────── */
 document.getElementById("btnDA").addEventListener("click",  ()=>punch("dispatch","arrive"));
 document.getElementById("btnDL").addEventListener("click",  ()=>punch("dispatch","leave"));
 document.getElementById("btnL1A").addEventListener("click", ()=>punch("level1","arrive"));
