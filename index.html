@@ -500,8 +500,8 @@
 const LIFF_ID    = "2009174277-dSY24pNu";
 const GAS_URL    = "https://script.google.com/macros/s/AKfycbxUFysH7fGKyM9gJ_1vRMIa3krcuAsq7K5yDEioOXjB0NVbPJMx_e3TytAa_Nt6Eok94w/exec";
 const IDLE_MIN   = 8;
-const GEO_RETRY  = 100;
-const GEO_ACCEPT = 150;
+const GEO_RETRY  = 200;
+const GEO_ACCEPT = 500;
 const GEO_FAST   = { enableHighAccuracy: false, timeout: 7000,  maximumAge: 10000 };
 const GEO_PREC   = { enableHighAccuracy: true,  timeout: 10000, maximumAge: 0 };
 
@@ -755,11 +755,11 @@ async function punch(job, step){
     // ★ 休息作業不限制精度，只要能定位到座標即可
     const needAccuracy = (job !== "rest");
     if(!isFinite(loc.accuracy)||loc.accuracy<=0||(needAccuracy&&loc.accuracy>GEO_ACCEPT)){
-      showResult(false,"定位異常","精度不足，請稍後再試");
+      showResult(false,"定位異常",`精度不足（${Math.round(loc.accuracy)}m），請到開放空間後再試`);
       return;
     }
 
-    $ovLoadMsg.textContent = "已定位，送出中…";
+    $ovLoadMsg.textContent = `已定位（精度 ${Math.round(loc.accuracy)}m），送出中…`;
 
     const payload={job,step,userId:PROFILE.userId||"",displayName:PROFILE.displayName||"",lat:loc.lat,lng:loc.lng,accuracy:loc.accuracy,bypassKey:p.get("key")||"",test:p.get("test")||"",v:p.get("v")||"",href:location.href,ts:Date.now()};
     showDbg({step:"request",payload});
