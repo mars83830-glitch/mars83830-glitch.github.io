@@ -711,11 +711,10 @@ async function initAuth(){
     await liff.init({liffId:LIFF_ID});
     if(!liff.isInClient()&&!liff.isLoggedIn()){liff.login();return;}
     PROFILE=await liff.getProfile().catch(()=>{throw new Error("liff_profile_failed");});
-    // ★ checkAuth 和 getLastPunch 並行送出，節省一次往返時間
-    const [authRes, lastRes] = await Promise.all([
-      postGas({action:"checkAuth",userId:PROFILE.userId||"",displayName:PROFILE.displayName||"",test:isTest()?"1":"0",ts:Date.now()}),
-      postGas({action:"getLastPunch",userId:PROFILE.userId||"",ts:Date.now()})
-    ]);
+    // ★ checkAuth 和 getLastPunch 同時送出，但不等 getLastPunch
+    // checkAuth 完成就立即開放按鈕，getLastPunch 背景跑完再更新
+    const lastPunchPromise = postGas({action:"getLastPunch",userId:PROFILE.userId||"",ts:Date.now()});
+    const authRes = await postGas({action:"checkAuth",userId:PROFILE.userId||"",displayName:PROFILE.displayName||"",test:isTest()?"1":"0",ts:Date.now()});
     const data = authRes.data;
     showDbg({step:"checkAuth",profile:PROFILE,result:data});
     if(!data||!data.ok){showAuthGate("error", data&&data.message);return;}
@@ -724,10 +723,11 @@ async function initAuth(){
       AUTH_READY=true;
       setBtns(false);
       setStatus("可以打卡","ok");
-      // 直接用並行拿到的結果，不用再發一次請求
-      const ld = lastRes.data;
-      if(ld&&ld.ok&&ld.found&&ld.text) setLastPunch(ld.text);
-      else setLastPunch("—");
+      // 背景等 getLastPunch 完成再更新，不阻擋打卡
+      lastPunchPromise.then(({data:ld})=>{
+        if(ld&&ld.ok&&ld.found&&ld.text) setLastPunch(ld.text);
+        else setLastPunch("—");
+      }).catch(()=>{ setLastPunch("—"); });
     } else {
       const st = data.authStatus||"pending";
       showAuthGate(st, data.message);
