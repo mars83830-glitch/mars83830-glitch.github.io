@@ -348,13 +348,24 @@
     }
     .ov-retry-btn:active { opacity: .8; transform: scale(.97); }
 
-    /* spinner */
+    /* spinner (overlay) */
     .spinner {
       width: 44px; height: 44px;
       border: 4px solid #e2e8f0;
       border-top-color: #3b82f6;
       border-radius: 50%;
       animation: spin .7s linear infinite;
+    }
+    /* spinner (strip inline) */
+    .strip-spin {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid #d1d5db;
+      border-top-color: #a78bfa;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      vertical-align: middle;
+      flex-shrink: 0;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -405,7 +416,7 @@
       <div class="strip-row">
         <span class="strip-dot clock" id="lastDot"></span>
         <span class="strip-label">上次打卡</span>
-        <span class="strip-val muted" id="lastVal">—</span>
+        <span class="strip-spin" id="lastSpin"></span><span class="strip-val muted" id="lastVal"></span>
       </div>
     </div>
 
@@ -502,8 +513,8 @@ const GAS_URL    = "https://script.google.com/macros/s/AKfycbxUFysH7fGKyM9gJ_1vR
 const IDLE_MIN   = 8;
 const GEO_RETRY  = 200;
 const GEO_ACCEPT = 500;
-const GEO_FAST   = { enableHighAccuracy: false, timeout: 7000,  maximumAge: 10000 };
-const GEO_PREC   = { enableHighAccuracy: true,  timeout: 10000, maximumAge: 0 };
+const GEO_FAST   = { enableHighAccuracy: false, timeout: 4000,  maximumAge: 30000 };
+const GEO_PREC   = { enableHighAccuracy: true,  timeout: 7000,  maximumAge: 0 };
 
 const $hdUser    = document.getElementById("hdUser");
 const $authGate  = document.getElementById("authGate");
@@ -541,7 +552,9 @@ function setStatus(msg, type) {
   /* status row removed – no-op */
 }
 
+const $lastSpin = document.getElementById("lastSpin");
 function setLastPunch(text) {
+  if($lastSpin) $lastSpin.style.display = "none";
   $lastVal.className = "strip-val";
   $lastVal.textContent = text || "—";
 }
@@ -713,7 +726,12 @@ async function initAuth(){
     if(!liff.isInClient()&&!liff.isLoggedIn()){liff.login();return;}
     PROFILE=await liff.getProfile().catch(()=>{throw new Error("liff_profile_failed");});
     $hdUser.textContent=PROFILE.displayName||"使用者";
-    const{data}=await postGas({action:"checkAuth",userId:PROFILE.userId||"",displayName:PROFILE.displayName||"",test:isTest()?"1":"0",ts:Date.now()});
+    // ★ checkAuth 和 getLastPunch 並行送出，節省一次往返時間
+    const [authRes, lastRes] = await Promise.all([
+      postGas({action:"checkAuth",userId:PROFILE.userId||"",displayName:PROFILE.displayName||"",test:isTest()?"1":"0",ts:Date.now()}),
+      postGas({action:"getLastPunch",userId:PROFILE.userId||"",ts:Date.now()})
+    ]);
+    const data = authRes.data;
     showDbg({step:"checkAuth",profile:PROFILE,result:data});
     if(!data||!data.ok){showAuthGate("error", data&&data.message);return;}
     if(data.canPunch){
@@ -721,7 +739,10 @@ async function initAuth(){
       AUTH_READY=true;
       setBtns(false);
       setStatus("可以打卡","ok");
-      fetchLastPunch();
+      // 直接用並行拿到的結果，不用再發一次請求
+      const ld = lastRes.data;
+      if(ld&&ld.ok&&ld.found&&ld.text) setLastPunch(ld.text);
+      else setLastPunch("—");
     } else {
       const st = data.authStatus||"pending";
       showAuthGate(st, data.message);
@@ -755,11 +776,11 @@ async function punch(job, step){
     // ★ 休息作業不限制精度，只要能定位到座標即可
     const needAccuracy = (job !== "rest");
     if(!isFinite(loc.accuracy)||loc.accuracy<=0||(needAccuracy&&loc.accuracy>GEO_ACCEPT)){
-      showResult(false,"定位異常",`精度不足（${Math.round(loc.accuracy)}m），請到開放空間後再試`);
+      showResult(false,"定位異常","請到開放空間重新整理後再試");
       return;
     }
 
-    $ovLoadMsg.textContent = `已定位（精度 ${Math.round(loc.accuracy)}m），送出中…`;
+    $ovLoadMsg.textContent = "已定位，送出中…";
 
     const payload={job,step,userId:PROFILE.userId||"",displayName:PROFILE.displayName||"",lat:loc.lat,lng:loc.lng,accuracy:loc.accuracy,bypassKey:p.get("key")||"",test:p.get("test")||"",v:p.get("v")||"",href:location.href,ts:Date.now()};
     showDbg({step:"request",payload});
@@ -780,8 +801,6 @@ async function punch(job, step){
 
     /* update last punch strip */
     setLastPunch(detail);
-    /* also refresh from server to be sure */
-    fetchLastPunch();
 
     showResult(true, "打卡成功！", detail, ()=>{
       try{ liff.closeWindow(); }catch(_){}
