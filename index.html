@@ -516,7 +516,6 @@ const GEO_ACCEPT = 500;
 const GEO_FAST   = { enableHighAccuracy: false, timeout: 4000,  maximumAge: 30000 };
 const GEO_PREC   = { enableHighAccuracy: true,  timeout: 7000,  maximumAge: 0 };
 
-const $hdUser    = document.getElementById("hdUser");
 const $authGate  = document.getElementById("authGate");
 const $agIcon    = document.getElementById("agIcon");
 const $agTitle   = document.getElementById("agTitle");
@@ -525,10 +524,7 @@ const $agMsg     = document.getElementById("agMsg");
 const $idleWrap  = document.getElementById("idleWrap");
 const $debug     = document.getElementById("debug");
 const $dbgWrap   = document.getElementById("dbgWrap");
-const $statusDot = document.getElementById("statusDot");
-const $statusVal = document.getElementById("statusVal");
 const $lastVal   = document.getElementById("lastVal");
-const $lastDot   = document.getElementById("lastDot");
 const $overlay       = document.getElementById("overlay");
 const $ovLoading     = document.getElementById("ovLoading");
 const $ovLoadTitle   = document.getElementById("ovLoadTitle");
@@ -709,23 +705,12 @@ function showAuthGate(status, message) {
   setBtns(true);
 }
 
-async function fetchLastPunch(){
-  if(!PROFILE) return;
-  try{
-    const{data}=await postGas({action:"getLastPunch",userId:PROFILE.userId||"",ts:Date.now()});
-    if(data&&data.ok&&data.found&&data.text){
-      setLastPunch(data.text);
-    }
-  }catch(_){}
-}
-
 async function initAuth(){
   setBtns(true); AUTH_READY=false; setStatus("登入驗證中…","muted");
   try{
     await liff.init({liffId:LIFF_ID});
     if(!liff.isInClient()&&!liff.isLoggedIn()){liff.login();return;}
     PROFILE=await liff.getProfile().catch(()=>{throw new Error("liff_profile_failed");});
-    $hdUser.textContent=PROFILE.displayName||"使用者";
     // ★ checkAuth 和 getLastPunch 並行送出，節省一次往返時間
     const [authRes, lastRes] = await Promise.all([
       postGas({action:"checkAuth",userId:PROFILE.userId||"",displayName:PROFILE.displayName||"",test:isTest()?"1":"0",ts:Date.now()}),
@@ -765,8 +750,7 @@ async function punch(job, step){
   const sl = stepLabel(step);
 
   const isRest = (job === "rest");
-  const restText = isRest ? (step === "arrive" ? "休息開始" : "休息結束") : "";
-  showLoading(isRest ? restText : `${jl}・${sl}`, isRest ? "送出中，請稍候…" : "定位中，請稍候…");
+  showLoading(`${jl}・${sl}`, isRest ? "送出中，請稍候…" : "定位中，請稍候…");
 
   const p = getMergedParams();
 
@@ -798,9 +782,7 @@ async function punch(job, step){
     }
 
     const station = data.stationName || "";
-    const detail  = isRest
-      ? (step === "arrive" ? "休息開始" : "休息結束")
-      : [station, jl, sl + "打卡"].filter(Boolean).join("　");
+    const detail  = [station, jl, sl + "打卡"].filter(Boolean).join("　");
 
     /* update last punch strip */
     setLastPunch(detail);
