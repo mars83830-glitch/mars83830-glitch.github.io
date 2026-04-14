@@ -619,10 +619,12 @@ function geoOnce(opts){
 }
 function goodLoc(l){return l&&isFinite(l.lat)&&isFinite(l.lng)&&l.accuracy>0;}
 function betterLoc(a,b){if(!goodLoc(a))return b;if(!goodLoc(b))return a;return a.accuracy<=b.accuracy?a:b;}
-async function smartGeo(){
+async function smartGeo(skipAccuracy){
   const log=[];let first=null;
   try{first=await geoOnce(GEO_FAST);log.push({step:"fast",ok:true,loc:first});}
   catch(e){log.push({step:"fast",ok:false,err:String(e.message)});}
+  // ★ 休息作業：有拿到座標就直接回傳，不管精度
+  if(skipAccuracy&&goodLoc(first))return{loc:first,log};
   if(goodLoc(first)&&first.accuracy<=GEO_RETRY)return{loc:first,log};
   let second=null;
   try{second=await geoOnce(GEO_PREC);log.push({step:"precise",ok:true,loc:second});}
@@ -741,15 +743,18 @@ async function punch(job, step){
   const jl = jobLabel(job);
   const sl = stepLabel(step);
 
-  showLoading(`${jl}・${sl}`, "定位中，請稍候…");
+  const isRest = (job === "rest");
+  showLoading(`${jl}・${sl}`, isRest ? "送出中，請稍候…" : "定位中，請稍候…");
 
   const p = getMergedParams();
 
   try{
-    const{loc,log}=await smartGeo();
+    const{loc,log}=await smartGeo(isRest);
     showDbg({step:"geo",log,best:loc});
 
-    if(!isFinite(loc.accuracy)||loc.accuracy<=0||loc.accuracy>GEO_ACCEPT){
+    // ★ 休息作業不限制精度，只要能定位到座標即可
+    const needAccuracy = (job !== "rest");
+    if(!isFinite(loc.accuracy)||loc.accuracy<=0||(needAccuracy&&loc.accuracy>GEO_ACCEPT)){
       showResult(false,"定位異常","精度不足，請稍後再試");
       return;
     }
