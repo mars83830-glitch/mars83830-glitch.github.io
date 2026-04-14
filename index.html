@@ -182,8 +182,8 @@
     }
 
     .job-label {
-      font-size: clamp(17px, 4.8vw, 23px);
-      font-weight: 800;
+      font-size: clamp(20px, 6vw, 32px);
+      font-weight: 900;
       text-align: center;
       padding: 7px 4px 5px;
       color: var(--text);
@@ -217,14 +217,15 @@
       .strip-row { min-height: 20px; font-size: 12px; }
 
       /* larger button text in landscape (more width) */
-      .btn { font-size: clamp(16px, 3.8vw, 22px); }
+      .btn { font-size: 8vmin; }
       .job-label { font-size: clamp(15px, 3.5vw, 20px); padding: 5px 4px 3px; }
     }
 
     /* Portrait: bigger text since buttons are taller */
     @media (orientation: portrait) {
-      .btn { font-size: clamp(30px, 9vw, 46px); letter-spacing: .5px; }
-      .job-label { font-size: clamp(24px, 7vw, 36px); padding: 10px 4px 7px; }
+      /* portrait: 格子較高，vmin ≈ vw，10vmin 約 37px on 375px screen */
+      .btn { font-size: 10vmin; }
+      .job-label { font-size: clamp(24px, 7vw, 38px); padding: 10px 4px 7px; }
       .grid { gap: 6px; padding: 6px 8px; }
       .job-btns { gap: 4px; padding: 0 5px 5px; }
     }
@@ -234,32 +235,37 @@
       flex: 1;
       border: none;
       border-radius: 14px;
-      font-size: clamp(15px, 4vw, 20px);
-      font-weight: 800;
+      /* 字體：用 vmin 讓字跟格子大小掛勾，portrait 約 10vmin ≈ 大字 */
+      font-size: 10vmin;
+      font-weight: 900;
       cursor: pointer;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 2px;
       min-height: 0;
-      transition: transform .08s, box-shadow .08s;
+      min-width: 0;
+      overflow: hidden;
+      /* 按鈕效果：右下角深色邊框模擬厚度，比 box-shadow 更乾淨 */
+      border-bottom: 5px solid rgba(0,0,0,.25);
+      border-right:  3px solid rgba(0,0,0,.15);
+      transition: transform .07s, border .07s, filter .07s;
       -webkit-tap-highlight-color: transparent;
-      line-height: 1.15;
-      letter-spacing: .2px;
-      /* 立體感：底部陰影 + 頂部亮邊 */
-      box-shadow:
-        inset 0 2px 0 rgba(255,255,255,.28),
-        0 5px 0 rgba(0,0,0,.28),
-        0 6px 8px rgba(0,0,0,.18);
+      line-height: 1;
+      letter-spacing: .5px;
+      /* 亮邊 */
+      border-top:  1.5px solid rgba(255,255,255,.35);
+      border-left: 1.5px solid rgba(255,255,255,.25);
     }
-    .btn:disabled { opacity: .35; cursor: not-allowed; transform: none !important; box-shadow: none; }
+    .btn:disabled {
+      opacity: .32;
+      cursor: not-allowed;
+      filter: grayscale(.4);
+      border-bottom: 2px solid rgba(0,0,0,.15);
+    }
     .btn:active:not(:disabled) {
-      transform: translateY(4px);
-      box-shadow:
-        inset 0 2px 0 rgba(255,255,255,.18),
-        0 1px 0 rgba(0,0,0,.28),
-        0 2px 3px rgba(0,0,0,.15);
+      transform: translateY(3px);
+      border-bottom: 2px solid rgba(0,0,0,.25);
+      filter: brightness(.92);
     }
 
 
