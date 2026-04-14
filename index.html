@@ -64,10 +64,10 @@
     .strip-row {
       display: flex;
       align-items: center;
-      gap: 7px;
-      min-height: 26px;
-      font-size: 13px;
-      font-weight: 600;
+      gap: 8px;
+      min-height: 34px;
+      font-size: 16px;
+      font-weight: 700;
     }
 
     .strip-dot {
@@ -81,13 +81,13 @@
     .strip-dot.clock  { background: #a78bfa; }
 
     .strip-label {
-      font-size: 11px;
+      font-size: 14px;
       font-weight: 700;
       color: var(--muted);
       white-space: nowrap;
       letter-spacing: .3px;
     }
-    .strip-val { color: var(--text); }
+    .strip-val { color: var(--text); font-size: 16px; font-weight: 700; }
     .strip-val.ok  { color: #16a34a; }
     .strip-val.err { color: #dc2626; }
     .strip-val.muted { color: var(--muted); }
@@ -334,11 +334,7 @@
 
     <!-- Info strip: status + last punch -->
     <div class="info-strip">
-      <div class="strip-row">
-        <span class="strip-dot gray" id="statusDot"></span>
-        <span class="strip-label">狀態</span>
-        <span class="strip-val muted" id="statusVal">登入驗證中…</span>
-      </div>
+
       <div class="strip-row">
         <span class="strip-dot clock" id="lastDot"></span>
         <span class="strip-label">上次打卡</span>
@@ -464,9 +460,7 @@ let countdownTimer = null;
 
 /* ── Status strip helpers ───────────────────── */
 function setStatus(msg, type) {
-  $statusDot.className = "strip-dot " + (type === "ok" ? "green" : type === "err" ? "red" : "gray");
-  $statusVal.className = "strip-val " + (type || "muted");
-  $statusVal.textContent = msg || "";
+  /* status row removed – no-op */
 }
 
 function setLastPunch(text) {
