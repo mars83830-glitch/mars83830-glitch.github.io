@@ -96,17 +96,62 @@
     .strip-val.muted { color: var(--muted); }
 
     /* ── Auth box ──────────────────────────── */
-    .auth-box {
+    /* ── Auth gate (full-screen, no permission) ── */
+    .auth-gate {
       display: none;
-      margin: 6px 12px 0;
-      padding: 8px 12px;
-      border-radius: 10px;
-      background: #fffbeb;
-      border: 1px solid #fcd34d;
-      color: #92400e;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: #f4f6f9;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 24px;
+      gap: 0;
+    }
+    .auth-gate.show { display: flex; }
+
+    .auth-gate-icon {
+      font-size: 64px;
+      line-height: 1;
+      margin-bottom: 20px;
+    }
+    .auth-gate-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #1a202c;
+      text-align: center;
+      margin-bottom: 12px;
+      letter-spacing: .3px;
+    }
+    .auth-gate-msg {
+      font-size: 16px;
+      font-weight: 500;
+      color: #4a5568;
+      text-align: center;
+      line-height: 1.75;
+      margin-bottom: 28px;
+      max-width: 300px;
+    }
+    .auth-gate-badge {
+      display: inline-block;
+      padding: 6px 18px;
+      border-radius: 999px;
       font-size: 13px;
-      font-weight: 600;
-      line-height: 1.5;
+      font-weight: 700;
+      letter-spacing: .4px;
+      margin-bottom: 28px;
+    }
+    .auth-gate-badge.pending  { background: #eff6ff; color: #1d4ed8; border: 1.5px solid #bfdbfe; }
+    .auth-gate-badge.blocked  { background: #fef2f2; color: #b91c1c; border: 1.5px solid #fecaca; }
+    .auth-gate-badge.disabled { background: #f9fafb; color: #6b7280; border: 1.5px solid #d1d5db; }
+    .auth-gate-badge.error    { background: #fff7ed; color: #c2410c; border: 1.5px solid #fed7aa; }
+
+    .auth-gate-contact {
+      font-size: 13px;
+      color: #94a3b8;
+      text-align: center;
+      line-height: 1.6;
     }
 
     /* ── Grid ──────────────────────────────── */
@@ -358,7 +403,14 @@
       </div>
     </div>
 
-    <div class="auth-box" id="authBox"></div>
+    <!-- Auth gate overlay -->
+    <div class="auth-gate" id="authGate">
+      <div class="auth-gate-icon" id="agIcon">🔒</div>
+      <div class="auth-gate-title" id="agTitle">無法使用打卡系統</div>
+      <div class="auth-gate-badge pending" id="agBadge">審核中</div>
+      <div class="auth-gate-msg" id="agMsg">您的帳號尚未取得打卡權限，請聯絡管理員開通。</div>
+      <div class="auth-gate-contact">如有疑問請聯絡主管或系統管理員</div>
+    </div>
 
     <!-- Main grid -->
     <div class="grid">
@@ -448,7 +500,11 @@ const GEO_FAST   = { enableHighAccuracy: false, timeout: 7000,  maximumAge: 1000
 const GEO_PREC   = { enableHighAccuracy: true,  timeout: 10000, maximumAge: 0 };
 
 const $hdUser    = document.getElementById("hdUser");
-const $authBox   = document.getElementById("authBox");
+const $authGate  = document.getElementById("authGate");
+const $agIcon    = document.getElementById("agIcon");
+const $agTitle   = document.getElementById("agTitle");
+const $agBadge   = document.getElementById("agBadge");
+const $agMsg     = document.getElementById("agMsg");
 const $idleWrap  = document.getElementById("idleWrap");
 const $debug     = document.getElementById("debug");
 const $dbgWrap   = document.getElementById("dbgWrap");
@@ -577,6 +633,61 @@ async function postGas(payload){
 }
 
 /* ── Auth gate ─────────────────────────────── */
+function showAuthGate(status, message) {
+  const configs = {
+    pending: {
+      icon: "⏳",
+      title: "帳號審核中",
+      badge: "待審核",
+      badgeClass: "pending",
+      msg: "您的帳號已登記，正在等待管理員審核開通，審核完成後即可使用打卡功能。"
+    },
+    blocked: {
+      icon: "🚫",
+      title: "帳號已停權",
+      badge: "無使用權限",
+      badgeClass: "blocked",
+      msg: "此帳號已被停用，無法使用打卡系統，請聯絡管理員了解原因。"
+    },
+    disabled: {
+      icon: "⛔",
+      title: "帳號已停用",
+      badge: "停用中",
+      badgeClass: "disabled",
+      msg: "此帳號目前處於停用狀態，如需恢復請聯絡管理員。"
+    },
+    error: {
+      icon: "⚠️",
+      title: "驗證失敗",
+      badge: "系統錯誤",
+      badgeClass: "error",
+      msg: message || "授權檢查時發生錯誤，請稍後再試或重新整理頁面。"
+    },
+    liff_failed: {
+      icon: "🔄",
+      title: "登入已失效",
+      badge: "需要重新整理",
+      badgeClass: "error",
+      msg: "LINE 登入狀態已過期，請關閉此頁面後重新從 LINE 開啟。"
+    },
+    init_failed: {
+      icon: "⚠️",
+      title: "初始化失敗",
+      badge: "系統錯誤",
+      badgeClass: "error",
+      msg: "系統初始化失敗，請關閉後重新開啟，若問題持續請聯絡管理員。"
+    }
+  };
+  const c = configs[status] || configs.error;
+  $agIcon.textContent  = c.icon;
+  $agTitle.textContent = c.title;
+  $agBadge.textContent = c.badge;
+  $agBadge.className   = "auth-gate-badge " + c.badgeClass;
+  $agMsg.textContent   = c.msg;
+  $authGate.classList.add("show");
+  setBtns(true);
+}
+
 async function fetchLastPunch(){
   if(!PROFILE) return;
   try{
@@ -596,24 +707,22 @@ async function initAuth(){
     $hdUser.textContent=PROFILE.displayName||"使用者";
     const{data}=await postGas({action:"checkAuth",userId:PROFILE.userId||"",displayName:PROFILE.displayName||"",test:isTest()?"1":"0",ts:Date.now()});
     showDbg({step:"checkAuth",profile:PROFILE,result:data});
-    if(!data||!data.ok){$authBox.style.display="";$authBox.textContent="授權檢查失敗，請稍後再試";setStatus("授權檢查失敗","err");return;}
+    if(!data||!data.ok){showAuthGate("error", data&&data.message);return;}
     if(data.canPunch){
-      $authBox.style.display="none";
+      $authGate.classList.remove("show");
       AUTH_READY=true;
       setBtns(false);
       setStatus("可以打卡","ok");
       fetchLastPunch();
     } else {
-      $authBox.style.display="";
-      $authBox.textContent=data.message||"尚未開通打卡權限，請聯絡管理員";
-      setStatus("目前無法打卡","err");
+      const st = data.authStatus||"pending";
+      showAuthGate(st, data.message);
     }
   }catch(e){
     const msg=e&&e.message||"";
     if(msg==="redirect_login")return;
-    $authBox.style.display="";
-    $authBox.textContent=msg==="liff_profile_failed"?"登入狀態已失效，請重新整理後再試":"登入初始化失敗，請重新整理後再試";
-    setStatus("登入初始化失敗","err"); AUTH_READY=false;
+    showAuthGate(msg==="liff_profile_failed" ? "liff_failed" : "init_failed");
+    AUTH_READY=false;
   }
 }
 
