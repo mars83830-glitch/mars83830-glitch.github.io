@@ -106,26 +106,6 @@
     .badge.red    { background: #fee2e2; color: #991b1b; }
     .badge.orange { background: #ffedd5; color: #9a3412; }
 
-    /* ── Loading 進度條 ── */
-    .progress-bar {
-      width: 100%; height: 4px;
-      background: #e5e7eb;
-      border-radius: 4px;
-      overflow: hidden;
-      margin: 18px 0 12px;
-    }
-    .progress-fill {
-      height: 100%;
-      width: 55%;
-      background: var(--primary);
-      border-radius: 4px;
-      animation: prog 1.6s ease-in-out infinite alternate;
-    }
-    @keyframes prog {
-      from { width: 20%; }
-      to   { width: 80%; }
-    }
-
     /* ── Loading 文字列 ── */
     .status-row {
       display: flex;
@@ -165,7 +145,6 @@
       <div class="icon-circle blue">📅</div>
       <div class="status-title" style="color:#1d4ed8">驗證身分中</div>
       <div class="status-desc">正在確認你的帳號權限，請稍候...</div>
-      <div class="progress-bar"><div class="progress-fill"></div></div>
       <div class="status-row">
         <div class="spinner-sm"></div>
         連線中
