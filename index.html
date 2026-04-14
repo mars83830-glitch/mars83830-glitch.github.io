@@ -750,7 +750,8 @@ async function punch(job, step){
   const sl = stepLabel(step);
 
   const isRest = (job === "rest");
-  showLoading(`${jl}・${sl}`, isRest ? "送出中，請稍候…" : "定位中，請稍候…");
+  const restText = isRest ? (step === "arrive" ? "休息開始" : "休息結束") : "";
+  showLoading(isRest ? restText : `${jl}・${sl}`, isRest ? "送出中，請稍候…" : "定位中，請稍候…");
 
   const p = getMergedParams();
 
@@ -782,7 +783,9 @@ async function punch(job, step){
     }
 
     const station = data.stationName || "";
-    const detail  = [station, jl, sl + "打卡"].filter(Boolean).join("　");
+    const detail  = isRest
+      ? (step === "arrive" ? "休息開始" : "休息結束")
+      : [station, jl, sl + "打卡"].filter(Boolean).join("　");
 
     /* update last punch strip */
     setLastPunch(detail);
