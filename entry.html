@@ -12,13 +12,11 @@
       --text: #1f2937;
       --muted: #6b7280;
       --primary: #4b89dc;
-      --shadow: 0 8px 24px rgba(0,0,0,.08);
     }
 
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     html, body {
-      margin: 0; padding: 0;
       width: 100%; min-height: 100vh;
       background: var(--bg);
       color: var(--text);
@@ -28,109 +26,200 @@
       justify-content: center;
     }
 
+    /* ── 外框卡片 ── */
     .card {
       background: var(--card);
-      border-radius: 22px;
-      box-shadow: var(--shadow);
-      padding: 36px 28px;
+      border-radius: 24px;
+      box-shadow: 0 12px 32px rgba(0,0,0,.10);
+      padding: 36px 28px 32px;
       width: min(360px, 92vw);
       text-align: center;
     }
 
-    .logo {
-      font-size: 48px;
-      margin-bottom: 12px;
+    /* ── App header bar ── */
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      margin-bottom: 24px;
+    }
+    .app-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+    }
+    .app-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary);
+      letter-spacing: .04em;
     }
 
-    h1 {
-      font-size: 22px;
+    /* ── 圖示圓圈 ── */
+    .icon-circle {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin: 0 auto 16px;
+    }
+    .icon-circle.blue   { background: #dbeafe; }
+    .icon-circle.yellow { background: #fef3c7; }
+    .icon-circle.red    { background: #fee2e2; }
+    .icon-circle.orange { background: #ffedd5; }
+
+    /* ── 標題 / 說明 ── */
+    .status-title {
+      font-size: 18px;
       font-weight: 900;
-      margin: 0 0 8px;
+      margin-bottom: 8px;
+      line-height: 1.4;
     }
-
-    .subtitle {
+    .status-desc {
       font-size: 14px;
       color: var(--muted);
-      margin: 0 0 28px;
-    }
-
-    .status-box {
-      border-radius: 14px;
-      padding: 16px;
-      font-size: 15px;
-      font-weight: 700;
       line-height: 1.7;
       white-space: pre-wrap;
-      text-align: left;
     }
 
-    .status-box.loading {
-      background: #f8fbff;
-      border: 1px solid #bfd3f2;
-      color: #1d4ed8;
+    /* ── 分隔線 ── */
+    .divider {
+      width: 40px; height: 2px;
+      background: #f3f4f6;
+      border-radius: 2px;
+      margin: 18px auto;
     }
 
-    .status-box.error {
-      background: #fff7ed;
-      border: 1px solid #fed7aa;
-      color: #9a3412;
-    }
-
-    .status-box.blocked {
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      color: #991b1b;
-    }
-
-    .status-box.pending {
-      background: #fffbeb;
-      border: 1px solid #fde68a;
-      color: #92400e;
-    }
-
-    .spinner {
+    /* ── 狀態 Badge ── */
+    .badge {
       display: inline-block;
-      width: 20px; height: 20px;
-      border: 3px solid #bfd3f2;
-      border-top-color: var(--primary);
-      border-radius: 50%;
-      animation: spin .8s linear infinite;
-      margin-bottom: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 16px;
+      border-radius: 20px;
+    }
+    .badge.blue   { background: #dbeafe; color: #1d4ed8; }
+    .badge.yellow { background: #fef3c7; color: #92400e; }
+    .badge.red    { background: #fee2e2; color: #991b1b; }
+    .badge.orange { background: #ffedd5; color: #9a3412; }
+
+    /* ── Loading 進度條 ── */
+    .progress-bar {
+      width: 100%; height: 4px;
+      background: #e5e7eb;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 18px 0 12px;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 55%;
+      background: var(--primary);
+      border-radius: 4px;
+      animation: prog 1.6s ease-in-out infinite alternate;
+    }
+    @keyframes prog {
+      from { width: 20%; }
+      to   { width: 80%; }
     }
 
+    /* ── Loading 文字列 ── */
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      font-size: 13px;
+      color: var(--primary);
+      font-weight: 700;
+    }
+    .spinner-sm {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      border: 2px solid #bcd3f5;
+      border-top-color: var(--primary);
+      animation: spin .8s linear infinite;
+      flex-shrink: 0;
+    }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── 預設隱藏所有狀態區塊 ── */
+    .state { display: none; }
+    .state.active { display: block; }
   </style>
 </head>
 <body>
   <div class="card">
-    <div class="logo">📅</div>
-    <h1>排班系統</h1>
-    <p class="subtitle">桃園營運處</p>
-    <div class="spinner" id="spinner"></div>
-    <div class="status-box loading" id="statusBox">驗證中，請稍候...</div>
+
+    <!-- App Header（共用） -->
+    <div class="app-header">
+      <div class="app-dot"></div>
+      <span class="app-name">排班系統・桃園營運處</span>
+    </div>
+
+    <!-- ① Loading -->
+    <div class="state active" id="state-loading">
+      <div class="icon-circle blue">📅</div>
+      <div class="status-title" style="color:#1d4ed8">驗證身分中</div>
+      <div class="status-desc">正在確認你的帳號權限，請稍候...</div>
+      <div class="progress-bar"><div class="progress-fill"></div></div>
+      <div class="status-row">
+        <div class="spinner-sm"></div>
+        連線中
+      </div>
+    </div>
+
+    <!-- ② 審核中 / 尚未開通 -->
+    <div class="state" id="state-pending">
+      <div class="icon-circle yellow">⏳</div>
+      <div class="status-title">申請審核中</div>
+      <div class="status-desc" id="msg-pending">你的申請已送出，<br/>請等待管理員開通後再試。</div>
+      <div class="divider"></div>
+      <span class="badge yellow">等待審核</span>
+    </div>
+
+    <!-- ③ 帳號停用 -->
+    <div class="state" id="state-blocked">
+      <div class="icon-circle red">🚫</div>
+      <div class="status-title" style="color:#991b1b">帳號已停用</div>
+      <div class="status-desc">你的帳號存取已被限制，<br/>請聯絡管理員處理。</div>
+      <div class="divider"></div>
+      <span class="badge red">無法存取</span>
+    </div>
+
+    <!-- ④ 系統/設定異常 -->
+    <div class="state" id="state-error">
+      <div class="icon-circle orange">⚠️</div>
+      <div class="status-title" style="color:#92400e">系統異常</div>
+      <div class="status-desc" id="msg-error">身分別設定有問題，<br/>請聯絡管理員確認。</div>
+      <div class="divider"></div>
+      <span class="badge orange">請聯絡管理員</span>
+    </div>
+
+    <!-- ⑤ 無查詢權限（canQuery = false，與帳號停用視覺區隔） -->
+    <div class="state" id="state-no-query">
+      <div class="icon-circle orange">🔒</div>
+      <div class="status-title" style="color:#9a3412">目前無法使用</div>
+      <div class="status-desc" id="msg-no-query">目前尚無查詢或排班權限，<br/>請稍後再試。</div>
+      <div class="divider"></div>
+      <span class="badge orange">權限未開放</span>
+    </div>
+
   </div>
 
   <script>
-    // ╔══════════════════════════════════════════╗
-    // ║  請填入你的設定值                         ║
-    // ╚══════════════════════════════════════════╝
-    const LIFF_ID     = '2009174277-Dwu3ebuB';
-    const GAS_URL     = 'https://script.google.com/macros/s/AKfycbw5nLu4db1KvJkOl1j98srOVCsR8AgZh3TByl1SrQDAZgn0LROV6CHdhA5PwwVd6miA/exec';
+    const LIFF_ID = '2009174277-Dwu3ebuB';
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbw5nLu4db1KvJkOl1j98srOVCsR8AgZh3TByl1SrQDAZgn0LROV6CHdhA5PwwVd6miA/exec';
+    const PT_URL  = 'https://mars83830-glitch.github.io/pt.html';
+    const FT_URL  = 'https://mars83830-glitch.github.io/ft.html';
 
-    // pt.html 和 ft.html 的完整網址
-    // 部署到 GitHub Pages 後，格式會是：
-    // https://【你的帳號】.github.io/【repository名稱】/pt.html
-    const PT_URL      = 'https://mars83830-glitch.github.io/pt.html';
-    const FT_URL      = 'https://mars83830-glitch.github.io/ft.html';
-    // ═══════════════════════════════════════════
-
-    const statusBox = document.getElementById('statusBox');
-    const spinner   = document.getElementById('spinner');
-
-    function showStatus(message, type) {
-      spinner.style.display = 'none';
-      statusBox.className   = 'status-box ' + type;
-      statusBox.textContent = message;
+    function showState(id) {
+      document.querySelectorAll('.state').forEach(el => el.classList.remove('active'));
+      const el = document.getElementById(id);
+      if (el) el.classList.add('active');
     }
 
     function buildRedirectUrl(baseUrl, userId, displayName, data) {
@@ -151,29 +240,8 @@
       return `${baseUrl}?${p.toString()}`;
     }
 
-    function saveAuthContextForRedirect(target, userId, displayName, data) {
-      try {
-        const payload = {
-          target: target || '',
-          ts: Date.now(),
-          uid: userId || '',
-          displayName: displayName || '',
-          role: data.role || '',
-          status: data.status || '',
-          isSP: !!data.isSP,
-          canQuery: !!data.canQuery,
-          canEdit: !!data.canEdit,
-          month: data.targetMonth || data.defaultMonth || '',
-          targetMonth: data.targetMonth || data.defaultMonth || '',
-          defaultMonth: data.defaultMonth || data.targetMonth || '',
-          hasSubmitted: !!data.hasSubmitted,
-          selectableMonths: Array.isArray(data.selectableMonths) ? data.selectableMonths : []
-        };
-        sessionStorage.setItem('schedule_auth_context', JSON.stringify(payload));
-      } catch (_) {}
-    }
-
     async function init() {
+      showState('state-loading');
       try {
         await liff.init({ liffId: LIFF_ID });
 
@@ -186,7 +254,6 @@
         const userId      = profile.userId      || '';
         const displayName = profile.displayName || '';
 
-        // 打後端驗證身份
         const url = `${GAS_URL}?action=checkPermission`
           + `&uid=${encodeURIComponent(userId)}`
           + `&displayName=${encodeURIComponent(displayName)}`;
@@ -195,78 +262,64 @@
         const data = await res.json();
 
         if (!data.ok) {
-          showStatus('系統錯誤，請稍後再試。\n\n' + (data.message || ''), 'error');
+          document.getElementById('msg-error').textContent =
+            '系統錯誤，請稍後再試。\n\n' + (data.message || '');
+          showState('state-error');
           return;
         }
 
-        // 依狀態處理
         switch (data.status) {
 
           case 'not_found':
-            showStatus(
-              '📋 尚未開通排班權限\n\n' +
-              '你的申請已自動送出，\n請等待管理員開通後再試。',
-              'pending'
-            );
+            document.getElementById('msg-pending').innerHTML =
+              '你的帳號尚未開通，申請已自動送出，<br/>請等待管理員開通後再試。';
+            showState('state-pending');
             break;
 
           case 'pending':
-            showStatus(
-              '⏳ 審核中\n\n' +
-              '你的申請正在審核，\n請等待管理員開通後再試。',
-              'pending'
-            );
+            document.getElementById('msg-pending').innerHTML =
+              '你的申請正在審核中，<br/>請等待管理員開通後再試。';
+            showState('state-pending');
             break;
 
           case 'blocked':
-            showStatus(
-              '🚫 帳號已停用\n\n' +
-              '請聯絡管理員處理。',
-              'blocked'
-            );
+            showState('state-blocked');
             break;
 
           case 'invalid_role':
-            showStatus(
-              '⚠️ 身分別設定異常\n\n' +
-              '請聯絡管理員確認你的身分別設定。',
-              'error'
-            );
+            document.getElementById('msg-error').innerHTML =
+              '身分別設定有問題，<br/>請聯絡管理員確認你的身分別設定。';
+            showState('state-error');
             break;
 
           case 'active':
-            // 驗證通過，依身分跳轉
             if (!data.canQuery) {
-              showStatus(
-                '🔒 目前無法查詢或排班\n\n' +
-                (data.message || ''),
-                'pending'
-              );
+              document.getElementById('msg-no-query').innerHTML =
+                (data.message || '目前尚無查詢或排班權限，<br/>請稍後再試。');
+              showState('state-no-query');
               return;
             }
-
             if (data.role === 'PT') {
               window.location.href = buildRedirectUrl(PT_URL, userId, displayName, data);
               return;
             }
-
             if (data.role === 'FT') {
               window.location.href = buildRedirectUrl(FT_URL, userId, displayName, data);
               return;
             }
-
-            showStatus('身分別異常，請聯絡管理員。', 'error');
+            document.getElementById('msg-error').textContent = '身分別異常，請聯絡管理員。';
+            showState('state-error');
             break;
 
           default:
-            showStatus('發生未知錯誤，請重新開啟後再試。', 'error');
+            document.getElementById('msg-error').textContent = '發生未知錯誤，請重新開啟後再試。';
+            showState('state-error');
         }
 
       } catch (err) {
-        showStatus(
-          '登入或驗證失敗，\n請重新開啟後再試。\n\n' + (err.message || err),
-          'error'
-        );
+        document.getElementById('msg-error').innerHTML =
+          '登入或驗證失敗，<br/>請重新開啟後再試。<br/><br/>' + (err.message || err);
+        showState('state-error');
       }
     }
 
