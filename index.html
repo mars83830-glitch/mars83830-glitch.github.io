@@ -47,18 +47,8 @@
       overflow: hidden;
     }
 
-    /* ── Header ────────────────────────────── */
-    .hd {
-      flex: 0 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 16px 8px;
-      background: var(--card);
-      border-bottom: 1px solid var(--border);
-    }
-    .hd-title { font-size: 16px; font-weight: 800; color: var(--text); letter-spacing: .2px; }
-    .hd-user  { font-size: 13px; color: var(--muted); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* ── Header: hidden ─────────────────────── */
+    .hd { display: none; }
 
     /* ── Info strip (2 rows) ───────────────── */
     .info-strip {
@@ -154,13 +144,41 @@
     }
     .rest-job .job-label { color: #f1f5f9; }
 
+    /* Portrait: buttons stacked vertically */
     .job-btns {
       display: flex;
-      flex-direction: row;
+      flex-direction: column;
       flex: 1;
       gap: 5px;
       padding: 0 6px 6px;
       min-height: 0;
+    }
+
+    /* Landscape: buttons side by side */
+    @media (orientation: landscape) {
+      .job-btns { flex-direction: row; }
+
+      /* landscape grid: 3 cols × 2 rows so all 6 fit wide */
+      .grid {
+        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+      }
+
+      /* tighter info strip in landscape */
+      .info-strip { padding: 4px 12px; gap: 3px; }
+      .strip-row { min-height: 20px; font-size: 12px; }
+
+      /* larger button text in landscape (more width) */
+      .btn { font-size: clamp(14px, 3.2vw, 18px); }
+      .btn-sub { font-size: clamp(10px, 2vw, 12px); }
+      .job-label { font-size: clamp(15px, 3.5vw, 20px); padding: 5px 4px 3px; }
+    }
+
+    /* Portrait: bigger text since buttons are taller */
+    @media (orientation: portrait) {
+      .btn { font-size: clamp(18px, 5vw, 26px); }
+      .btn-sub { font-size: clamp(12px, 3vw, 16px); }
+      .job-label { font-size: clamp(19px, 5.5vw, 27px); }
     }
 
     /* ── Punch buttons ─────────────────────── */
