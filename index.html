@@ -27,6 +27,16 @@
 
       --swap-light:#7fb2ff;
       --swap-dark:#1e79ff;
+
+      /* ★ 新增：打氣 / 清潔 / 休息 顏色 */
+      --pump-light:#ffb3d1;
+      --pump-dark:#c2185b;
+
+      --clean-light:#80e0d8;
+      --clean-dark:#00796b;
+
+      --rest-light:#ce93d8;
+      --rest-dark:#6a1b9a;
     }
 
     html,body{ height:100%; }
@@ -114,13 +124,21 @@
     }
     button:disabled{ opacity:.55; cursor:not-allowed; }
 
+    /* 原有三種 */
     .dispatchArrive{ background: var(--dispatch-light); color:#000; }
-    .level1Arrive{ background: var(--level1-light); color:#000; }
-    .swapArrive{ background: var(--swap-light); color:#000; }
+    .level1Arrive{   background: var(--level1-light);   color:#000; }
+    .swapArrive{     background: var(--swap-light);     color:#000; }
+    .dispatchLeave{  background: var(--dispatch-dark);  color:#fff; }
+    .level1Leave{    background: var(--level1-dark);    color:#fff; }
+    .swapLeave{      background: var(--swap-dark);      color:#fff; }
 
-    .dispatchLeave{ background: var(--dispatch-dark); color:#fff; }
-    .level1Leave{ background: var(--level1-dark); color:#fff; }
-    .swapLeave{ background: var(--swap-dark); color:#fff; }
+    /* ★ 新增三種 */
+    .pumpArrive{  background: var(--pump-light);  color:#000; }
+    .pumpLeave{   background: var(--pump-dark);   color:#fff; }
+    .cleanArrive{ background: var(--clean-light); color:#000; }
+    .cleanLeave{  background: var(--clean-dark);  color:#fff; }
+    .restArrive{  background: var(--rest-light);  color:#000; }
+    .restLeave{   background: var(--rest-dark);   color:#fff; }
 
     .status{
       margin-top:16px;
@@ -203,27 +221,57 @@
         成功後會顯示「完成」並自動關閉。
       </p>
 
+      <!-- 調度 -->
       <div class="group">
         <div class="groupTitle">調度</div>
         <div class="row2">
           <button id="btnDispatchArrive" class="dispatchArrive">到站打卡</button>
-          <button id="btnDispatchLeave" class="dispatchLeave">離站打卡</button>
+          <button id="btnDispatchLeave"  class="dispatchLeave">離站打卡</button>
         </div>
       </div>
 
+      <!-- 一級 -->
       <div class="group">
         <div class="groupTitle">一級</div>
         <div class="row2">
           <button id="btnLevel1Arrive" class="level1Arrive">到站打卡</button>
-          <button id="btnLevel1Leave" class="level1Leave">離站打卡</button>
+          <button id="btnLevel1Leave"  class="level1Leave">離站打卡</button>
         </div>
       </div>
 
+      <!-- 換電 -->
       <div class="group">
         <div class="groupTitle">換電</div>
         <div class="row2">
           <button id="btnSwapArrive" class="swapArrive">到站打卡</button>
-          <button id="btnSwapLeave" class="swapLeave">離站打卡</button>
+          <button id="btnSwapLeave"  class="swapLeave">離站打卡</button>
+        </div>
+      </div>
+
+      <!-- ★ 打氣 -->
+      <div class="group">
+        <div class="groupTitle">打氣</div>
+        <div class="row2">
+          <button id="btnPumpArrive" class="pumpArrive">到站打卡</button>
+          <button id="btnPumpLeave"  class="pumpLeave">離站打卡</button>
+        </div>
+      </div>
+
+      <!-- ★ 清潔 -->
+      <div class="group">
+        <div class="groupTitle">清潔</div>
+        <div class="row2">
+          <button id="btnCleanArrive" class="cleanArrive">到站打卡</button>
+          <button id="btnCleanLeave"  class="cleanLeave">離站打卡</button>
+        </div>
+      </div>
+
+      <!-- ★ 休息 -->
+      <div class="group">
+        <div class="groupTitle">休息</div>
+        <div class="row2">
+          <button id="btnRestArrive" class="restArrive">到站打卡</button>
+          <button id="btnRestLeave"  class="restLeave">離站打卡</button>
         </div>
       </div>
 
@@ -261,15 +309,14 @@ const GEO_OPTIONS_RETRY = {
   maximumAge: 0
 };
 
-// ★ 修改：降低觸發第二次高精度定位的門檻（80→50），縮小最大接受誤差（120→100）
 const GEO_RETRY_IF_OVER_M = 100;
 const GEO_ACCEPT_MAX_M = 150;
 
-const $status = document.getElementById("status");
-const $debug = document.getElementById("debug");
+const $status  = document.getElementById("status");
+const $debug   = document.getElementById("debug");
 const $dbgWrap = document.getElementById("dbgWrap");
 const $idleWrap = document.getElementById("idleWrap");
-const $authBox = document.getElementById("authBox");
+const $authBox  = document.getElementById("authBox");
 
 const btns = {
   dispatchArrive: document.getElementById("btnDispatchArrive"),
@@ -278,6 +325,13 @@ const btns = {
   level1Leave:    document.getElementById("btnLevel1Leave"),
   swapArrive:     document.getElementById("btnSwapArrive"),
   swapLeave:      document.getElementById("btnSwapLeave"),
+  // ★ 新增
+  pumpArrive:  document.getElementById("btnPumpArrive"),
+  pumpLeave:   document.getElementById("btnPumpLeave"),
+  cleanArrive: document.getElementById("btnCleanArrive"),
+  cleanLeave:  document.getElementById("btnCleanLeave"),
+  restArrive:  document.getElementById("btnRestArrive"),
+  restLeave:   document.getElementById("btnRestLeave"),
 };
 
 let CURRENT_PROFILE = null;
@@ -320,8 +374,11 @@ function showDebug(obj){
 
 function jobCN(job){
   return job === "dispatch" ? "調度"
-       : job === "level1" ? "一級"
-       : job === "swap" ? "換電"
+       : job === "level1"   ? "一級"
+       : job === "swap"     ? "換電"
+       : job === "pump"     ? "打氣"
+       : job === "clean"    ? "清潔"
+       : job === "rest"     ? "休息"
        : job;
 }
 function stepCN(step){
@@ -394,7 +451,6 @@ async function getLocationSmart(){
     attempts.push({ step: "first", ok: false, error: String(e && e.message ? e.message : e) });
   }
 
-  // ★ 誤差 <= 50m 才直接用，否則補一次高精度定位
   if (isGoodLocation(first) && first.accuracy <= GEO_RETRY_IF_OVER_M) {
     return { loc: first, attempts };
   }
@@ -616,17 +672,25 @@ async function punch(job, step){
   }
 }
 
+// ★ 原有六個按鈕
 btns.dispatchArrive.addEventListener("click", () => punch("dispatch","arrive"));
-btns.dispatchLeave.addEventListener("click", () => punch("dispatch","leave"));
-btns.level1Arrive.addEventListener("click", () => punch("level1","arrive"));
-btns.level1Leave.addEventListener("click", () => punch("level1","leave"));
-btns.swapArrive.addEventListener("click", () => punch("swap","arrive"));
-btns.swapLeave.addEventListener("click", () => punch("swap","leave"));
+btns.dispatchLeave.addEventListener("click",  () => punch("dispatch","leave"));
+btns.level1Arrive.addEventListener("click",   () => punch("level1","arrive"));
+btns.level1Leave.addEventListener("click",    () => punch("level1","leave"));
+btns.swapArrive.addEventListener("click",     () => punch("swap","arrive"));
+btns.swapLeave.addEventListener("click",      () => punch("swap","leave"));
+// ★ 新增六個按鈕
+btns.pumpArrive.addEventListener("click",     () => punch("pump","arrive"));
+btns.pumpLeave.addEventListener("click",      () => punch("pump","leave"));
+btns.cleanArrive.addEventListener("click",    () => punch("clean","arrive"));
+btns.cleanLeave.addEventListener("click",     () => punch("clean","leave"));
+btns.restArrive.addEventListener("click",     () => punch("rest","arrive"));
+btns.restLeave.addEventListener("click",      () => punch("rest","leave"));
 
 (function(){
-  document.addEventListener("click", touchAction, { passive:true });
+  document.addEventListener("click",      touchAction, { passive:true });
   document.addEventListener("touchstart", touchAction, { passive:true });
-  document.addEventListener("keydown", touchAction, { passive:true });
+  document.addEventListener("keydown",    touchAction, { passive:true });
 
   if (isTestMode()) {
     const p = getMergedParams();
