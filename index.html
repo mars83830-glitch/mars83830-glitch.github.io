@@ -40,7 +40,6 @@
       color: var(--text);
     }
 
-    /* ── Shell ─────────────────────────────── */
     .shell {
       height: 100dvh;
       height: 100svh;
@@ -50,10 +49,8 @@
       overflow: hidden;
     }
 
-    /* ── Header: hidden ─────────────────────── */
     .hd { display: none; }
 
-    /* ── Info strip (2 rows) ───────────────── */
     .info-strip {
       flex: 0 0 auto;
       display: flex;
@@ -82,6 +79,15 @@
     .strip-dot.red    { background: #ef4444; }
     .strip-dot.gray   { background: #94a3b8; }
     .strip-dot.clock  { background: #a78bfa; }
+    /* ★ GPS 狀態點顏色 */
+    .strip-dot.gps-ok   { background: #22c55e; }
+    .strip-dot.gps-warm { background: #f59e0b; animation: gpsPulse .9s ease-in-out infinite; }
+    .strip-dot.gps-err  { background: #ef4444; }
+
+    @keyframes gpsPulse {
+      0%,100% { transform: scale(1); opacity: 1; }
+      50%      { transform: scale(1.5); opacity: .5; }
+    }
 
     .strip-label {
       font-size: 14px;
@@ -91,12 +97,11 @@
       letter-spacing: .3px;
     }
     .strip-val { color: var(--text); font-size: 16px; font-weight: 700; }
-    .strip-val.ok  { color: #16a34a; }
-    .strip-val.err { color: #dc2626; }
+    .strip-val.ok    { color: #16a34a; }
+    .strip-val.err   { color: #dc2626; }
     .strip-val.muted { color: var(--muted); }
+    .strip-val.warn  { color: #d97706; }
 
-    /* ── Auth box ──────────────────────────── */
-    /* ── Auth gate (full-screen, no permission) ── */
     .auth-gate {
       display: none;
       position: fixed;
@@ -111,50 +116,16 @@
     }
     .auth-gate.show { display: flex; }
 
-    .auth-gate-icon {
-      font-size: 64px;
-      line-height: 1;
-      margin-bottom: 20px;
-    }
-    .auth-gate-title {
-      font-size: 22px;
-      font-weight: 800;
-      color: #1a202c;
-      text-align: center;
-      margin-bottom: 12px;
-      letter-spacing: .3px;
-    }
-    .auth-gate-msg {
-      font-size: 16px;
-      font-weight: 500;
-      color: #4a5568;
-      text-align: center;
-      line-height: 1.75;
-      margin-bottom: 28px;
-      max-width: 300px;
-    }
-    .auth-gate-badge {
-      display: inline-block;
-      padding: 6px 18px;
-      border-radius: 999px;
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: .4px;
-      margin-bottom: 28px;
-    }
+    .auth-gate-icon  { font-size: 64px; line-height: 1; margin-bottom: 20px; }
+    .auth-gate-title { font-size: 22px; font-weight: 800; color: #1a202c; text-align: center; margin-bottom: 12px; letter-spacing: .3px; }
+    .auth-gate-msg   { font-size: 16px; font-weight: 500; color: #4a5568; text-align: center; line-height: 1.75; margin-bottom: 28px; max-width: 300px; }
+    .auth-gate-badge { display: inline-block; padding: 6px 18px; border-radius: 999px; font-size: 13px; font-weight: 700; letter-spacing: .4px; margin-bottom: 28px; }
     .auth-gate-badge.pending  { background: #eff6ff; color: #1d4ed8; border: 1.5px solid #bfdbfe; }
     .auth-gate-badge.blocked  { background: #fef2f2; color: #b91c1c; border: 1.5px solid #fecaca; }
     .auth-gate-badge.disabled { background: #f9fafb; color: #6b7280; border: 1.5px solid #d1d5db; }
     .auth-gate-badge.error    { background: #fff7ed; color: #c2410c; border: 1.5px solid #fed7aa; }
+    .auth-gate-contact { font-size: 13px; color: #94a3b8; text-align: center; line-height: 1.6; }
 
-    .auth-gate-contact {
-      font-size: 13px;
-      color: #94a3b8;
-      text-align: center;
-      line-height: 1.6;
-    }
-
-    /* ── Grid ──────────────────────────────── */
     .grid {
       flex: 1 1 auto;
       display: grid;
@@ -165,7 +136,6 @@
       min-height: 0;
     }
 
-    /* ── Job cell ──────────────────────────── */
     .job {
       display: flex;
       flex-direction: column;
@@ -176,10 +146,7 @@
       min-height: 0;
       box-shadow: 0 1px 4px rgba(0,0,0,.05);
     }
-    .job.rest-job {
-      background: #0f172a;
-      border-color: #1e293b;
-    }
+    .job.rest-job { background: #0f172a; border-color: #1e293b; }
 
     .job-label {
       font-size: clamp(20px, 6vw, 32px);
@@ -192,7 +159,6 @@
     }
     .rest-job .job-label { color: #f1f5f9; }
 
-    /* Portrait: buttons stacked vertically */
     .job-btns {
       display: flex;
       flex-direction: column;
@@ -202,40 +168,26 @@
       min-height: 0;
     }
 
-    /* Landscape: buttons side by side */
     @media (orientation: landscape) {
       .job-btns { flex-direction: row; }
-
-      /* landscape grid: 3 cols × 2 rows so all 6 fit wide */
-      .grid {
-        grid-template-columns: 1fr 1fr 1fr;
-        grid-template-rows: 1fr 1fr;
-      }
-
-      /* tighter info strip in landscape */
+      .grid { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; }
       .info-strip { padding: 4px 12px; gap: 3px; }
       .strip-row { min-height: 20px; font-size: 12px; }
-
-      /* larger button text in landscape (more width) */
       .btn { font-size: 8vmin; }
       .job-label { font-size: clamp(15px, 3.5vw, 20px); padding: 5px 4px 3px; }
     }
 
-    /* Portrait: bigger text since buttons are taller */
     @media (orientation: portrait) {
-      /* portrait: 格子較高，vmin ≈ vw，10vmin 約 37px on 375px screen */
       .btn { font-size: 10vmin; }
       .job-label { font-size: clamp(24px, 7vw, 38px); padding: 10px 4px 7px; }
       .grid { gap: 6px; padding: 6px 8px; }
       .job-btns { gap: 4px; padding: 0 5px 5px; }
     }
 
-    /* ── Punch buttons ─────────────────────── */
     .btn {
       flex: 1;
       border: none;
       border-radius: 14px;
-      /* 字體：用 vmin 讓字跟格子大小掛勾，portrait 約 10vmin ≈ 大字 */
       font-size: 10vmin;
       font-weight: 900;
       cursor: pointer;
@@ -245,33 +197,20 @@
       min-height: 0;
       min-width: 0;
       overflow: hidden;
-      /* 按鈕效果：右下角深色邊框模擬厚度，比 box-shadow 更乾淨 */
       border-bottom: 5px solid rgba(0,0,0,.25);
       border-right:  3px solid rgba(0,0,0,.15);
       transition: transform .07s, border .07s, filter .07s;
       -webkit-tap-highlight-color: transparent;
       line-height: 1;
       letter-spacing: .5px;
-      /* 亮邊 */
       border-top:  1.5px solid rgba(255,255,255,.35);
       border-left: 1.5px solid rgba(255,255,255,.25);
     }
-    .btn:disabled {
-      opacity: .32;
-      cursor: not-allowed;
-      filter: grayscale(.4);
-      border-bottom: 2px solid rgba(0,0,0,.15);
-    }
-    .btn:active:not(:disabled) {
-      transform: translateY(3px);
-      border-bottom: 2px solid rgba(0,0,0,.25);
-      filter: brightness(.92);
-    }
-
+    .btn:disabled { opacity: .32; cursor: not-allowed; filter: grayscale(.4); border-bottom: 2px solid rgba(0,0,0,.15); }
+    .btn:active:not(:disabled) { transform: translateY(3px); border-bottom: 2px solid rgba(0,0,0,.25); filter: brightness(.92); }
 
     .arr { color: #fff; }
     .lve { color: #fff; }
-
     .d-a  { background: var(--dispatch-a); }
     .d-l  { background: var(--dispatch-l); }
     .l1-a { background: var(--level1-a);   }
@@ -285,7 +224,6 @@
     .rs-a { background: #475569;           }
     .rs-l { background: #1e293b; border: 1.5px solid #475569; }
 
-    /* ── Loading / Result overlay ──────────── */
     .overlay {
       display: none;
       position: absolute;
@@ -300,103 +238,28 @@
     }
     .overlay.show { display: flex; }
 
-    .ov-icon {
-      font-size: 52px;
-      line-height: 1;
-    }
-    .ov-title {
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--text);
-      text-align: center;
-    }
-    .ov-msg {
-      font-size: 15px;
-      font-weight: 500;
-      color: var(--muted);
-      text-align: center;
-      line-height: 1.6;
-      max-width: 280px;
-    }
-    .ov-detail {
-      font-size: 16px;
-      font-weight: 700;
-      text-align: center;
-      padding: 10px 20px;
-      border-radius: 12px;
-      line-height: 1.6;
-    }
+    .ov-icon    { font-size: 52px; line-height: 1; }
+    .ov-title   { font-size: 22px; font-weight: 800; color: var(--text); text-align: center; }
+    .ov-msg     { font-size: 15px; font-weight: 500; color: var(--muted); text-align: center; line-height: 1.6; max-width: 280px; }
+    .ov-detail  { font-size: 16px; font-weight: 700; text-align: center; padding: 10px 20px; border-radius: 12px; line-height: 1.6; }
     .ov-detail.ok  { background: #f0fdf4; color: #15803d; }
     .ov-detail.err { background: #fef2f2; color: #dc2626; }
-
-    .ov-countdown {
-      font-size: 13px;
-      color: var(--muted);
-      font-weight: 500;
-    }
-
-    .ov-retry-btn {
-      font-size: 16px;
-      font-weight: 800;
-      padding: 13px 32px;
-      border: none;
-      border-radius: 14px;
-      background: #1a202c;
-      color: #fff;
-      cursor: pointer;
-      letter-spacing: .3px;
-    }
+    .ov-countdown  { font-size: 13px; color: var(--muted); font-weight: 500; }
+    .ov-retry-btn  { font-size: 16px; font-weight: 800; padding: 13px 32px; border: none; border-radius: 14px; background: #1a202c; color: #fff; cursor: pointer; letter-spacing: .3px; }
     .ov-retry-btn:active { opacity: .8; transform: scale(.97); }
 
-    /* spinner (overlay) */
-    .spinner {
-      width: 44px; height: 44px;
-      border: 4px solid #e2e8f0;
-      border-top-color: #3b82f6;
-      border-radius: 50%;
-      animation: spin .7s linear infinite;
-    }
-    /* spinner (strip inline) */
-    .strip-spin {
-      display: inline-block;
-      width: 14px; height: 14px;
-      border: 2px solid #d1d5db;
-      border-top-color: #a78bfa;
-      border-radius: 50%;
-      animation: spin .7s linear infinite;
-      vertical-align: middle;
-      flex-shrink: 0;
-    }
+    .spinner { width: 44px; height: 44px; border: 4px solid #e2e8f0; border-top-color: #3b82f6; border-radius: 50%; animation: spin .7s linear infinite; }
+    .strip-spin { display: inline-block; width: 14px; height: 14px; border: 2px solid #d1d5db; border-top-color: #a78bfa; border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; flex-shrink: 0; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── Idle ──────────────────────────────── */
-    .idle-wrap {
-      display: none;
-      flex: 0 0 auto;
-      margin: 0 10px 6px;
-      padding: 8px 12px;
-      border-radius: 10px;
-      background: #fffbeb;
-      border: 1px dashed #fcd34d;
-    }
+    .idle-wrap { display: none; flex: 0 0 auto; margin: 0 10px 6px; padding: 8px 12px; border-radius: 10px; background: #fffbeb; border: 1px dashed #fcd34d; }
     .idle-wrap p { font-size: 12px; color: #92400e; line-height: 1.5; margin-bottom: 6px; }
-    .idle-btn {
-      font-size: 13px; font-weight: 700;
-      padding: 6px 14px; border: none; border-radius: 8px;
-      background: #1a202c; color: #fff; cursor: pointer;
-    }
+    .idle-btn { font-size: 13px; font-weight: 700; padding: 6px 14px; border: none; border-radius: 8px; background: #1a202c; color: #fff; cursor: pointer; }
 
-    /* ── Debug ─────────────────────────────── */
     details { flex: 0 0 auto; padding: 0 12px 8px; }
     summary { font-size: 11px; color: #94a3b8; cursor: pointer; }
-    .debug-box {
-      margin-top: 5px; padding: 8px; border-radius: 8px;
-      background: #0f172a; color: #7dd3fc;
-      font-size: 11px; font-family: ui-monospace, monospace;
-      max-height: 140px; overflow: auto; white-space: pre-wrap;
-    }
+    .debug-box { margin-top: 5px; padding: 8px; border-radius: 8px; background: #0f172a; color: #7dd3fc; font-size: 11px; font-family: ui-monospace, monospace; max-height: 140px; overflow: auto; white-space: pre-wrap; }
 
-    /* overlay must sit over the whole page */
     body { position: relative; }
   </style>
 </head>
@@ -404,23 +267,24 @@
 <body>
   <div class="shell">
 
-    <!-- Header -->
     <div class="hd">
       <span class="hd-title">桃園營運處｜打卡系統</span>
       <span class="hd-user" id="hdUser">驗證中…</span>
     </div>
 
-    <!-- Info strip: status + last punch -->
     <div class="info-strip">
-
       <div class="strip-row">
         <span class="strip-dot clock" id="lastDot"></span>
         <span class="strip-label">上次打卡</span>
-        <span class="strip-spin" id="lastSpin"></span><span class="strip-val muted" id="lastVal"></span>
+        <span class="strip-spin" id="lastSpin"></span>
+        <span class="strip-val muted" id="lastVal"></span>
+        <!-- ★ GPS 狀態點：只有一個小點，靠右 -->
+        <span style="margin-left:auto;display:flex;align-items:center;gap:5px">
+          <span class="strip-dot gps-warm" id="gpsDot" title="定位狀態"></span>
+        </span>
       </div>
     </div>
 
-    <!-- Auth gate overlay -->
     <div class="auth-gate" id="authGate">
       <div class="auth-gate-icon" id="agIcon">🔒</div>
       <div class="auth-gate-title" id="agTitle">無法使用打卡系統</div>
@@ -429,7 +293,6 @@
       <div class="auth-gate-contact">如有疑問請聯絡主管或系統管理員</div>
     </div>
 
-    <!-- Main grid -->
     <div class="grid">
       <div class="job">
         <div class="job-label">調度</div>
@@ -485,11 +348,9 @@
       <div class="debug-box" id="debug"></div>
     </details>
 
-  </div><!-- /shell -->
+  </div>
 
-  <!-- ── Full-screen overlay (loading / result) ── -->
   <div class="overlay" id="overlay">
-    <!-- loading state -->
     <div id="ovLoading">
       <div style="display:flex;flex-direction:column;align-items:center;gap:18px;">
         <div class="spinner"></div>
@@ -497,7 +358,6 @@
         <div class="ov-msg" id="ovLoadMsg">請稍候</div>
       </div>
     </div>
-    <!-- result state -->
     <div id="ovResult" style="display:none;flex-direction:column;align-items:center;gap:14px;">
       <div class="ov-icon" id="ovIcon">✅</div>
       <div class="ov-title" id="ovResultTitle">打卡成功</div>
@@ -511,20 +371,25 @@
 const LIFF_ID    = "2009174277-dSY24pNu";
 const GAS_URL    = "https://script.google.com/macros/s/AKfycbxUFysH7fGKyM9gJ_1vRMIa3krcuAsq7K5yDEioOXjB0NVbPJMx_e3TytAa_Nt6Eok94w/exec";
 const IDLE_MIN   = 8;
-const GEO_RETRY  = 200;
-const GEO_ACCEPT = 500;
-const GEO_FAST   = { enableHighAccuracy: false, timeout: 4000,  maximumAge: 30000 };
-const GEO_PREC   = { enableHighAccuracy: true,  timeout: 7000,  maximumAge: 0 };
 
-const $authGate  = document.getElementById("authGate");
-const $agIcon    = document.getElementById("agIcon");
-const $agTitle   = document.getElementById("agTitle");
-const $agBadge   = document.getElementById("agBadge");
-const $agMsg     = document.getElementById("agMsg");
-const $idleWrap  = document.getElementById("idleWrap");
-const $debug     = document.getElementById("debug");
-const $dbgWrap   = document.getElementById("dbgWrap");
-const $lastVal   = document.getElementById("lastVal");
+// ★ GPS 精度設定
+const GPS_TARGET_ACCURACY = 30;   // 目標精度（公尺）：達到就停止升級
+const GPS_WARMUP_MS       = 5000; // 預熱最長時間（毫秒）：5秒後用當下最好的
+const GPS_PUNCH_TIMEOUT   = 4000; // 按打卡後等待新定位的最長時間
+const GEO_ACCEPT          = 500;  // 精度超過此值才顯示異常警告
+
+const GEO_FAST = { enableHighAccuracy: true, timeout: 3000, maximumAge: 10000 };
+const GEO_PREC = { enableHighAccuracy: true, timeout: 7000, maximumAge: 0     };
+
+const $authGate      = document.getElementById("authGate");
+const $agIcon        = document.getElementById("agIcon");
+const $agTitle       = document.getElementById("agTitle");
+const $agBadge       = document.getElementById("agBadge");
+const $agMsg         = document.getElementById("agMsg");
+const $idleWrap      = document.getElementById("idleWrap");
+const $debug         = document.getElementById("debug");
+const $dbgWrap       = document.getElementById("dbgWrap");
+const $lastVal       = document.getElementById("lastVal");
 const $overlay       = document.getElementById("overlay");
 const $ovLoading     = document.getElementById("ovLoading");
 const $ovLoadTitle   = document.getElementById("ovLoadTitle");
@@ -535,6 +400,8 @@ const $ovResultTitle = document.getElementById("ovResultTitle");
 const $ovDetail      = document.getElementById("ovDetail");
 const $ovCountdown   = document.getElementById("ovCountdown");
 const $ovRetryBtn    = document.getElementById("ovRetryBtn");
+const $gpsDot        = document.getElementById("gpsDot");
+// gpsVal removed
 
 const ALL_IDS = ["btnDA","btnDL","btnL1A","btnL1L","btnSA","btnSL","btnPA","btnPL","btnCA","btnCL","btnRA","btnRL"];
 const allBtns = ALL_IDS.map(id => document.getElementById(id));
@@ -543,19 +410,171 @@ let PROFILE = null, AUTH_READY = false;
 let lastAct = Date.now(), idleShown = false;
 let countdownTimer = null;
 
-/* ── Status strip helpers ───────────────────── */
-function setStatus(msg, type) {
-  /* status row removed – no-op */
+// ★ GPS 預熱快取
+let gpsCache = null;  // { lat, lng, accuracy, ts }
+let gpsWatchId = null;
+let gpsWarmupTimer = null;
+let gpsWarmupDone = false;
+
+/* ── GPS 狀態列 ─────────────────────────────── */
+function setGpsStrip(state) {
+  // state: 'warm'（暖機中）/ 'ok'（就緒）/ 'err'（失敗）
+  $gpsDot.className = "strip-dot gps-" + state;
 }
+
+/* ── GPS 預熱（頁面載入就開始，不等登入）────── */
+function startGpsWarmup() {
+  if (!navigator.geolocation) {
+    setGpsStrip("err");
+    return;
+  }
+  setGpsStrip("warm");
+
+  // 快速取一次（允許10秒快取）
+  navigator.geolocation.getCurrentPosition(
+    function(pos) {
+      applyGpsCache(pos);
+      // 繼續用 watchPosition 升級精度
+      startGpsWatch();
+    },
+    function() {
+      // 快速失敗，直接進精確軌
+      startGpsWatch();
+    },
+    GEO_FAST
+  );
+}
+
+function startGpsWatch() {
+  if (gpsWatchId !== null) return;
+
+  // 最多等 GPS_WARMUP_MS 秒，之後就用現有的
+  gpsWarmupTimer = setTimeout(function() {
+    stopGpsWatch();
+    gpsWarmupDone = true;
+    if (gpsCache) {
+      setGpsStrip("ok") + " 公尺");
+    } else {
+      setGpsStrip("err");
+    }
+  }, GPS_WARMUP_MS);
+
+  gpsWatchId = navigator.geolocation.watchPosition(
+    function(pos) {
+      applyGpsCache(pos);
+      if (pos.coords.accuracy <= GPS_TARGET_ACCURACY) {
+        // 達標，停止 watch
+        stopGpsWatch();
+        gpsWarmupDone = true;
+        setGpsStrip("ok") + " 公尺 ✓");
+      }
+    },
+    function() {
+      stopGpsWatch();
+      gpsWarmupDone = true;
+      if (!gpsCache) setGpsStrip("err");
+    },
+    GEO_PREC
+  );
+}
+
+function applyGpsCache(pos) {
+  const acc = pos.coords.accuracy;
+  // 只接受比目前更準的
+  if (!gpsCache || acc < gpsCache.accuracy) {
+    gpsCache = {
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude,
+      accuracy: acc,
+      ts: Date.now()
+    };
+    const accRound = Math.round(acc);
+    if (acc <= GPS_TARGET_ACCURACY) {
+      setGpsStrip("ok");
+    } else {
+      setGpsStrip("warm");
+    }
+  }
+}
+
+function stopGpsWatch() {
+  if (gpsWatchId !== null) {
+    navigator.geolocation.clearWatch(gpsWatchId);
+    gpsWatchId = null;
+  }
+  if (gpsWarmupTimer !== null) {
+    clearTimeout(gpsWarmupTimer);
+    gpsWarmupTimer = null;
+  }
+}
+
+// ★ 重新定位（閒置後用）
+function reWarmGps() {
+  stopGpsWatch();
+  gpsCache = null;
+  gpsWarmupDone = false;
+  startGpsWarmup();
+}
+
+/* ── 按打卡時取得最新座標 ─────────────────────
+   策略：
+   1. 若預熱快取 < 30 秒且精度夠 → 直接用，0 等待
+   2. 否則重新定一次（最多等 GPS_PUNCH_TIMEOUT ms）
+   ─────────────────────────────────────────── */
+function getLocForPunch(skipAccuracy) {
+  return new Promise(function(resolve, reject) {
+    const now = Date.now();
+    const cacheAge = gpsCache ? (now - gpsCache.ts) : Infinity;
+    const cacheAccOk = gpsCache && (skipAccuracy || gpsCache.accuracy <= GPS_TARGET_ACCURACY * 2);
+
+    // 快取夠新夠準 → 直接用
+    if (gpsCache && cacheAge < 30000 && cacheAccOk) {
+      return resolve(gpsCache);
+    }
+
+    // 否則重新拿一次
+    if (!navigator.geolocation) return reject(new Error("此裝置不支援定位"));
+
+    let settled = false;
+    const timer = setTimeout(function() {
+      if (settled) return;
+      settled = true;
+      // 逾時就用快取（如果有的話）
+      if (gpsCache) return resolve(gpsCache);
+      reject(new Error("定位逾時"));
+    }, GPS_PUNCH_TIMEOUT);
+
+    navigator.geolocation.getCurrentPosition(
+      function(pos) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        applyGpsCache(pos);
+        resolve(gpsCache);
+      },
+      function(err) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        if (gpsCache) return resolve(gpsCache); // 失敗就用快取
+        reject(new Error(err.message || "定位失敗"));
+      },
+      { enableHighAccuracy: true, timeout: GPS_PUNCH_TIMEOUT, maximumAge: 5000 }
+    );
+  });
+}
+
+/* ── Status / strip helpers ─────────────────── */
+function setStatus(msg, type) { /* no-op */ }
 
 const $lastSpin = document.getElementById("lastSpin");
 function setLastPunch(text) {
-  if($lastSpin) $lastSpin.style.display = "none";
+  if ($lastSpin) $lastSpin.style.display = "none";
   $lastVal.className = "strip-val";
   $lastVal.textContent = text || "—";
 }
 
-/* ── Overlay helpers ───────────────────────── */
+/* ── Overlay helpers ────────────────────────── */
 function showLoading(title, msg) {
   $ovLoading.style.display = "";
   $ovResult.style.display = "none";
@@ -576,18 +595,17 @@ function showResult(ok, title, detail, onClose) {
   $overlay.classList.add("show");
 
   if (countdownTimer) clearInterval(countdownTimer);
-
   if (ok) {
     let sec = 5;
-    $ovCountdown.textContent = `${sec} 秒後自動關閉`;
-    countdownTimer = setInterval(() => {
+    $ovCountdown.textContent = sec + " 秒後自動關閉";
+    countdownTimer = setInterval(function() {
       sec--;
       if (sec <= 0) {
         clearInterval(countdownTimer);
         closeOverlay();
         if (onClose) onClose();
       } else {
-        $ovCountdown.textContent = `${sec} 秒後自動關閉`;
+        $ovCountdown.textContent = sec + " 秒後自動關閉";
       }
     }, 1000);
   }
@@ -599,101 +617,60 @@ function closeOverlay() {
   setBtns(false);
 }
 
-/* ── General helpers ───────────────────────── */
-function setBtns(d) { allBtns.forEach(b => b.disabled = d); }
-function touch() { lastAct = Date.now(); if (idleShown) { $idleWrap.style.display="none"; idleShown=false; } }
-function hardReload() { try { const u=new URL(location.href); u.searchParams.set("v",Date.now()); location.replace(u.toString()); } catch(_){ location.reload(true); } }
+/* ── General helpers ────────────────────────── */
+function setBtns(d) { allBtns.forEach(function(b) { b.disabled = d; }); }
+function touch() {
+  lastAct = Date.now();
+  if (idleShown) { $idleWrap.style.display = "none"; idleShown = false; }
+}
+function hardReload() {
+  try { const u = new URL(location.href); u.searchParams.set("v", Date.now()); location.replace(u.toString()); }
+  catch(_) { location.reload(true); }
+}
 
 function getMergedParams() {
-  const s=new URLSearchParams(window.location.search||""), m=new URLSearchParams(s.toString());
-  const raw=s.get("liff.state");
-  if(raw){let d="";try{d=decodeURIComponent(raw);}catch(_){d=raw;}if(d.startsWith("?"))d=d.slice(1);new URLSearchParams(d).forEach((v,k)=>m.set(k,v));}
+  const s = new URLSearchParams(window.location.search || ""), m = new URLSearchParams(s.toString());
+  const raw = s.get("liff.state");
+  if (raw) {
+    let d = "";
+    try { d = decodeURIComponent(raw); } catch(_) { d = raw; }
+    if (d.startsWith("?")) d = d.slice(1);
+    new URLSearchParams(d).forEach(function(v, k) { m.set(k, v); });
+  }
   return m;
 }
-const isTest = () => getMergedParams().get("test")==="1";
-function showDbg(o){if(!isTest())return;$dbgWrap.style.display="";$debug.textContent=JSON.stringify(o,null,2);}
-function jobLabel(j){return{dispatch:"調度",level1:"一級",swap:"換電",pump:"打氣",clean:"清潔",rest:"休息"}[j]||j;}
-function stepLabel(s){return s==="arrive"?"到站":"離站";}
+const isTest = function() { return getMergedParams().get("test") === "1"; };
+function showDbg(o) { if (!isTest()) return; $dbgWrap.style.display = ""; $debug.textContent = JSON.stringify(o, null, 2); }
+function jobLabel(j) { return { dispatch:"調度", level1:"一級", swap:"換電", pump:"打氣", clean:"清潔", rest:"休息" }[j] || j; }
+function stepLabel(s) { return s === "arrive" ? "到站" : "離站"; }
 
-setInterval(()=>{if((Date.now()-lastAct)/60000>=IDLE_MIN&&!idleShown){idleShown=true;$idleWrap.style.display="";}},15000);
+setInterval(function() {
+  if ((Date.now() - lastAct) / 60000 >= IDLE_MIN && !idleShown) {
+    idleShown = true;
+    $idleWrap.style.display = "";
+    // ★ 閒置太久也重新預熱 GPS
+    reWarmGps();
+  }
+}, 15000);
 
-/* ── Geolocation ───────────────────────────── */
-function geoOnce(opts){
-  return new Promise((res,rej)=>{
-    if(!navigator.geolocation)return rej(new Error("此裝置不支援定位"));
-    navigator.geolocation.getCurrentPosition(
-      p=>res({lat:p.coords.latitude,lng:p.coords.longitude,accuracy:+p.coords.accuracy,ts:Date.now()}),
-      e=>rej(new Error(e.message||"定位失敗")),opts);
-  });
-}
-function goodLoc(l){return l&&isFinite(l.lat)&&isFinite(l.lng)&&l.accuracy>0;}
-function betterLoc(a,b){if(!goodLoc(a))return b;if(!goodLoc(b))return a;return a.accuracy<=b.accuracy?a:b;}
-async function smartGeo(skipAccuracy){
-  const log=[];let first=null;
-  try{first=await geoOnce(GEO_FAST);log.push({step:"fast",ok:true,loc:first});}
-  catch(e){log.push({step:"fast",ok:false,err:String(e.message)});}
-  // ★ 休息作業：有拿到座標就直接回傳，不管精度
-  if(skipAccuracy&&goodLoc(first))return{loc:first,log};
-  if(goodLoc(first)&&first.accuracy<=GEO_RETRY)return{loc:first,log};
-  let second=null;
-  try{second=await geoOnce(GEO_PREC);log.push({step:"precise",ok:true,loc:second});}
-  catch(e){log.push({step:"precise",ok:false,err:String(e.message)});}
-  const best=betterLoc(first,second);
-  if(!goodLoc(best)){const e=new Error("定位失敗");e.log=log;throw e;}
-  return{loc:best,log};
+/* ── Network ─────────────────────────────────── */
+async function postGas(payload) {
+  const r = await fetch(GAS_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) });
+  const txt = await r.text();
+  let data = {};
+  try { data = JSON.parse(txt); } catch(_) {}
+  return { r, txt, data };
 }
 
-/* ── Network ───────────────────────────────── */
-async function postGas(payload){
-  const r=await fetch(GAS_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});
-  const txt=await r.text();let data={};try{data=JSON.parse(txt);}catch(_){}return{r,txt,data};
-}
-
-/* ── Auth gate ─────────────────────────────── */
+/* ── Auth gate ──────────────────────────────── */
 function showAuthGate(status, message) {
   const configs = {
-    pending: {
-      icon: "⏳",
-      title: "帳號審核中",
-      badge: "待審核",
-      badgeClass: "pending",
-      msg: "您的帳號已登記，正在等待管理員審核開通，審核完成後即可使用打卡功能。"
-    },
-    blocked: {
-      icon: "🚫",
-      title: "帳號已停權",
-      badge: "無使用權限",
-      badgeClass: "blocked",
-      msg: "此帳號已被停用，無法使用打卡系統，請聯絡管理員了解原因。"
-    },
-    disabled: {
-      icon: "⛔",
-      title: "帳號已停用",
-      badge: "停用中",
-      badgeClass: "disabled",
-      msg: "此帳號目前處於停用狀態，如需恢復請聯絡管理員。"
-    },
-    error: {
-      icon: "⚠️",
-      title: "驗證失敗",
-      badge: "系統錯誤",
-      badgeClass: "error",
-      msg: message || "授權檢查時發生錯誤，請稍後再試或重新整理頁面。"
-    },
-    liff_failed: {
-      icon: "🔄",
-      title: "登入已失效",
-      badge: "需要重新整理",
-      badgeClass: "error",
-      msg: "LINE 登入狀態已過期，請關閉此頁面後重新從 LINE 開啟。"
-    },
-    init_failed: {
-      icon: "⚠️",
-      title: "初始化失敗",
-      badge: "系統錯誤",
-      badgeClass: "error",
-      msg: "系統初始化失敗，請關閉後重新開啟，若問題持續請聯絡管理員。"
-    }
+    pending:     { icon:"⏳", title:"帳號審核中",   badge:"待審核",    badgeClass:"pending",  msg:"您的帳號已登記，正在等待管理員審核開通，審核完成後即可使用打卡功能。" },
+    blocked:     { icon:"🚫", title:"帳號已停權",   badge:"無使用權限", badgeClass:"blocked",  msg:"此帳號已被停用，無法使用打卡系統，請聯絡管理員了解原因。" },
+    disabled:    { icon:"⛔", title:"帳號已停用",   badge:"停用中",    badgeClass:"disabled", msg:"此帳號目前處於停用狀態，如需恢復請聯絡管理員。" },
+    error:       { icon:"⚠️", title:"驗證失敗",     badge:"系統錯誤",  badgeClass:"error",    msg: message || "授權檢查時發生錯誤，請稍後再試或重新整理頁面。" },
+    liff_failed: { icon:"🔄", title:"登入已失效",   badge:"需要重新整理", badgeClass:"error",  msg:"LINE 登入狀態已過期，請關閉此頁面後重新從 LINE 開啟。" },
+    init_failed: { icon:"⚠️", title:"初始化失敗",   badge:"系統錯誤",  badgeClass:"error",    msg:"系統初始化失敗，請關閉後重新開啟，若問題持續請聯絡管理員。" }
   };
   const c = configs[status] || configs.error;
   $agIcon.textContent  = c.icon;
@@ -705,131 +682,148 @@ function showAuthGate(status, message) {
   setBtns(true);
 }
 
-async function initAuth(){
-  setBtns(true); AUTH_READY=false; setStatus("登入驗證中…","muted");
-  try{
-    await liff.init({liffId:LIFF_ID});
-    if(!liff.isInClient()&&!liff.isLoggedIn()){liff.login();return;}
-    PROFILE=await liff.getProfile().catch(()=>{throw new Error("liff_profile_failed");});
-    // ★ checkAuth 和 getLastPunch 同時送出，但不等 getLastPunch
-    // checkAuth 完成就立即開放按鈕，getLastPunch 背景跑完再更新
-    const lastPunchPromise = postGas({action:"getLastPunch",userId:PROFILE.userId||"",ts:Date.now()});
-    const authRes = await postGas({action:"checkAuth",userId:PROFILE.userId||"",displayName:PROFILE.displayName||"",test:isTest()?"1":"0",ts:Date.now()});
+async function initAuth() {
+  setBtns(true); AUTH_READY = false;
+  try {
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isInClient() && !liff.isLoggedIn()) { liff.login(); return; }
+    PROFILE = await liff.getProfile().catch(function() { throw new Error("liff_profile_failed"); });
+
+    const lastPunchPromise = postGas({ action:"getLastPunch", userId: PROFILE.userId || "", ts: Date.now() });
+    const authRes = await postGas({ action:"checkAuth", userId: PROFILE.userId || "", displayName: PROFILE.displayName || "", test: isTest() ? "1" : "0", ts: Date.now() });
     const data = authRes.data;
-    showDbg({step:"checkAuth",profile:PROFILE,result:data});
-    if(!data||!data.ok){showAuthGate("error", data&&data.message);return;}
-    if(data.canPunch){
+    showDbg({ step:"checkAuth", profile: PROFILE, result: data });
+
+    if (!data || !data.ok) { showAuthGate("error", data && data.message); return; }
+    if (data.canPunch) {
       $authGate.classList.remove("show");
-      AUTH_READY=true;
+      AUTH_READY = true;
       setBtns(false);
-      setStatus("可以打卡","ok");
-      // 背景等 getLastPunch 完成再更新，不阻擋打卡
-      lastPunchPromise.then(({data:ld})=>{
-        if(ld&&ld.ok&&ld.found&&ld.text) setLastPunch(ld.text);
+      lastPunchPromise.then(function({ data: ld }) {
+        if (ld && ld.ok && ld.found && ld.text) setLastPunch(ld.text);
         else setLastPunch("—");
-      }).catch(()=>{ setLastPunch("—"); });
+      }).catch(function() { setLastPunch("—"); });
     } else {
-      const st = data.authStatus||"pending";
-      showAuthGate(st, data.message);
+      showAuthGate(data.authStatus || "pending", data.message);
     }
-  }catch(e){
-    const msg=e&&e.message||"";
-    if(msg==="redirect_login")return;
-    showAuthGate(msg==="liff_profile_failed" ? "liff_failed" : "init_failed");
-    AUTH_READY=false;
+  } catch(e) {
+    const msg = e && e.message || "";
+    if (msg === "redirect_login") return;
+    showAuthGate(msg === "liff_profile_failed" ? "liff_failed" : "init_failed");
+    AUTH_READY = false;
   }
 }
 
-/* ── Punch ─────────────────────────────────── */
-async function punch(job, step){
+/* ── Punch ──────────────────────────────────── */
+async function punch(job, step) {
   touch();
-  if(!AUTH_READY||!PROFILE){ setStatus("尚未完成登入，請稍後再試","err"); return; }
+  if (!AUTH_READY || !PROFILE) { return; }
 
   setBtns(true);
   const jl = jobLabel(job);
   const sl = stepLabel(step);
-
   const isRest = (job === "rest");
   const restText = isRest ? (step === "arrive" ? "休息開始" : "休息結束") : "";
-  showLoading(isRest ? restText : `${jl}・${sl}`, isRest ? "送出中，請稍候…" : "定位中，請稍候…");
+
+  // ★ 如果 GPS 已就緒，overlay 標題直接顯示「送出中」而非「定位中」
+  const gpsReady = gpsCache && (Date.now() - gpsCache.ts) < 30000;
+  showLoading(
+    isRest ? restText : jl + "・" + sl,
+    gpsReady ? "送出中，請稍候…" : "定位中，請稍候…"
+  );
 
   const p = getMergedParams();
 
-  try{
-    const{loc,log}=await smartGeo(isRest);
-    showDbg({step:"geo",log,best:loc});
+  try {
+    // ★ 用預熱快取或等新定位
+    const loc = await getLocForPunch(isRest);
+    showDbg({ step:"geo", loc });
 
-    // ★ 休息作業不限制精度，只要能定位到座標即可
     const needAccuracy = (job !== "rest");
-    if(!isFinite(loc.accuracy)||loc.accuracy<=0||(needAccuracy&&loc.accuracy>GEO_ACCEPT)){
-      showResult(false,"定位異常","請到開放空間重新整理後再試");
+    if (!isFinite(loc.accuracy) || loc.accuracy <= 0 || (needAccuracy && loc.accuracy > GEO_ACCEPT)) {
+      showResult(false, "定位異常", "請到開放空間重新整理後再試");
       return;
     }
 
-    $ovLoadMsg.textContent = "已定位，送出中…";
+    $ovLoadMsg.textContent = "已定位（" + Math.round(loc.accuracy) + " 公尺），送出中…";
 
-    const payload={job,step,userId:PROFILE.userId||"",displayName:PROFILE.displayName||"",lat:loc.lat,lng:loc.lng,accuracy:loc.accuracy,bypassKey:p.get("key")||"",test:p.get("test")||"",v:p.get("v")||"",href:location.href,ts:Date.now()};
-    showDbg({step:"request",payload});
-    const{data}=await postGas(payload);
-    showDbg({step:"response",data});
+    const payload = {
+      job, step,
+      userId: PROFILE.userId || "",
+      displayName: PROFILE.displayName || "",
+      lat: loc.lat, lng: loc.lng, accuracy: loc.accuracy,
+      bypassKey: p.get("key") || "",
+      test: p.get("test") || "",
+      v: p.get("v") || "",
+      href: location.href,
+      ts: Date.now()
+    };
+    showDbg({ step:"request", payload });
+    const { data } = await postGas(payload);
+    showDbg({ step:"response", data });
 
-    if(!data.ok){
-      const errMsg = data.message||"打卡失敗，請稍後再試";
-      showResult(false,"打卡失敗", errMsg);
-      if(!errMsg.includes("離場站過遠")&&!errMsg.includes("尚未到站")&&!errMsg.includes("定位異常")){
-        $idleWrap.style.display=""; idleShown=true;
+    if (!data.ok) {
+      const errMsg = data.message || "打卡失敗，請稍後再試";
+      showResult(false, "打卡失敗", errMsg);
+      if (!errMsg.includes("離場站過遠") && !errMsg.includes("尚未到站") && !errMsg.includes("定位異常")) {
+        $idleWrap.style.display = ""; idleShown = true;
       }
       return;
     }
 
     const station = data.stationName || "";
-    const detail  = isRest
+    const detail = isRest
       ? (step === "arrive" ? "休息開始" : "休息結束")
       : [station, jl, sl + "打卡"].filter(Boolean).join("　");
 
-    /* update last punch strip */
     setLastPunch(detail);
+    // ★ 打卡成功後繼續預熱（為下次打卡準備）
+    reWarmGps();
 
-    showResult(true, "打卡成功！", detail, ()=>{
-      try{ liff.closeWindow(); }catch(_){}
+    showResult(true, "打卡成功！", detail, function() {
+      try { liff.closeWindow(); } catch(_) {}
     });
 
-  }catch(e){
-    const msg=e&&e.message||"";
-    if(msg==="redirect_login"){ closeOverlay(); return; }
+  } catch(e) {
+    const msg = e && e.message || "";
+    if (msg === "redirect_login") { closeOverlay(); return; }
     let errDisplay = "打卡失敗，請稍後再試";
-    if(!isTest()){
-      if(msg==="liff_profile_failed"){ errDisplay="頁面放置過久，請重新整理後再打卡"; $idleWrap.style.display=""; idleShown=true; }
-      else if(msg.toLowerCase().includes("timeout")){ errDisplay="定位逾時，請開啟定位後再試"; }
-      else if(msg.includes("定位失敗")){ errDisplay="定位異常，請再試一次"; }
-      else { $idleWrap.style.display=""; idleShown=true; }
+    if (!isTest()) {
+      if (msg === "liff_profile_failed") { errDisplay = "頁面放置過久，請重新整理後再打卡"; $idleWrap.style.display = ""; idleShown = true; }
+      else if (msg.toLowerCase().includes("timeout")) { errDisplay = "定位逾時，請開啟定位後再試"; }
+      else if (msg.includes("定位失敗")) { errDisplay = "定位異常，請再試一次"; }
+      else { $idleWrap.style.display = ""; idleShown = true; }
     } else {
-      errDisplay=`錯誤：${msg}`;
-      showDbg({step:"catch",error:String(e),stack:e.stack||""});
-      $idleWrap.style.display=""; idleShown=true;
+      errDisplay = "錯誤：" + msg;
+      showDbg({ step:"catch", error: String(e), stack: e.stack || "" });
+      $idleWrap.style.display = ""; idleShown = true;
     }
-    showResult(false,"打卡失敗", errDisplay);
+    showResult(false, "打卡失敗", errDisplay);
   }
 }
 
-/* ── Bind buttons ──────────────────────────── */
-document.getElementById("btnDA").addEventListener("click",  ()=>punch("dispatch","arrive"));
-document.getElementById("btnDL").addEventListener("click",  ()=>punch("dispatch","leave"));
-document.getElementById("btnL1A").addEventListener("click", ()=>punch("level1","arrive"));
-document.getElementById("btnL1L").addEventListener("click", ()=>punch("level1","leave"));
-document.getElementById("btnSA").addEventListener("click",  ()=>punch("swap","arrive"));
-document.getElementById("btnSL").addEventListener("click",  ()=>punch("swap","leave"));
-document.getElementById("btnPA").addEventListener("click",  ()=>punch("pump","arrive"));
-document.getElementById("btnPL").addEventListener("click",  ()=>punch("pump","leave"));
-document.getElementById("btnCA").addEventListener("click",  ()=>punch("clean","arrive"));
-document.getElementById("btnCL").addEventListener("click",  ()=>punch("clean","leave"));
-document.getElementById("btnRA").addEventListener("click",  ()=>punch("rest","arrive"));
-document.getElementById("btnRL").addEventListener("click",  ()=>punch("rest","leave"));
+/* ── Bind buttons ───────────────────────────── */
+document.getElementById("btnDA").addEventListener("click",  function() { punch("dispatch","arrive"); });
+document.getElementById("btnDL").addEventListener("click",  function() { punch("dispatch","leave");  });
+document.getElementById("btnL1A").addEventListener("click", function() { punch("level1","arrive");   });
+document.getElementById("btnL1L").addEventListener("click", function() { punch("level1","leave");    });
+document.getElementById("btnSA").addEventListener("click",  function() { punch("swap","arrive");     });
+document.getElementById("btnSL").addEventListener("click",  function() { punch("swap","leave");      });
+document.getElementById("btnPA").addEventListener("click",  function() { punch("pump","arrive");     });
+document.getElementById("btnPL").addEventListener("click",  function() { punch("pump","leave");      });
+document.getElementById("btnCA").addEventListener("click",  function() { punch("clean","arrive");    });
+document.getElementById("btnCL").addEventListener("click",  function() { punch("clean","leave");     });
+document.getElementById("btnRA").addEventListener("click",  function() { punch("rest","arrive");     });
+document.getElementById("btnRL").addEventListener("click",  function() { punch("rest","leave");      });
 
-document.addEventListener("click",      touch, {passive:true});
-document.addEventListener("touchstart", touch, {passive:true});
+document.addEventListener("click",      touch, { passive: true });
+document.addEventListener("touchstart", touch, { passive: true });
 
-if(isTest())showDbg({note:"test=1",params:Object.fromEntries(getMergedParams().entries())});
+if (isTest()) showDbg({ note:"test=1", params: Object.fromEntries(getMergedParams().entries()) });
+
+// ★ 頁面載入就開始 GPS 預熱，不等登入
+startGpsWarmup();
+// 同步啟動 LIFF 登入驗證
 initAuth();
 </script>
 </body>
