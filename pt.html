@@ -1398,6 +1398,12 @@
     function monthText(y,m){ return `<span class="year">${y}</span>年 ${m} 月`; }
     function monthValue(y,m){ return `${y}-${pad2(m)}`; }
 
+    /* 純文字顯示格式：2026-05 → 2026 年 5 月 */
+    function formatMonthDisplay(monthStr){
+      const parsed = parseMonthValue(monthStr);
+      return parsed ? `${parsed.year} 年 ${parsed.month} 月` : (monthStr || '');
+    }
+
     function parseMonthValue(monthStr){
       const m = String(monthStr||'').match(/^(\d{4})-(\d{2})$/);
       if (!m) return null;
@@ -1497,18 +1503,18 @@
         const nextBase = getNextMonthBase();
         const next = monthValue(nextBase.year, nextBase.month);
         state.selectableMonths = [
-          { value: cur, label: `${cur}（當月）` },
-          { value: next, label: `${next}（下個月）` }
+          { value: cur, label: `${formatMonthDisplay(cur)}（當月）` },
+          { value: next, label: `${formatMonthDisplay(next)}（下個月）` }
         ];
       }
       if (!state.selectableMonths.some(item => item && item.value === selected)) {
-        state.selectableMonths.unshift({ value: selected, label: selected });
+        state.selectableMonths.unshift({ value: selected, label: formatMonthDisplay(selected) });
       }
       state.defaultMonthValue = selected;
       syncViewMonthFromValue(selected);
       document.getElementById('authStatus').textContent = `歡迎，${state.displayName || '同事'}！`;
       showAuthBox(
-        `✅ 身份驗證成功\n身分：PT${state.isSpecialAccess ? '（SP）' : ''}\n月份：${getSelectedMonthValue()}`,
+        `✅ 身份驗證成功\n身分：PT${state.isSpecialAccess ? '（SP）' : ''}\n月份：${formatMonthDisplay(getSelectedMonthValue())}`,
         'ok'
       );
       setGoStep2Enabled(state.canEditSchedule);
@@ -1904,11 +1910,12 @@
 
       box.classList.remove('hidden');
       const selMonth = getSelectedMonthValue();
+      const selMonthDisplay = formatMonthDisplay(selMonth);
       const queryTitle= document.getElementById('step1QueryTitle');
       const queryBtn  = document.getElementById('queryScheduleBtn');
       if (queryTitle) queryTitle.textContent = '已送出排班查詢';
-      hint.innerHTML = `僅供查詢目前選定月份（${selMonth}）已送出的排班資訊。<br>查詢後進入下一步即可進行修改。`;
-      if (queryBtn) queryBtn.textContent = `查詢 ${selMonth} 排班`;
+      hint.innerHTML = `僅供查詢目前選定月份（${selMonthDisplay}）已送出的排班資訊。<br>查詢後進入下一步即可進行修改。`;
+      if (queryBtn) queryBtn.textContent = `查詢 ${selMonthDisplay} 排班`;
 
       if (!state.queriedLoaded){ resultWrap.classList.add('hidden'); emptyBox.classList.add('hidden'); return; }
       if (!state.queriedFound){ resultWrap.classList.add('hidden'); tbody.innerHTML=''; emptyBox.classList.remove('hidden'); return; }
@@ -2138,7 +2145,7 @@
       const tbody   = document.getElementById('submitPreviewBody');
       const monthEl = document.getElementById('submitMonthText');
       const schedules = buildSchedulesPayload();
-      monthEl.textContent = `📅 月份：${monthValue(state.viewYear, state.viewMonth)}`;
+      monthEl.textContent = `📅 月份：${formatMonthDisplay(monthValue(state.viewYear, state.viewMonth))}`;
       if (!schedules.length){ tbody.innerHTML='<tr><td colspan="2" style="text-align:center;color:var(--muted);">目前沒有排班資料</td></tr>'; return; }
       tbody.innerHTML = schedules.map(item=>{
         let text = item.shift1Text==='X' && !item.shift2Text ? '休假' : item.shift2Text ? `${item.shift1Text} / ${item.shift2Text}` : item.shift1Text;
@@ -2194,7 +2201,7 @@
           return;
         }
         state.submitBusy = false; state.submittedSuccess = true; updateSubmitButtonState();
-        showSubmitResult(`✅ 送出成功！\n月份：${monthValue(state.viewYear,state.viewMonth)}\n筆數：${data.writeCount||0}`,'ok');
+        showSubmitResult(`✅ 送出成功！\n月份：${formatMonthDisplay(monthValue(state.viewYear,state.viewMonth))}\n筆數：${data.writeCount||0}`,'ok');
       } catch(err){
         state.submitBusy = false; updateSubmitButtonState();
         showSubmitResult(`送出失敗：${err.message||err}`,'err');
