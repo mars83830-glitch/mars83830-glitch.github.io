@@ -622,6 +622,11 @@
       z-index: 1;
     }
 
+    /* 國定假日那天，讓「日期 + 國徽章」整組水平置中 */
+    .day-top:has(.holiday-tag) {
+      justify-content: center;
+    }
+
     .day-num {
       font-size: 14px;
       font-weight: 800;
