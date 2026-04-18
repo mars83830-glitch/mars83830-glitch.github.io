@@ -5,267 +5,503 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>FT 排假｜桃園營運處</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #eef1f5;
-      --card: #ffffff;
-      --text: #1f2937;
-      --muted: #6b7280;
-      --line: #d9dee7;
-      --line-soft: #e7edf7;
-      --primary: #4b89dc;
-      --red: #dc2626;
-      --red-soft: #fee2e2;
-      --green: #15803d;
-      --green-soft: #f0fdf4;
-      --green-line: #bbf7d0;
-      --sun: #fdecec;
-      --sat: #eef4ff;
-      --holiday-red: #c2410c;
-      --holiday-soft: #fff4f4;
-      --holiday-top: #f8dede;
-      --shadow: 0 8px 24px rgba(0,0,0,.08);
+      /* 主色系 - 精緻藍紫漸層 */
+      --brand-500: #5b7cfa;
+      --brand-600: #4361ee;
+      --brand-700: #3a4fd8;
+      --brand-50:  #eef2ff;
+      --brand-100: #e0e7ff;
+
+      /* 中性色 */
+      --bg:        #f4f6fb;
+      --bg-soft:   #eef1f7;
+      --card:      #ffffff;
+      --text:      #0f172a;
+      --text-soft: #475569;
+      --muted:     #94a3b8;
+      --line:      #e2e8f0;
+      --line-soft: #eef2f7;
+
+      /* 狀態色 */
+      --red:        #e11d48;
+      --red-soft:   #ffe4e6;
+      --red-line:   #fecdd3;
+      --amber:      #d97706;
+      --amber-soft: #fef3c7;
+      --green:      #059669;
+      --green-soft: #d1fae5;
+      --green-line: #a7f3d0;
+
+      /* 週末 & 節日 */
+      --sun:        #fef2f2;
+      --sat:        #eff6ff;
+      --holiday-red:  #be123c;
+      --holiday-soft: #fff1f2;
+      --holiday-top:  #fecdd3;
+
+      /* 陰影 */
+      --shadow-sm:  0 1px 2px rgba(15,23,42,.04), 0 1px 3px rgba(15,23,42,.06);
+      --shadow-md:  0 4px 12px rgba(15,23,42,.06), 0 2px 4px rgba(15,23,42,.04);
+      --shadow-lg:  0 12px 32px rgba(67,97,238,.08), 0 4px 8px rgba(15,23,42,.04);
+      --shadow-xl:  0 20px 48px rgba(67,97,238,.12), 0 8px 16px rgba(15,23,42,.06);
+
+      /* 圓角 */
+      --r-sm: 10px;
+      --r-md: 14px;
+      --r-lg: 18px;
+      --r-xl: 24px;
     }
 
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
     html, body {
       margin: 0; padding: 0;
       width: 100%; max-width: 100%;
       overflow-x: hidden;
-      background: var(--bg);
+      background:
+        radial-gradient(circle at 0% 0%, rgba(91,124,250,.08) 0%, transparent 40%),
+        radial-gradient(circle at 100% 100%, rgba(236,72,153,.05) 0%, transparent 40%),
+        var(--bg);
+      background-attachment: fixed;
       color: var(--text);
-      font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      font-family: "Plus Jakarta Sans", "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
       min-height: 100vh;
+      font-feature-settings: "cv11", "ss01";
+      -webkit-font-smoothing: antialiased;
     }
 
-    .topbar {
-      background: #fff;
-      text-align: center;
-      padding: 14px 12px 10px;
-      box-shadow: 0 1px 0 rgba(0,0,0,.05);
-    }
-
-    .topbar h1 { margin: 0; font-size: 22px; font-weight: 900; }
-
+    /* ═══ 頁籤步驟 ═══ */
     .step-tabs {
+      position: sticky;
+      top: 0;
+      z-index: 100;
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      margin: 10px 12px 0;
-      border: 1px solid #bfd3f2;
-      border-radius: 16px;
-      overflow: hidden;
-      background: #fff;
+      grid-template-columns: repeat(3, 1fr);
+      margin: 12px;
+      padding: 6px;
+      background: rgba(255,255,255,.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,.6);
+      border-radius: var(--r-lg);
+      box-shadow: var(--shadow-md);
+      gap: 4px;
     }
 
     .step-tab {
+      position: relative;
       border: none;
-      background: #fff;
-      color: var(--primary);
-      font-size: clamp(12px, 3.2vw, 15px);
-      font-weight: 900;
-      padding: 10px 2px;
-      height: 48px;
+      background: transparent;
+      color: var(--text-soft);
+      font-family: inherit;
+      font-size: clamp(12px, 3.4vw, 14px);
+      font-weight: 700;
+      padding: 10px 4px;
+      height: 44px;
       white-space: nowrap;
       cursor: pointer;
+      border-radius: var(--r-md);
+      transition: all .25s cubic-bezier(.4,0,.2,1);
+      letter-spacing: .02em;
+    }
+
+    .step-tab:hover:not(.active) {
+      background: var(--brand-50);
+      color: var(--brand-600);
     }
 
     .step-tab.active {
-      background: linear-gradient(180deg, #5d9af0 0%, #4b89dc 100%);
+      background: linear-gradient(135deg, var(--brand-500) 0%, var(--brand-700) 100%);
       color: #fff;
+      box-shadow: 0 4px 12px rgba(67,97,238,.32), inset 0 1px 0 rgba(255,255,255,.2);
+      transform: translateY(-1px);
     }
 
-    .page { padding: 12px 12px 24px; }
+    .step-tab .step-num {
+      display: inline-block;
+      width: 20px; height: 20px;
+      line-height: 20px;
+      margin-right: 4px;
+      border-radius: 50%;
+      background: rgba(0,0,0,.06);
+      font-size: 11px;
+      font-weight: 800;
+    }
 
+    .step-tab.active .step-num {
+      background: rgba(255,255,255,.24);
+    }
+
+    .page { padding: 4px 12px 32px; }
+
+    /* ═══ 卡片 ═══ */
     .card {
       background: var(--card);
-      border-radius: 22px;
-      box-shadow: var(--shadow);
-      padding: 16px 14px;
-      margin-bottom: 14px;
+      border-radius: var(--r-xl);
+      box-shadow: var(--shadow-lg);
+      padding: 20px 16px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(226,232,240,.6);
+      animation: cardIn .4s cubic-bezier(.4,0,.2,1) both;
     }
 
-    .section-title { margin: 0 0 10px; font-size: 20px; font-weight: 900; }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
 
-    .hint { color: var(--muted); font-size: 14px; line-height: 1.7; }
+    .section-title {
+      margin: 0 0 14px;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -.02em;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
-    .auth-box {
-      margin-top: 12px;
-      border-radius: 14px;
-      padding: 12px;
+    .section-title::before {
+      content: '';
+      display: block;
+      width: 4px;
+      height: 20px;
+      background: linear-gradient(180deg, var(--brand-500), var(--brand-700));
+      border-radius: 4px;
+    }
+
+    .hint {
+      color: var(--text-soft);
       font-size: 14px;
       line-height: 1.7;
+    }
+
+    /* ═══ 驗證資訊框 ═══ */
+    .auth-box {
+      margin-top: 12px;
+      border-radius: var(--r-md);
+      padding: 14px;
+      font-size: 14px;
+      line-height: 1.75;
       white-space: pre-wrap;
-      border: 1px solid #e5e7eb;
-      background: #f9fafb;
-      color: #374151;
-    }
-
-    .auth-box.ok { background: #f0fdf4; border-color: #bbf7d0; color: #166534; font-weight: 900; }
-    .auth-box.err { background: #fff7ed; border-color: #fed7aa; color: #9a3412; font-weight: 900; }
-
-    select, button {
-      height: 40px;
       border: 1px solid var(--line);
-      border-radius: 12px;
-      background: #fff;
-      padding: 0 10px;
-      font-size: 15px;
+      background: var(--bg-soft);
+      color: var(--text-soft);
+      font-weight: 500;
     }
 
-    button { cursor: pointer; font-weight: 900; }
-    button:disabled { opacity: .45; cursor: not-allowed; }
+    .auth-box.ok {
+      background: linear-gradient(135deg, var(--green-soft) 0%, #ecfdf5 100%);
+      border-color: var(--green-line);
+      color: #064e3b;
+      font-weight: 700;
+    }
+
+    .auth-box.err {
+      background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+      border-color: #fed7aa;
+      color: #9a3412;
+      font-weight: 700;
+    }
+
+    /* ═══ 表單元素 ═══ */
+    select, button {
+      font-family: inherit;
+      height: 42px;
+      border: 1.5px solid var(--line);
+      border-radius: var(--r-md);
+      background: #fff;
+      padding: 0 12px;
+      font-size: 14px;
+      color: var(--text);
+      transition: all .2s;
+    }
+
+    select:focus, button:focus-visible {
+      outline: none;
+      border-color: var(--brand-500);
+      box-shadow: 0 0 0 3px var(--brand-100);
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: 700;
+      letter-spacing: .01em;
+    }
+
+    button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
 
     .btn-primary {
-      background: linear-gradient(180deg, #5d9af0 0%, #4b89dc 100%);
-      color: #fff; border: none;
+      background: linear-gradient(135deg, var(--brand-500) 0%, var(--brand-700) 100%);
+      color: #fff;
+      border: none;
+      box-shadow: 0 4px 12px rgba(67,97,238,.28), inset 0 1px 0 rgba(255,255,255,.2);
+      padding: 0 18px;
     }
 
-    .btn-secondary { background: #fff; color: #111827; }
-    .btn-danger { background: #fff; color: var(--red); border: 1px solid #fecaca; }
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(67,97,238,.36), inset 0 1px 0 rgba(255,255,255,.2);
+    }
+
+    .btn-primary:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn-secondary {
+      background: #fff;
+      color: var(--text);
+      border: 1.5px solid var(--line);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      border-color: var(--brand-500);
+      color: var(--brand-600);
+      background: var(--brand-50);
+    }
+
+    .btn-danger {
+      background: #fff;
+      color: var(--red);
+      border: 1.5px solid var(--red-line);
+    }
 
     .footer-actions {
       display: flex;
       justify-content: flex-end;
       gap: 10px;
       flex-wrap: wrap;
-      margin-top: 14px;
+      margin-top: 16px;
     }
+
+    .footer-actions button { min-width: 96px; }
 
     .hidden { display: none !important; }
 
-    /* ── 假別選擇器 ── */
+    /* ═══ 假別選擇器 ═══ */
+    .palette-title {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: var(--text-soft);
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+
     .leave-type-grid {
       display: grid;
       gap: 8px;
-      margin: 12px 0;
+      margin: 10px 0;
     }
 
     .leave-type-grid-main {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(2, 1fr);
     }
 
     .leave-type-grid-extra {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(4, 1fr);
       gap: 6px;
     }
 
     .leave-chip {
-      border: 2px solid #dbe3ef;
-      border-radius: 14px;
-      padding: 8px 12px;
+      position: relative;
+      border: 1.5px solid var(--line);
+      border-radius: var(--r-md);
+      padding: 10px 12px;
       text-align: center;
-      font-size: 12px;
-      font-weight: 900;
+      font-size: 13px;
+      font-weight: 700;
       line-height: 1.2;
       white-space: pre-line;
-      color: #334155;
+      color: var(--text-soft);
       background: #fff;
       cursor: pointer;
-      transition: all .15s;
-      min-height: 44px;
+      transition: all .2s cubic-bezier(.4,0,.2,1);
+      min-height: 46px;
       display: flex;
       align-items: center;
       justify-content: center;
+      font-family: inherit;
+      letter-spacing: .01em;
+    }
+
+    .leave-chip:hover:not(.active) {
+      border-color: var(--brand-500);
+      color: var(--brand-600);
+      background: var(--brand-50);
     }
 
     .leave-chip.leave-chip-extra {
-      min-height: 38px;
+      min-height: 40px;
       padding: 6px 4px;
-      font-size: 11px;
-      border-radius: 12px;
+      font-size: 12px;
+      border-radius: var(--r-sm);
       letter-spacing: -.2px;
     }
 
     .leave-chip.active {
-      background: #dbeafe;
-      border-color: #60a5fa;
-      color: #1e3a8a;
-      outline: 3px solid #60a5fa;
-      outline-offset: -3px;
+      background: linear-gradient(135deg, var(--brand-500) 0%, var(--brand-700) 100%);
+      border-color: var(--brand-700);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(67,97,238,.32);
+      transform: translateY(-1px);
     }
 
     .leave-chip.required-off {
-      background: #fef9c3;
-      border-color: #facc15;
-      color: #713f12;
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      border-color: #fcd34d;
+      color: #92400e;
+    }
+
+    .leave-chip.required-off:hover:not(.active) {
+      border-color: #f59e0b;
+      background: linear-gradient(135deg, #fde68a 0%, #fcd34d 100%);
+      color: #78350f;
     }
 
     .leave-chip.required-off.active {
-      outline-color: #facc15;
-      background: #fef08a;
-    }
-
-    @media (min-width: 420px) {
-      .leave-type-grid-main { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .leave-type-grid-extra { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      border-color: #d97706;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(217,119,6,.32);
     }
 
     .current-leave {
       font-size: 13px;
-      color: #374151;
-      margin-top: 8px;
+      color: var(--text-soft);
+      margin-top: 10px;
       line-height: 1.6;
+      padding: 10px 12px;
+      background: var(--brand-50);
+      border-radius: var(--r-sm);
+      border-left: 3px solid var(--brand-500);
     }
 
-    .current-leave b { color: #1d4ed8; }
+    .current-leave b {
+      color: var(--brand-700);
+      font-weight: 800;
+    }
 
-    .leave-rule-box {
-      margin: 10px 0;
-      background: #f8fbff;
-      border: 1px solid #bfd3f2;
-      border-radius: 14px;
-      padding: 12px;
+    /* ═══ 規則按鈕 ═══ */
+    .rule-row {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      margin: 0 0 10px;
+    }
+
+    .btn-rule {
+      padding: 0 14px;
+      height: 36px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .02em;
+    }
+
+    .leave-grid-block { margin: 10px 0 0; }
+    .leave-toggle-row { margin: 10px 0 0; }
+    .leave-toggle-btn {
+      width: 100%;
+      height: 40px;
       font-size: 13px;
-      color: #374151;
+      font-weight: 700;
+      color: var(--text-soft);
+    }
+
+    /* ═══ Modal ═══ */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,.55);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 25000;
+      animation: fadeIn .2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    .modal-card {
+      width: min(520px, 94vw);
+      background: #fff;
+      border-radius: var(--r-xl);
+      box-shadow: 0 24px 64px rgba(15,23,42,.24);
+      padding: 20px;
+      animation: modalIn .3s cubic-bezier(.34,1.56,.64,1);
+    }
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(.92) translateY(8px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 12px;
+      letter-spacing: -.01em;
+    }
+
+    .modal-body {
+      font-size: 14px;
+      color: var(--text-soft);
       line-height: 1.8;
     }
 
-    .leave-rule-box b { color: #1d4ed8; }
-
-    .rule-row { display:flex; justify-content:flex-end; align-items:center; margin: 0 0 10px; }
-    .btn-rule { padding: 0 14px; height: 38px; font-size: 13px; font-weight: 900; }
-
-    .leave-grid-block { margin: 12px 0 0; }
-    .leave-toggle-row { margin: 8px 0 0; }
-    .leave-toggle-btn { width: 100%; }
-
-    .modal {
-      position: fixed; inset: 0; background: rgba(15,23,42,.45);
-      display: flex; align-items: center; justify-content: center;
-      padding: 20px; z-index: 25000;
+    .modal-rule-item {
+      margin: 8px 0;
+      white-space: pre-wrap;
+      padding: 8px 12px;
+      background: var(--bg-soft);
+      border-radius: var(--r-sm);
+      border-left: 3px solid var(--brand-500);
     }
-    .modal-card {
-      width: min(520px, 94vw); background: #fff; border-radius: 18px;
-      box-shadow: 0 20px 60px rgba(0,0,0,.22); padding: 18px 16px;
-    }
-    .modal-title { font-size: 18px; font-weight: 900; color: #111827; margin-bottom: 10px; }
-    .modal-body { font-size: 14px; color: #374151; line-height: 1.8; }
-    .modal-rule-item { margin: 6px 0; white-space: pre-wrap; }
 
-
-    /* ── 月曆 ── */
+    /* ═══ 月曆 ═══ */
     .calendar-toolbar {
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
 
     .month-title {
       font-size: 18px;
-      font-weight: 900;
-      color: var(--primary);
+      font-weight: 800;
+      color: var(--text);
       text-align: center;
       flex: 1;
+      letter-spacing: -.01em;
+    }
+
+    .month-title .year {
+      color: var(--brand-600);
+      margin-right: 4px;
     }
 
     .calendar-table-wrap {
       width: 100%;
       border: 1px solid var(--line);
-      border-radius: 14px;
+      border-radius: var(--r-lg);
       overflow: hidden;
       background: #fff;
+      box-shadow: var(--shadow-sm);
     }
 
     .calendar-table {
@@ -275,59 +511,116 @@
     }
 
     .calendar-table thead th {
-      height: 48px;
-      border-right: 1px solid var(--line);
-      border-bottom: 1px solid var(--line);
+      height: 40px;
+      border-right: 1px solid var(--line-soft);
+      border-bottom: 1.5px solid var(--line);
       font-size: 12px;
-      font-weight: 900;
+      font-weight: 800;
       text-align: center;
-      background: #fff;
+      background: linear-gradient(180deg, #fafbff 0%, #f4f6fb 100%);
+      color: var(--text-soft);
+      letter-spacing: .05em;
     }
 
     .calendar-table thead th:last-child { border-right: none; }
-    .calendar-table thead .sun { color: #c2410c; }
-    .calendar-table thead .sat { color: #2563eb; }
+    .calendar-table thead .sun { color: var(--red); }
+    .calendar-table thead .sat { color: var(--brand-600); }
 
     .calendar-table td {
       position: relative;
-      height: 72px;
+      height: 82px;
       vertical-align: top;
-      border-right: 1px solid var(--line);
-      border-bottom: 1px solid var(--line);
-      padding: 4px 5px;
+      border-right: 1px solid var(--line-soft);
+      border-bottom: 1px solid var(--line-soft);
+      padding: 5px 4px;
       overflow: hidden;
       background: #fff;
       cursor: pointer;
+      transition: background .15s;
     }
 
     .calendar-table td:last-child { border-right: none; }
     .calendar-table tbody tr:last-child td { border-bottom: none; }
 
-    .day-cell.outside { background: #f3f4f6; cursor: default; }
-    .day-cell.sun-bg { background: linear-gradient(0deg,rgba(255,255,255,1) 78%,var(--sun) 78%); }
-    .day-cell.sat-bg { background: linear-gradient(0deg,rgba(255,255,255,1) 78%,var(--sat) 78%); }
-    .day-cell.holiday-bg {
-      background: linear-gradient(180deg,var(--holiday-top) 0 18px,transparent 18px 100%),var(--holiday-soft);
+    .day-cell:not(.outside):hover {
+      background: var(--brand-50) !important;
     }
-    .day-cell.has-leave { outline-offset: -2px; }
-    .day-cell.has-leave-required { outline: 2px solid #fecaca; }
-    .day-cell.has-leave-selected { outline: 2px solid #2563eb; }
-    .day-cell.has-leave-other { outline: 2px solid #008000; }
-    .day-cell.invalid { box-shadow: inset 0 0 0 2px var(--red); background: var(--red-soft) !important; }
 
-    .day-top { display: flex; align-items: flex-start; min-height: 18px; }
+    .day-cell.outside {
+      background: #f8fafc;
+      cursor: default;
+      opacity: .5;
+    }
 
-    .day-num { font-size: 15px; font-weight: 900; color: #6b7280; line-height: 1; }
-    .day-num.sun { color: #c2410c; }
-    .day-num.sat { color: #2563eb; }
-    .day-num.holiday { color: var(--holiday-red); }
-    .day-num.outside { color: #c9ced7; }
+    .day-cell.sun-bg {
+      background: linear-gradient(0deg, #fff 82%, var(--sun) 82%);
+    }
+
+    .day-cell.sat-bg {
+      background: linear-gradient(0deg, #fff 82%, var(--sat) 82%);
+    }
+
+    .day-cell.holiday-bg {
+      background:
+        linear-gradient(180deg, var(--holiday-top) 0 4px, transparent 4px 100%),
+        var(--holiday-soft);
+    }
+
+    .day-cell.has-leave {
+      outline-offset: -2px;
+    }
+
+    .day-cell.has-leave-required {
+      outline: 2px solid #f59e0b;
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
+    }
+
+    .day-cell.has-leave-selected {
+      outline: 2px solid var(--brand-500);
+      background: linear-gradient(135deg, var(--brand-50) 0%, var(--brand-100) 100%) !important;
+    }
+
+    .day-cell.has-leave-other {
+      outline: 2px solid var(--green);
+      background: linear-gradient(135deg, var(--green-soft) 0%, #a7f3d0 100%) !important;
+    }
+
+    .day-cell.invalid {
+      box-shadow: inset 0 0 0 2px var(--red);
+      background: var(--red-soft) !important;
+      animation: shake .4s;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-2px); }
+      75% { transform: translateX(2px); }
+    }
+
+    .day-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-start;
+      min-height: 20px;
+    }
+
+    .day-num {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text-soft);
+      line-height: 1;
+      font-family: "Plus Jakarta Sans", sans-serif;
+    }
+
+    .day-num.sun      { color: var(--red); }
+    .day-num.sat      { color: var(--brand-600); }
+    .day-num.holiday  { color: var(--holiday-red); }
+    .day-num.outside  { color: var(--muted); font-weight: 500; }
 
     .day-body {
-      margin-top: 3px;
-      font-size: 10px;
-      font-weight: 900;
-      color: #1d4ed8;
+      margin-top: 4px;
+      font-size: 11px;
+      font-weight: 800;
       line-height: 1.2;
       overflow: hidden;
       word-break: break-all;
@@ -336,133 +629,271 @@
       align-items: center;
       justify-content: center;
       width: 100%;
-      height: calc(100% - 20px);
+      height: calc(100% - 22px);
+      letter-spacing: .02em;
     }
 
-    .day-body.required-off-text { color: #dc2626; }
-    .day-body.selected-off-text { color: #2563eb; }
-    .day-body.extra-leave-text { color: #008000; }
-    .day-body.holiday-text { color: var(--holiday-red); font-size: 11px; }
+    .day-body.required-off-text { color: #92400e; }
+    .day-body.selected-off-text { color: var(--brand-700); }
+    .day-body.extra-leave-text  { color: #065f46; }
+    .day-body.holiday-text      { color: var(--holiday-red); font-size: 11px; }
 
-    /* ── 錯誤 / 成功 ── */
+    /* ═══ 錯誤 / 成功 ═══ */
     .error-box {
-      margin-top: 12px;
-      border: 1px solid #fecaca;
-      background: #fff1f2;
-      border-radius: 14px;
-      padding: 12px;
+      margin-top: 14px;
+      border: 1px solid var(--red-line);
+      background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
+      border-radius: var(--r-md);
+      padding: 14px;
     }
 
-    .error-title { color: #991b1b; font-weight: 900; margin-bottom: 6px; }
-    .error-item { color: #991b1b; margin: 6px 0; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+    .error-title {
+      color: #9f1239;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+    }
+
+    .error-title::before {
+      content: '⚠';
+      font-size: 16px;
+    }
+
+    .error-item {
+      color: #9f1239;
+      margin: 6px 0;
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      padding-left: 8px;
+      border-left: 2px solid var(--red-line);
+    }
 
     .success-box {
-      margin-top: 12px;
+      margin-top: 14px;
       border: 1px solid var(--green-line);
-      background: var(--green-soft);
-      border-radius: 14px;
-      padding: 12px;
+      background: linear-gradient(135deg, var(--green-soft) 0%, #ecfdf5 100%);
+      border-radius: var(--r-md);
+      padding: 14px;
+      animation: successIn .4s cubic-bezier(.34,1.56,.64,1);
     }
 
-    .success-item { color: var(--green); font-size: 14px; font-weight: 900; }
+    @keyframes successIn {
+      from { opacity: 0; transform: scale(.96); }
+      to   { opacity: 1; transform: scale(1); }
+    }
 
-    /* ── 預覽表格 ── */
+    .success-item {
+      color: #065f46;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: .01em;
+    }
+
+    /* ═══ 預覽表格 ═══ */
     .preview-table-wrap {
       margin-top: 12px;
       width: 100%;
       overflow-x: auto;
       border: 1px solid var(--line);
-      border-radius: 14px;
+      border-radius: var(--r-md);
       background: #fff;
+      box-shadow: var(--shadow-sm);
     }
 
-    .preview-table { width: 100%; border-collapse: collapse; min-width: 260px; }
+    .preview-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 260px;
+    }
 
     .preview-table th,
     .preview-table td {
-      border-bottom: 1px solid var(--line);
-      padding: 10px 12px;
+      border-bottom: 1px solid var(--line-soft);
+      padding: 12px 14px;
       text-align: left;
       font-size: 14px;
       line-height: 1.6;
     }
 
-    .preview-table th { background: #f8fbff; font-weight: 900; }
-    .preview-table tbody tr:last-child td { border-bottom: none; }
+    .preview-table th {
+      background: linear-gradient(180deg, #fafbff 0%, #f4f6fb 100%);
+      font-weight: 800;
+      color: var(--text-soft);
+      font-size: 12px;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
 
-    /* ── Loading ── */
+    .preview-table tbody tr:last-child td { border-bottom: none; }
+    .preview-table tbody tr:hover { background: var(--brand-50); }
+
+    /* ═══ Loading ═══ */
     .loading-mask {
       position: fixed;
       inset: 0;
-      background: rgba(15,23,42,.32);
+      background: rgba(15,23,42,.45);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 20px;
       z-index: 20000;
+      animation: fadeIn .2s ease;
     }
 
     .loading-card {
       width: min(320px, 92vw);
       background: #fff;
-      border-radius: 22px;
-      box-shadow: 0 20px 60px rgba(0,0,0,.22);
-      padding: 20px 18px;
+      border-radius: var(--r-xl);
+      box-shadow: 0 24px 64px rgba(15,23,42,.24);
+      padding: 24px 20px;
       text-align: center;
-      font-size: 20px;
-      font-weight: 900;
-      color: #1d4ed8;
-      line-height: 1.5;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--brand-700);
+      line-height: 1.6;
+      letter-spacing: .01em;
     }
 
-    /* ── 統計列 ── */
+    .loading-card::before {
+      content: '';
+      display: block;
+      width: 40px;
+      height: 40px;
+      margin: 0 auto 12px;
+      border: 3px solid var(--brand-100);
+      border-top-color: var(--brand-500);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ═══ 統計列 ═══ */
     .leave-stats {
       display: flex;
-      gap: 10px;
+      gap: 8px;
       flex-wrap: wrap;
-      margin: 10px 0;
+      margin: 12px 0;
     }
 
     .stat-chip {
-      background: #f0f4ff;
-      border: 1px solid #c7d7f5;
-      border-radius: 10px;
-      padding: 6px 12px;
-      font-size: 13px;
-      font-weight: 900;
-      color: #1e3a8a;
+      background: linear-gradient(135deg, var(--brand-50) 0%, var(--brand-100) 100%);
+      border: 1px solid var(--brand-100);
+      border-radius: var(--r-sm);
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--brand-700);
+      letter-spacing: .01em;
+      transition: all .2s;
     }
 
-    .stat-chip.warn { background: #fff7ed; border-color: #fed7aa; color: #9a3412; }
+    .stat-chip.warn {
+      background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+      border-color: #fed7aa;
+      color: #9a3412;
+    }
 
-    .query-box { margin-top: 16px; border-top: 1px solid #e5e7eb; padding-top: 14px; }
-    .query-title { font-size: 18px; font-weight: 900; margin: 0 0 8px; }
+    /* ═══ 查詢區 ═══ */
+    .query-box {
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px dashed var(--line);
+    }
+
+    .query-title {
+      font-size: 16px;
+      font-weight: 800;
+      margin: 0 0 8px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .query-title::before {
+      content: '📋';
+      font-size: 16px;
+    }
+
     .query-empty {
-      margin-top: 10px;
-      border: 1px dashed #cbd5e1;
-      background: #f8fafc;
-      border-radius: 14px;
-      padding: 14px;
+      margin-top: 12px;
+      border: 1.5px dashed var(--line);
+      background: var(--bg-soft);
+      border-radius: var(--r-md);
+      padding: 20px;
       text-align: center;
-      color: #64748b;
-      font-weight: 900;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 14px;
     }
 
     .ui-locked .page,
-    .ui-locked .step-tabs,
-    .ui-locked .topbar { pointer-events: none; }
+    .ui-locked .step-tabs { pointer-events: none; }
+
+    /* ═══ 月份選擇器區 ═══ */
+    #monthPickerBox {
+      margin-top: 14px;
+      padding: 12px;
+      background: linear-gradient(135deg, var(--brand-50) 0%, #fafbff 100%);
+      border-radius: var(--r-md);
+      border: 1px solid var(--brand-100);
+    }
+
+    #monthPickerBox .hint {
+      font-weight: 700;
+      color: var(--brand-700);
+      font-size: 12px;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      margin-bottom: 6px !important;
+    }
+
+    #monthSelect {
+      width: 100%;
+      font-weight: 700;
+      color: var(--text);
+      background: #fff;
+    }
+
+    /* ═══ 響應式 ═══ */
+    @media (max-width: 360px) {
+      .page { padding: 4px 10px 32px; }
+      .card { padding: 16px 12px; }
+      .leave-type-grid-extra {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .calendar-table td { padding: 4px 2px; }
+      .day-body { font-size: 10px; }
+    }
+
+    @media (min-width: 420px) {
+      .leave-type-grid-main  { grid-template-columns: repeat(2, 1fr); }
+      .leave-type-grid-extra { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    @media (min-width: 560px) {
+      .page { padding: 4px 20px 40px; }
+      .card { padding: 24px 20px; }
+      .leave-type-grid-extra { grid-template-columns: repeat(6, 1fr); }
+    }
   </style>
 </head>
 <body>
   <div class="app" id="appRoot">
-    <div class="topbar">
-      <h1>桃園營運處｜FT 排假</h1>
-    </div>
 
     <div class="step-tabs">
-      <button class="step-tab active" id="stepBadge1">1 驗證</button>
-      <button class="step-tab"        id="stepBadge2">2 排假</button>
-      <button class="step-tab"        id="stepBadge3">3 送出</button>
+      <button class="step-tab active" id="stepBadge1"><span class="step-num">1</span>驗證</button>
+      <button class="step-tab"        id="stepBadge2"><span class="step-num">2</span>排假</button>
+      <button class="step-tab"        id="stepBadge3"><span class="step-num">3</span>送出</button>
     </div>
 
     <div class="loading-mask hidden" id="globalLoadingMask">
@@ -473,13 +904,13 @@
 
       <!-- Step 1：驗證 -->
       <div class="card" id="step1">
-        <h2 class="section-title">第 1 步｜驗證排假權限</h2>
+        <h2 class="section-title">驗證排假權限</h2>
         <div class="hint" id="step1Hint">系統驗證中...</div>
         <div class="auth-box hidden" id="authBox"></div>
 
-        <div class="hidden" id="monthPickerBox" style="margin-top:10px;">
-          <div class="hint" style="margin-bottom:6px;">排假月份</div>
-          <select id="monthSelect" onchange="handleMonthChange(this.value)" style="min-width:160px;"></select>
+        <div class="hidden" id="monthPickerBox">
+          <div class="hint">排假月份</div>
+          <select id="monthSelect" onchange="handleMonthChange(this.value)"></select>
         </div>
 
         <div class="query-box hidden" id="step1QueryBox">
@@ -489,7 +920,7 @@
             <button class="btn-secondary" onclick="handleQueryLeaves()">查詢排假</button>
           </div>
           <div id="step1QueryResult" class="hidden">
-            <div class="calendar-toolbar" style="margin-top:10px;">
+            <div class="calendar-toolbar" style="margin-top:12px;">
               <div class="month-title" id="step1MonthTitle"></div>
             </div>
             <div class="calendar-table-wrap">
@@ -508,21 +939,19 @@
         </div>
 
         <div class="footer-actions">
-          <button class="btn-primary" id="goStep2Btn" onclick="goStep(2)" disabled>進入排假</button>
+          <button class="btn-primary" id="goStep2Btn" onclick="goStep(2)" disabled>進入排假 →</button>
         </div>
       </div>
 
       <!-- Step 2：排假月曆 -->
       <div class="card hidden" id="step2">
-        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:6px;">
-          <h2 class="section-title" style="margin:0;">第 2 步｜選擇排假日期</h2>
-          <div class="rule-row" style="margin:0; flex:none;">
-          <button class="btn-secondary btn-rule" type="button" onclick="openRuleModal()">排假規則</button>
-          </div>
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:12px;">
+          <h2 class="section-title" style="margin:0;">選擇排假日期</h2>
+          <button class="btn-secondary btn-rule" type="button" onclick="openRuleModal()">📖 排假規則</button>
         </div>
 
         <div style="margin-bottom:8px;">
-          <div class="palette-title" style="font-size:14px;font-weight:900;margin-bottom:8px;color:#374151;">選擇假別後點擊日期</div>
+          <div class="palette-title">選擇假別後點擊日期</div>
           <div id="leaveTypeSection"></div>
           <div class="current-leave" id="currentLeaveText">目前選中：<b>請先選擇假別</b></div>
         </div>
@@ -545,7 +974,7 @@
           </table>
         </div>
 
-        <div class="hint" style="margin-top:8px;">點擊已排假的日期可取消該天假單。</div>
+        <div class="hint" style="margin-top:10px; font-size:12px;">💡 點擊已排假的日期可取消該天假單</div>
 
         <div class="success-box hidden" id="step2SuccessBox">
           <div class="success-item">✅ 排假符合規則，可以進行下一步</div>
@@ -557,18 +986,18 @@
         </div>
 
         <div class="footer-actions">
-          <button class="btn-secondary" onclick="goStep(1)">上一步</button>
+          <button class="btn-secondary" onclick="goStep(1)">← 上一步</button>
           <button class="btn-secondary" onclick="runValidateOnly()">重新檢查</button>
-          <button class="btn-primary" id="step2NextBtn" onclick="prepareStep3()">下一步</button>
+          <button class="btn-primary" id="step2NextBtn" onclick="prepareStep3()">下一步 →</button>
         </div>
       </div>
 
       <!-- Step 3：預覽送出 -->
       <div class="card hidden" id="step3">
-        <h2 class="section-title">第 3 步｜最後送出</h2>
+        <h2 class="section-title">最後送出</h2>
 
         <div style="margin-top:4px;">
-          <div style="font-size:15px;font-weight:900;margin-bottom:8px;" id="submitMonthText"></div>
+          <div style="font-size:14px;font-weight:800;margin-bottom:10px;color:var(--brand-700);letter-spacing:.02em;" id="submitMonthText"></div>
           <div class="preview-table-wrap">
             <table class="preview-table">
               <thead><tr><th style="width:42%;">日期</th><th>假別</th></tr></thead>
@@ -580,8 +1009,8 @@
         <div class="auth-box hidden" id="submitResultBox"></div>
 
         <div class="footer-actions">
-          <button class="btn-secondary" onclick="goStep(2)">上一步</button>
-          <button class="btn-primary" id="submitBtn" onclick="submitLeaves()">正式送出</button>
+          <button class="btn-secondary" onclick="goStep(2)">← 上一步</button>
+          <button class="btn-primary" id="submitBtn" onclick="submitLeaves()">正式送出 ✓</button>
         </div>
       </div>
 
@@ -590,26 +1019,24 @@
 
   <div class="modal hidden" id="ruleModal" onclick="closeRuleModalByBackdrop(event)">
     <div class="modal-card">
-      <div class="modal-title">排假規則</div>
+      <div class="modal-title">📖 排假規則</div>
       <div class="modal-body">
         <div class="modal-rule-item">1. 必休每月最多 4 天，其中六日合計最多 2 天</div>
         <div class="modal-rule-item">2. 選休天數依每月「YB桃園總群」公告為準，若排超出上限，即當月選休無效並由公司安排</div>
         <div class="modal-rule-item">3. 特殊假上限依勞基法規定為準，請自行計算勿超休</div>
         <div class="modal-rule-item">4. 如遇問題請先詢問主管再行排班，以保障自身權益</div>
       </div>
-      <div class="footer-actions" style="margin-top:10px;">
-        <button class="btn-primary" type="button" onclick="closeRuleModal()">關閉</button>
+      <div class="footer-actions" style="margin-top:14px;">
+        <button class="btn-primary" type="button" onclick="closeRuleModal()">我知道了</button>
       </div>
     </div>
   </div>
 
-
-
   <div class="modal hidden" id="noticeModal" onclick="closeNoticeModalByBackdrop(event)">
     <div class="modal-card" style="width:min(420px,92vw); text-align:center;">
       <div class="modal-title" id="noticeModalTitle">提醒</div>
-      <div class="modal-body" id="noticeModalMessage" style="font-size:16px; line-height:1.8;">請先選擇假別！</div>
-      <div class="footer-actions" style="justify-content:center; margin-top:14px;">
+      <div class="modal-body" id="noticeModalMessage" style="font-size:15px; line-height:1.8;">請先選擇假別！</div>
+      <div class="footer-actions" style="justify-content:center; margin-top:16px;">
         <button class="btn-primary" type="button" onclick="closeNoticeModal()">確定</button>
       </div>
     </div>
@@ -639,7 +1066,7 @@
       uid: '', displayName: '', isSP: false,
       targetMonth: '', viewYear: 0, viewMonth: 0,
       selectedLeaveType: '',
-      assignedLeaves: {}, // { 'yyyy-MM-dd': '假別' }
+      assignedLeaves: {},
       invalidDates: new Set(),
       queriedLeaves: [], queriedLoaded: false, queriedFound: false,
       submitBusy: false, submittedSuccess: false, validateBusy: false,
@@ -651,7 +1078,7 @@
     // ── 工具 ──
     function pad2(n) { return String(n).padStart(2,'0'); }
     function toDateKey(y,m,d) { return `${y}-${pad2(m)}-${pad2(d)}`; }
-    function monthText(y,m) { return `${y} 年 ${m} 月`; }
+    function monthText(y,m) { return `<span class="year">${y}</span>年 ${m} 月`; }
     function getCurrentMonthValue(){
       const now=new Date();
       return `${now.getFullYear()}-${pad2(now.getMonth()+1)}`;
@@ -697,7 +1124,7 @@
       box.classList.remove('hidden');
       sel.innerHTML=state.selectableMonths.map(v=>{
         const [y,m]=v.split('-').map(Number);
-        return `<option value="${v}">${monthText(y,m)}</option>`;
+        return `<option value="${v}">${y} 年 ${m} 月</option>`;
       }).join('');
       sel.value=state.targetMonth;
     }
@@ -707,7 +1134,7 @@
       state.targetMonth=value;
       updateMonthDependentViews();
       renderStep1QueryCalendar();
-      document.getElementById('step1QueryHint').textContent=`查詢 ${state.targetMonth} 已送出的排假。`;
+      document.getElementById('step1QueryHint').textContent=`查詢 ${state.targetMonth} 已送出的排假`;
       showAuthBox(
         `✅ 身份驗證成功\n`+
         `身分：FT${state.isSP?'（SP）':''}\n`+
@@ -754,7 +1181,6 @@
     }
 
     function getMonthLeaves() {
-      const prefix=`${pad2(state.viewYear)}-${pad2(state.viewMonth)}-`;
       return Object.keys(state.assignedLeaves)
         .filter(k=>k.startsWith(state.targetMonth+'-'))
         .map(k=>({date:k,leaveType:state.assignedLeaves[k]}))
@@ -789,6 +1215,7 @@
       if(step===3){
         renderPreviewTable();
       }
+      window.scrollTo({top:0,behavior:'smooth'});
     }
 
     function showAuthBox(msg,type){
@@ -809,7 +1236,7 @@
       const btn=document.getElementById('step2NextBtn');
       if(!btn) return;
       btn.disabled=!!(state.uiLocked||state.step2NextBusy);
-      btn.textContent=state.step2NextBusy?'處理中...':'下一步';
+      btn.textContent=state.step2NextBusy?'處理中...':'下一步 →';
     }
 
     function selectLeaveType(type){
@@ -868,12 +1295,11 @@
       const leaves=getMonthLeaves();
       const required=leaves.filter(l=>l.leaveType==='必休');
       const reqWeekend=required.filter(l=>isWeekend(l.date));
-      const reqWarn=required.length>4||reqWeekend.length>2;
 
       el.innerHTML=`
-        <div class="stat-chip${required.length>4?' warn':''}">必休：${required.length} / 4 天</div>
-        <div class="stat-chip${reqWeekend.length>2?' warn':''}">必休六日：${reqWeekend.length} / 2 天</div>
-        <div class="stat-chip">總假單：${leaves.length} 筆</div>
+        <div class="stat-chip${required.length>4?' warn':''}">必休 ${required.length}/4 天</div>
+        <div class="stat-chip${reqWeekend.length>2?' warn':''}">必休六日 ${reqWeekend.length}/2 天</div>
+        <div class="stat-chip">總假單 ${leaves.length} 筆</div>
       `;
     }
 
@@ -882,7 +1308,7 @@
       const title=document.getElementById('step2MonthTitle');
       const tbody=document.getElementById('step2Grid');
       if(!title||!tbody) return;
-      title.textContent=monthText(state.viewYear,state.viewMonth);
+      title.innerHTML=monthText(state.viewYear,state.viewMonth);
 
       const cells=getMonthMatrix(state.viewYear,state.viewMonth);
       tbody.innerHTML='';
@@ -924,8 +1350,6 @@
               else if(leaveType==='選休') bodyClass+=' selected-off-text';
               else bodyClass+=' extra-leave-text';
               bodyHtml=`<div class="${bodyClass}">${leaveType}</div>`;
-            } else if(isHoliday){
-              bodyHtml='<div class="day-body"></div>';
             } else {
               bodyHtml='<div class="day-body"></div>';
             }
@@ -962,7 +1386,6 @@
       if(event.target && event.target.id==='noticeModal') closeNoticeModal();
     }
 
-    // 點擊日期：有假則取消，無假則套用目前選中假別
     function toggleLeave(dateKey){
       if(state.uiLocked) return;
       if(state.assignedLeaves[dateKey]){
@@ -985,13 +1408,13 @@
       const tbody=document.getElementById('submitPreviewBody');
       const monthEl=document.getElementById('submitMonthText');
       if(!tbody||!monthEl) return;
-      monthEl.textContent=`月份：${state.targetMonth}`;
+      monthEl.textContent=`📅 月份：${state.targetMonth}`;
       const leaves=getMonthLeaves();
       if(!leaves.length){
-        tbody.innerHTML='<tr><td colspan="2">本月無排假需求</td></tr>';
+        tbody.innerHTML='<tr><td colspan="2" style="text-align:center;color:var(--muted);">本月無排假需求</td></tr>';
         return;
       }
-      tbody.innerHTML=leaves.map(l=>`<tr><td>${formatShortDate(l.date)}</td><td>${l.leaveType}</td></tr>`).join('');
+      tbody.innerHTML=leaves.map(l=>`<tr><td><b>${formatShortDate(l.date)}</b></td><td>${l.leaveType}</td></tr>`).join('');
     }
 
     // ── 錯誤 / 成功 ──
@@ -1052,14 +1475,14 @@
       if(!box) return;
 
       box.classList.remove('hidden');
-      hint.textContent=`查詢 ${state.targetMonth} 已送出的排假。`;
+      hint.textContent=`查詢 ${state.targetMonth} 已送出的排假`;
 
       if(!state.queriedLoaded){result.classList.add('hidden');empty.classList.add('hidden');return;}
       if(!state.queriedFound){result.classList.add('hidden');empty.classList.remove('hidden');return;}
 
       result.classList.remove('hidden');
       empty.classList.add('hidden');
-      title.textContent=monthText(state.viewYear,state.viewMonth);
+      title.innerHTML=monthText(state.viewYear,state.viewMonth);
 
       const qMap={};
       state.queriedLeaves.forEach(l=>{qMap[l.date]=l.leaveType;});
@@ -1087,6 +1510,7 @@
             else cls+=' has-leave-other';
           }
           td.className=cls;
+          td.style.cursor='default';
 
           let numCls='day-num';
           if(c.outside) numCls+=' outside';
@@ -1102,8 +1526,6 @@
               else if(leaveType==='選休') bodyClass+=' selected-off-text';
               else bodyClass+=' extra-leave-text';
               bodyHtml=`<div class="${bodyClass}">${leaveType}</div>`;
-            } else if(isHoliday){
-              bodyHtml='<div class="day-body"></div>';
             } else {
               bodyHtml='<div class="day-body"></div>';
             }
@@ -1114,7 +1536,6 @@
         tbody.appendChild(tr);
       });
 
-      // 帶入查詢結果到編輯器
       state.assignedLeaves={};
       state.queriedLeaves.forEach(l=>{state.assignedLeaves[l.date]=l.leaveType;});
     }
@@ -1206,7 +1627,7 @@
         if(!data||!data.ok){
           state.submitBusy=false;
           document.getElementById('submitBtn').disabled=false;
-          document.getElementById('submitBtn').textContent='正式送出';
+          document.getElementById('submitBtn').textContent='正式送出 ✓';
           showSubmitResult(`送出失敗：${data?.message||'未知錯誤'}`,'err');
           return;
         }
@@ -1214,12 +1635,12 @@
         state.submitBusy=false;
         state.submittedSuccess=true;
         document.getElementById('submitBtn').disabled=true;
-        document.getElementById('submitBtn').textContent='已送出';
+        document.getElementById('submitBtn').textContent='已送出 ✓';
         showSubmitResult(`✅ 送出成功！\n月份：${state.targetMonth}\n筆數：${data.writeCount||0}`,'ok');
       } catch(err){
         state.submitBusy=false;
         document.getElementById('submitBtn').disabled=false;
-        document.getElementById('submitBtn').textContent='正式送出';
+        document.getElementById('submitBtn').textContent='正式送出 ✓';
         showSubmitResult(`送出失敗：${err.message||err}`,'err');
       } finally {
         showGlobalLoading(false); setUiLocked(false);
@@ -1253,10 +1674,8 @@
 
       document.getElementById('step1Hint').textContent=`歡迎，${state.displayName}！`;
       showAuthBox(
-        `✅ 身份驗證成功
-`+
-        `身分：FT${state.isSP?'（SP）':''}
-`+
+        `✅ 身份驗證成功\n`+
+        `身分：FT${state.isSP?'（SP）':''}\n`+
         `排假月份：${state.targetMonth}`,
         'ok'
       );
@@ -1264,7 +1683,6 @@
       populateMonthSelector();
       document.getElementById('goStep2Btn').disabled=false;
       renderStep1QueryCalendar();
-
     }
 
     window.onload=init;
