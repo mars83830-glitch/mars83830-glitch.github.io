@@ -622,9 +622,12 @@
       z-index: 1;
     }
 
-    /* 國定假日那天，讓「日期 + 國徽章」整組水平置中 */
-    .day-top:has(.holiday-tag) {
-      justify-content: center;
+    /* 國徽章絕對置中於格子上方，不影響日期位置 */
+    .day-top .holiday-tag {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
     }
 
     .day-num {
