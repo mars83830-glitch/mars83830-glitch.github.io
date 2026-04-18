@@ -1174,6 +1174,13 @@
     function toDateKey(y,m,d) { return y + '-' + pad2(m) + '-' + pad2(d); }
     function monthText(y,m) { return '<span class="year">' + y + '</span>年 ' + m + ' 月'; }
 
+    function formatMonthLabel(ymStr){
+      if(!ymStr) return '';
+      var parts = ymStr.split('-');
+      if(parts.length < 2) return ymStr;
+      return Number(parts[0]) + ' 年 ' + Number(parts[1]) + ' 月';
+    }
+
     function getCurrentMonthValue(){
       var now = new Date();
       return now.getFullYear() + '-' + pad2(now.getMonth()+1);
@@ -1230,7 +1237,7 @@
       state.targetMonth = value;
       updateMonthDependentViews();
       renderStep1QueryCalendar();
-      document.getElementById('step1QueryHint').textContent = '查詢 ' + state.targetMonth + ' 已送出的排假';
+      document.getElementById('step1QueryHint').textContent = '查詢 ' + formatMonthLabel(state.targetMonth) + ' 已送出的排假';
       showAuthBox('✅ 身份驗證成功', 'ok');
     }
 
@@ -1497,7 +1504,7 @@
       var tbody = document.getElementById('submitPreviewBody');
       var monthEl = document.getElementById('submitMonthText');
       if(!tbody || !monthEl) return;
-      monthEl.textContent = '📅 月份：' + state.targetMonth;
+      monthEl.textContent = '📅 月份：' + formatMonthLabel(state.targetMonth);
       var leaves = getMonthLeaves();
       if(!leaves.length){
         tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--muted);">本月無排假需求</td></tr>';
@@ -1573,7 +1580,7 @@
       if(!box) return;
 
       box.classList.remove('hidden');
-      hint.textContent = '查詢 ' + state.targetMonth + ' 已送出的排假';
+      hint.textContent = '查詢 ' + formatMonthLabel(state.targetMonth) + ' 已送出的排假';
 
       if(!state.queriedLoaded){ result.classList.add('hidden'); empty.classList.add('hidden'); return; }
       if(!state.queriedFound){ result.classList.add('hidden'); empty.classList.remove('hidden'); return; }
