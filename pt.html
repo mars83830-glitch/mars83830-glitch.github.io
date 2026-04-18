@@ -613,8 +613,9 @@
 
     .day-top {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: flex-start;
+      gap: 2px;
       min-height: 18px;
       width: 100%;
       position: relative;
@@ -633,6 +634,19 @@
     .day-num.sat      { color: var(--brand-600); }
     .day-num.holiday  { color: var(--holiday-red); }
     .day-num.outside  { color: var(--muted); font-weight: 500; }
+
+    /* 日期旁的「國」小徽章 */
+    .holiday-tag {
+      padding: 1px 5px;
+      font-size: 9px;
+      font-weight: 800;
+      line-height: 1.3;
+      color: #fff;
+      background: var(--holiday-red);
+      border-radius: 4px;
+      letter-spacing: .02em;
+      flex-shrink: 0;
+    }
 
     .day-body {
       margin-top: 3px;
@@ -683,12 +697,6 @@
       padding: 0 1px;
       color: var(--muted);
       letter-spacing: .05em;
-    }
-
-    .day-off-text.holiday-off {
-      color: var(--holiday-red);
-      font-weight: 800;
-      font-size: 11px;
     }
 
     /* 可點擊的日期 */
@@ -1120,7 +1128,7 @@
     }
 
     /* ═══ 月份選擇器 ═══ */
-    .month-picker-row {
+    #monthPickerBox {
       margin-top: 14px;
       padding: 12px;
       background: linear-gradient(135deg, var(--brand-50) 0%, #fafbff 100%);
@@ -1128,18 +1136,19 @@
       border: 1px solid var(--brand-100);
     }
 
-    .month-picker-row label {
-      font-size: 12px;
+    #monthPickerBox .hint {
+      font-weight: 700;
       color: var(--brand-700);
-      font-weight: 800;
-      display: block;
-      margin-bottom: 6px;
+      font-size: 12px;
       letter-spacing: .05em;
       text-transform: uppercase;
+      margin-bottom: 6px !important;
     }
 
-    .month-picker-row select {
-      max-width: 240px;
+    #monthPicker {
+      width: 100%;
+      font-weight: 700;
+      color: var(--text);
       background: #fff;
     }
 
@@ -1167,7 +1176,7 @@
       .calendar-table td { height: 72px; padding: 3px 2px; }
       .day-num { font-size: 13px; }
       .day-shift-text, .day-off-text { font-size: 9px; min-height: 22px; }
-      .day-off-text.holiday-off { font-size: 10px; }
+      .holiday-tag { font-size: 8px; padding: 1px 4px; }
     }
 
     @media (max-width: 360px) {
@@ -1203,13 +1212,12 @@
       <!-- Step 1 -->
       <div class="card" id="step1">
         <h2 class="section-title">驗證排班權限</h2>
-        <div class="hint">系統會自動檢查排班權限。<br>僅開放每月 15 日～25 日使用。</div>
-        <div class="status" id="authStatus">驗證中...</div>
+        <div class="hint" id="authStatus">系統驗證中...</div>
         <div class="auth-box hidden" id="authBox"></div>
 
         <!-- SP 月份選擇器 -->
-        <div class="month-picker-row hidden" id="monthPickerBox">
-          <label>選擇排班月份</label>
+        <div class="hidden" id="monthPickerBox">
+          <div class="hint">排班月份</div>
           <select id="monthPicker" onchange="handleMonthChange(this.value)"></select>
         </div>
 
@@ -1498,7 +1506,7 @@
       }
       state.defaultMonthValue = selected;
       syncViewMonthFromValue(selected);
-      document.getElementById('authStatus').textContent = '驗證完成';
+      document.getElementById('authStatus').textContent = `歡迎，${state.displayName || '同事'}！`;
       showAuthBox(
         `✅ 身份驗證成功\n身分：PT${state.isSpecialAccess ? '（SP）' : ''}\n月份：${getSelectedMonthValue()}`,
         'ok'
@@ -1816,16 +1824,16 @@
     // ── Step3 月曆 ──
     function buildCellBody(assignedValue, outside, isHoliday){
       if (outside) return '';
-      if (!assignedValue) return isHoliday ? '<div class="day-off-text holiday-off">國假</div>' : '';
+      if (!assignedValue) return '';
       if (assignedValue==='OFF') return '<div class="day-off-text">休假</div>';
       const tpl = state.templates.find(t=>t.id===assignedValue);
-      if (!tpl) return isHoliday ? '<div class="day-off-text holiday-off">國假</div>' : '';
+      if (!tpl) return '';
       return `<div class="day-shift-text">${formatTimeOnly(tpl)}</div>`;
     }
 
     function buildQueryCellBody(item, outside, isHoliday){
       if (outside) return '';
-      if (!item) return isHoliday ? '<div class="day-off-text holiday-off">國假</div>' : '';
+      if (!item) return '';
       if (item.shift1Text==='X' && !item.shift2Text) return '<div class="day-off-text">休假</div>';
       const text = item.shift2Text ? `${item.shift1Text}\n${item.shift2Text}` : item.shift1Text;
       return `<div class="day-shift-text">${text}</div>`;
@@ -1870,7 +1878,8 @@
           else if (isHoliday) numCls += ' holiday';
           else if (weekday===0) numCls += ' sun';
           else if (weekday===6) numCls += ' sat';
-          td.innerHTML = `<div class="day-top"><div class="${numCls}">${c.day}</div></div><div class="day-body">${buildCellBody(assigned,c.outside,isHoliday)}</div>`;
+          const holidayBadge = (!c.outside && isHoliday) ? '<div class="holiday-tag">國</div>' : '';
+          td.innerHTML = `<div class="day-top"><div class="${numCls}">${c.day}</div>${holidayBadge}</div><div class="day-body">${buildCellBody(assigned,c.outside,isHoliday)}</div>`;
           if (!c.outside) td.onclick = ()=>assignDate(dateKey);
           tr.appendChild(td);
         });
@@ -1932,7 +1941,8 @@
           else if (isHoliday) numCls += ' holiday';
           else if (weekday===0) numCls += ' sun';
           else if (weekday===6) numCls += ' sat';
-          td.innerHTML = `<div class="day-top"><div class="${numCls}">${c.day}</div></div><div class="day-body">${buildQueryCellBody(item,c.outside,isHoliday)}</div>`;
+          const holidayBadge = (!c.outside && isHoliday) ? '<div class="holiday-tag">國</div>' : '';
+          td.innerHTML = `<div class="day-top"><div class="${numCls}">${c.day}</div>${holidayBadge}</div><div class="day-body">${buildQueryCellBody(item,c.outside,isHoliday)}</div>`;
           tr.appendChild(td);
         });
         tbody.appendChild(tr);
