@@ -1521,10 +1521,7 @@
       state.defaultMonthValue = selected;
       syncViewMonthFromValue(selected);
       document.getElementById('authStatus').textContent = `歡迎，${state.displayName || '同事'}！`;
-      showAuthBox(
-        `✅ 身份驗證成功\n身分：PT${state.isSpecialAccess ? '（SP）' : ''}\n月份：${formatMonthDisplay(getSelectedMonthValue())}`,
-        'ok'
-      );
+      showAuthBox('✅ 身份驗證成功', 'ok');
       setGoStep2Enabled(state.canEditSchedule);
       if (typeof renderMonthPicker === 'function') renderMonthPicker();
       renderStep1QueryCalendar();
