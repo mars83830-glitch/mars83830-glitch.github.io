@@ -776,6 +776,33 @@
     .day-body.extra-leave-text  { color: #065f46; }
     .day-body.holiday-text      { color: var(--holiday-red); font-size: 11px; }
 
+    /* 國定假日 + 假別雙行容器 */
+    .day-body-wrap {
+      margin-top: 2px;
+      width: 100%;
+      height: calc(100% - 20px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      overflow: hidden;
+    }
+
+    .day-body-wrap .day-body {
+      margin-top: 0;
+      height: auto;
+      flex: 0 0 auto;
+    }
+
+    .holiday-tag {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--holiday-red);
+      line-height: 1.1;
+      letter-spacing: .05em;
+    }
+
     /* 各假別文字顏色（與格子邊框呼應） */
     .day-body.text-慰勞假     { color: #047857; }
     .day-body.text-病假       { color: #be123c; }
@@ -1503,12 +1530,15 @@
 
           let bodyHtml='';
           if(!c.outside){
+            const holidayTag=isHoliday?'<div class="holiday-tag">國</div>':'';
             if(leaveType){
               let bodyClass='day-body';
               if(leaveType==='必休') bodyClass+=' required-off-text';
               else if(leaveType==='選休') bodyClass+=' selected-off-text';
               else bodyClass+=' text-'+leaveType;
-              bodyHtml=`<div class="${bodyClass}">${leaveType}</div>`;
+              bodyHtml=`<div class="day-body-wrap">${holidayTag}<div class="${bodyClass}">${leaveType}</div></div>`;
+            } else if(isHoliday){
+              bodyHtml=`<div class="day-body-wrap">${holidayTag}</div>`;
             } else {
               bodyHtml='<div class="day-body"></div>';
             }
@@ -1679,12 +1709,15 @@
 
           let bodyHtml='';
           if(!c.outside){
+            const holidayTag=isHoliday?'<div class="holiday-tag">國</div>':'';
             if(leaveType){
               let bodyClass='day-body';
               if(leaveType==='必休') bodyClass+=' required-off-text';
               else if(leaveType==='選休') bodyClass+=' selected-off-text';
               else bodyClass+=' text-'+leaveType;
-              bodyHtml=`<div class="${bodyClass}">${leaveType}</div>`;
+              bodyHtml=`<div class="day-body-wrap">${holidayTag}<div class="${bodyClass}">${leaveType}</div></div>`;
+            } else if(isHoliday){
+              bodyHtml=`<div class="day-body-wrap">${holidayTag}</div>`;
             } else {
               bodyHtml='<div class="day-body"></div>';
             }
