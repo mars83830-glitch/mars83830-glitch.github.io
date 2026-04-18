@@ -528,11 +528,11 @@
 
     .calendar-table td {
       position: relative;
-      height: 82px;
+      height: 68px;
       vertical-align: top;
       border-right: 1px solid var(--line-soft);
       border-bottom: 1px solid var(--line-soft);
-      padding: 5px 4px;
+      padding: 4px 3px;
       overflow: hidden;
       background: #fff;
       cursor: pointer;
@@ -553,11 +553,11 @@
     }
 
     .day-cell.sun-bg {
-      background: linear-gradient(0deg, #fff 82%, var(--sun) 82%);
+      background: linear-gradient(0deg, #fff 80%, var(--sun) 80%);
     }
 
     .day-cell.sat-bg {
-      background: linear-gradient(0deg, #fff 82%, var(--sat) 82%);
+      background: linear-gradient(0deg, #fff 80%, var(--sat) 80%);
     }
 
     .day-cell.holiday-bg {
@@ -566,23 +566,80 @@
         var(--holiday-soft);
     }
 
-    .day-cell.has-leave {
-      outline-offset: -2px;
-    }
+    .day-cell.has-leave { /* 共用規則（保留） */ }
 
+    /* 必休：琥珀金黃 */
     .day-cell.has-leave-required {
-      outline: 2px solid #f59e0b;
+      box-shadow: inset 0 0 0 1.5px #f59e0b;
       background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
     }
 
+    /* 選休：靛藍 */
     .day-cell.has-leave-selected {
-      outline: 2px solid var(--brand-500);
+      box-shadow: inset 0 0 0 1.5px var(--brand-500);
       background: linear-gradient(135deg, var(--brand-50) 0%, var(--brand-100) 100%) !important;
     }
 
-    .day-cell.has-leave-other {
-      outline: 2px solid var(--green);
-      background: linear-gradient(135deg, var(--green-soft) 0%, #a7f3d0 100%) !important;
+    /* ─── 其他假別 ─── */
+    /* 慰勞假：翠綠 */
+    .day-cell.leave-慰勞假 {
+      box-shadow: inset 0 0 0 1.5px #10b981;
+      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%) !important;
+    }
+    /* 病假：珊瑚粉紅 */
+    .day-cell.leave-病假 {
+      box-shadow: inset 0 0 0 1.5px #f43f5e;
+      background: linear-gradient(135deg, #ffe4e6 0%, #fecdd3 100%) !important;
+    }
+    /* 事假：薰衣草紫 */
+    .day-cell.leave-事假 {
+      box-shadow: inset 0 0 0 1.5px #a78bfa;
+      background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%) !important;
+    }
+    /* 公假：青藍 */
+    .day-cell.leave-公假 {
+      box-shadow: inset 0 0 0 1.5px #06b6d4;
+      background: linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%) !important;
+    }
+    /* 喪假：深灰 */
+    .day-cell.leave-喪假 {
+      box-shadow: inset 0 0 0 1.5px #64748b;
+      background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%) !important;
+    }
+    /* 生理假：玫瑰粉 */
+    .day-cell.leave-生理假 {
+      box-shadow: inset 0 0 0 1.5px #ec4899;
+      background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%) !important;
+    }
+    /* 婚假：櫻花粉 */
+    .day-cell.leave-婚假 {
+      box-shadow: inset 0 0 0 1.5px #f472b6;
+      background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%) !important;
+    }
+    /* 產檢假：薄荷綠 */
+    .day-cell.leave-產檢假 {
+      box-shadow: inset 0 0 0 1.5px #14b8a6;
+      background: linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%) !important;
+    }
+    /* 育嬰假：暖黃 */
+    .day-cell.leave-育嬰假 {
+      box-shadow: inset 0 0 0 1.5px #eab308;
+      background: linear-gradient(135deg, #fef9c3 0%, #fef08a 100%) !important;
+    }
+    /* 產假：淺薄荷 */
+    .day-cell.leave-產假 {
+      box-shadow: inset 0 0 0 1.5px #0d9488;
+      background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%) !important;
+    }
+    /* 陪產假：天空藍 */
+    .day-cell.leave-陪產假 {
+      box-shadow: inset 0 0 0 1.5px #0ea5e9;
+      background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%) !important;
+    }
+    /* 家庭照護：暖橘 */
+    .day-cell.leave-家庭照護 {
+      box-shadow: inset 0 0 0 1.5px #f97316;
+      background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%) !important;
     }
 
     .day-cell.invalid {
@@ -637,6 +694,20 @@
     .day-body.selected-off-text { color: var(--brand-700); }
     .day-body.extra-leave-text  { color: #065f46; }
     .day-body.holiday-text      { color: var(--holiday-red); font-size: 11px; }
+
+    /* 各假別文字顏色（與格子邊框呼應） */
+    .day-body.text-慰勞假     { color: #047857; }
+    .day-body.text-病假       { color: #be123c; }
+    .day-body.text-事假       { color: #6d28d9; }
+    .day-body.text-公假       { color: #0e7490; }
+    .day-body.text-喪假       { color: #334155; }
+    .day-body.text-生理假     { color: #be185d; }
+    .day-body.text-婚假       { color: #db2777; }
+    .day-body.text-產檢假     { color: #0f766e; }
+    .day-body.text-育嬰假     { color: #854d0e; }
+    .day-body.text-產假       { color: #0f766e; }
+    .day-body.text-陪產假     { color: #0369a1; }
+    .day-body.text-家庭照護   { color: #c2410c; }
 
     /* ═══ 錯誤 / 成功 ═══ */
     .error-box {
@@ -871,7 +942,8 @@
       .leave-type-grid-extra {
         grid-template-columns: repeat(3, 1fr);
       }
-      .calendar-table td { padding: 4px 2px; }
+      .calendar-table td { padding: 3px 2px; }
+      .day-num { font-size: 13px; }
       .day-body { font-size: 10px; }
     }
 
@@ -1331,7 +1403,7 @@
             cls+=' has-leave';
             if(leaveType==='必休') cls+=' has-leave-required';
             else if(leaveType==='選休') cls+=' has-leave-selected';
-            else cls+=' has-leave-other';
+            else cls+=' leave-'+leaveType;
           }
           if(!c.outside&&isInvalid) cls+=' invalid';
           td.className=cls;
@@ -1348,7 +1420,7 @@
               let bodyClass='day-body';
               if(leaveType==='必休') bodyClass+=' required-off-text';
               else if(leaveType==='選休') bodyClass+=' selected-off-text';
-              else bodyClass+=' extra-leave-text';
+              else bodyClass+=' text-'+leaveType;
               bodyHtml=`<div class="${bodyClass}">${leaveType}</div>`;
             } else {
               bodyHtml='<div class="day-body"></div>';
@@ -1507,7 +1579,7 @@
             cls+=' has-leave';
             if(leaveType==='必休') cls+=' has-leave-required';
             else if(leaveType==='選休') cls+=' has-leave-selected';
-            else cls+=' has-leave-other';
+            else cls+=' leave-'+leaveType;
           }
           td.className=cls;
           td.style.cursor='default';
@@ -1524,7 +1596,7 @@
               let bodyClass='day-body';
               if(leaveType==='必休') bodyClass+=' required-off-text';
               else if(leaveType==='選休') bodyClass+=' selected-off-text';
-              else bodyClass+=' extra-leave-text';
+              else bodyClass+=' text-'+leaveType;
               bodyHtml=`<div class="${bodyClass}">${leaveType}</div>`;
             } else {
               bodyHtml='<div class="day-body"></div>';
