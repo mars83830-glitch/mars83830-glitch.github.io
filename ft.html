@@ -515,8 +515,9 @@
       font-size: 18px;
       font-weight: 800;
       color: var(--text);
-      margin-bottom: 12px;
+      margin-bottom: 14px;
       letter-spacing: -.01em;
+      line-height: 1.3;
     }
 
     .modal-body {
@@ -525,13 +526,32 @@
       line-height: 1.8;
     }
 
-    .modal-rule-item {
-      margin: 8px 0;
-      white-space: pre-wrap;
-      padding: 8px 12px;
+    .rule-list {
+      margin: 0;
+      padding-left: 20px;
+      color: var(--text-soft);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .rule-list li {
+      margin-bottom: 10px;
+      padding-left: 4px;
+    }
+
+    .rule-list li::marker {
+      color: var(--brand-500);
+      font-weight: 800;
+    }
+
+    .modal-note {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+      padding: 10px 12px;
       background: var(--bg-soft);
       border-radius: var(--r-sm);
-      border-left: 3px solid var(--brand-500);
     }
 
     /* ═══ 月曆 ═══ */
@@ -1153,12 +1173,13 @@
   <div class="modal hidden" id="ruleModal" onclick="closeRuleModalByBackdrop(event)">
     <div class="modal-card">
       <div class="modal-title">📖 排假規則</div>
-      <div class="modal-body">
-        <div class="modal-rule-item">1. 必休每月最多 4 天，其中六日合計最多 2 天</div>
-        <div class="modal-rule-item">2. 選休天數依每月「YB桃園總群」公告為準，若排超出上限，即當月選休無效並由公司安排</div>
-        <div class="modal-rule-item">3. 特殊假上限依勞基法規定為準，請自行計算勿超休</div>
-        <div class="modal-rule-item">4. 如遇問題請先詢問主管再行排班，以保障自身權益</div>
-      </div>
+      <ol class="rule-list">
+        <li>必休每月最多 4 天，其中六日合計最多 2 天。</li>
+        <li>選休天數依每月「YB桃園總群」公告為準，若排超出上限，即當月選休無效並由公司安排。</li>
+        <li>特殊假上限依勞基法規定為準，請自行計算勿超休。</li>
+        <li>如遇問題請先詢問主管再行排班，以保障自身權益。</li>
+      </ol>
+      <div class="modal-note">關閉後可直接回到此頁繼續排假與修正。</div>
       <div class="footer-actions" style="margin-top:14px;">
         <button class="btn-primary" type="button" onclick="closeRuleModal()">我知道了</button>
       </div>
