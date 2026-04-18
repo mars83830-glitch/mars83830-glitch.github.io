@@ -456,15 +456,14 @@
       gap: 8px;
       align-items: end;
       width: 100%;
-      margin-top: 10px;
-      padding: 10px 0 2px;
-      border-top: 1px solid var(--line-soft);
+      padding: 2px 0;
     }
 
-    .template-flat-row:first-of-type {
-      border-top: none;
-      margin-top: 0;
-      padding-top: 2px;
+    /* 只有「第二段」row 在第一段下面時才加分隔線 */
+    .template-flat-row + .template-flat-row:not(.hidden) {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--line-soft);
     }
 
     .seg-label {
