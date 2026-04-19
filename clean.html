@@ -147,7 +147,7 @@
       .pumpRow input{padding:10px 4px;font-size:13px;letter-spacing:0}
       .pumpRow .carBtn{width:32px;height:40px}
     }
-    /* 打氣表頭:單行 */
+    /* 打氣表頭:車號 + 胎壓(橫跨兩欄) */
     .pumpHeader{
       display:flex;gap:5px;align-items:center;
       font-size:12px;color:#374151;font-weight:700;
@@ -155,7 +155,8 @@
     }
     .pumpHeader .h-cell{text-align:center}
     .pumpHeader .h-cellCar{flex:1.6}
-    .pumpHeader .h-cellPsi{flex:1}
+    /* 胎壓標題橫跨兩欄(前輪+後輪+中間 gap) */
+    .pumpHeader .h-cellPsiMerged{flex:2;text-align:center}
     .pumpHeader .h-cellBtn{flex-shrink:0;width:36px}
     @media (max-width:360px){
       .pumpHeader{font-size:11px}
@@ -618,12 +619,11 @@
   function renderPumpList() {
     const wrap = document.getElementById("carList");
 
-    // ★ 單行表頭:打氣前胎壓 / 打氣後胎壓
+    // ★ 單行表頭:車號 | 打氣前胎壓(橫跨前輪/後輪兩欄)
     const header =
       '<div class="pumpHeader">' +
         '<div class="h-cell h-cellCar">車號</div>' +
-        '<div class="h-cell h-cellPsi">打氣前胎壓</div>' +
-        '<div class="h-cell h-cellPsi">打氣後胎壓</div>' +
+        '<div class="h-cell h-cellPsiMerged">打氣前胎壓</div>' +
         '<div class="h-cell h-cellBtn"></div>' +
       '</div>';
 
