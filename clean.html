@@ -129,6 +129,19 @@
     .carBtnDel{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca}
     .carErrRow{font-size:12px;color:#dc2626;margin-top:-4px;margin-bottom:4px;padding-left:2px;min-height:16px}
 
+    /* 序號標記(車號列前方) */
+    .carSeq{
+      flex-shrink:0;width:28px;height:44px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:14px;font-weight:700;color:#6b7280;
+      font-family:"JetBrains Mono","Courier New",monospace;
+      user-select:none;
+    }
+    .pumpRow .carSeq{height:40px;width:24px;font-size:13px}
+    @media (max-width:360px){
+      .pumpRow .carSeq{width:20px;font-size:12px}
+    }
+
     /* 打氣列 */
     .pumpRow{display:flex;gap:5px;margin-bottom:4px;align-items:center;flex-wrap:nowrap}
     .pumpRow .cell{min-width:0;position:relative}
@@ -154,12 +167,14 @@
       margin-bottom:6px;padding:0 2px
     }
     .pumpHeader .h-cell{text-align:center}
+    .pumpHeader .h-seq{flex-shrink:0;width:24px}
     .pumpHeader .h-cellCar{flex:1.6}
     /* 胎壓標題橫跨兩欄(前輪+後輪+中間 gap) */
     .pumpHeader .h-cellPsiMerged{flex:2;text-align:center}
     .pumpHeader .h-cellBtn{flex-shrink:0;width:36px}
     @media (max-width:360px){
       .pumpHeader{font-size:11px}
+      .pumpHeader .h-seq{width:20px}
       .pumpHeader .h-cellBtn{width:32px}
     }
   </style>
@@ -223,7 +238,7 @@
         <div class="hint">點選下方作業類型開始填寫</div>
         <div class="taskGrid" style="margin-top:16px">
           <button class="taskBtn swap"  onclick="goTask('swap')"><span class="ic">🔋</span>換電作業</button>
-          <button class="taskBtn pump"  onclick="goTask('pump')"><span class="ic">💨</span>打氣作業</button>
+          <button class="taskBtn pump"  onclick="goTask('pump')"><span class="ic">🚲</span>打氣作業</button>
           <button class="taskBtn clean" onclick="goTask('clean')"><span class="ic">🧹</span>清潔作業</button>
         </div>
       </div>
@@ -242,7 +257,7 @@
           <div><span id="taskPill" class="pill swap">換電作業</span></div>
         </div>
 
-        <h2 style="margin-top:14px" id="formTitle">作業回報</h2>
+        <h2 style="margin-top:14px" id="formTitle">桃園營運處|作業回報</h2>
 
         <div class="row ac-wrap" id="stationWrap">
           <label>場站名稱<span class="req">*</span></label>
@@ -462,7 +477,7 @@
     document.getElementById("fStationClear").classList.remove("show");
     setStatusMsg("", true);
 
-    document.getElementById("formTitle").textContent = TASK_LABEL[type];
+    document.getElementById("formTitle").textContent = "桃園營運處|作業回報";
     const pill = document.getElementById("taskPill");
     pill.className = "pill " + type;
     pill.textContent = TASK_LABEL[type];
@@ -600,6 +615,7 @@
       const canDel = state.carNos.length > 1;
 
       return '<div class="carRow">' +
+        '<div class="carSeq">' + (i + 1) + '.</div>' +
         '<div class="carInputWrap">' +
           '<input class="carInput ' + valClass + '" ' +
             'type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="7" ' +
@@ -622,6 +638,7 @@
     // ★ 單行表頭:車號 | 打氣前胎壓(橫跨前輪/後輪兩欄)
     const header =
       '<div class="pumpHeader">' +
+        '<div class="h-seq"></div>' +
         '<div class="h-cell h-cellCar">車號</div>' +
         '<div class="h-cell h-cellPsiMerged">打氣前胎壓</div>' +
         '<div class="h-cell h-cellBtn"></div>' +
@@ -639,6 +656,7 @@
       const psiRearInvalid  = isPsiInvalid(item.psiRear)  ? "psiInvalid" : "";
 
       return '<div class="pumpRow">' +
+        '<div class="carSeq">' + (i + 1) + '.</div>' +
         '<div class="cell cellCar">' +
           '<input class="carInput ' + valClass + '" ' +
             'type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="7" ' +
