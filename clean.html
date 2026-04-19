@@ -16,7 +16,7 @@
     .row{margin:12px 0}
     label{display:block;font-size:13px;font-weight:700;margin-bottom:6px;color:#374151}
     label .req{color:#dc2626;margin-left:4px}
-    input,select,button{font-size:15px;padding:11px 12px;border:1px solid #d1d5db;border-radius:10px;width:100%;background:#fff;color:#111827}
+    input,select,button{font-size:15px;padding:11px 12px;border:1px solid #d1d5db;border-radius:10px;width:100%;background:#fff;color:#111827;font-family:inherit}
     select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%236b7280' d='M6 8L0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:10px;padding-right:32px}
     button{cursor:pointer;font-weight:700}
     .btnMain{background:#2563eb;color:#fff;border:0;padding:14px}
@@ -44,18 +44,48 @@
     .pill.swap{background:#dbeafe;color:#1e40af}
     .pill.pump{background:#fce7f3;color:#9d174d}
     .pill.clean{background:#ccfbf1;color:#115e59}
+
+    /* 自動完成下拉 */
+    .ac-wrap{position:relative}
+    .ac-input-wrap{position:relative}
+    .ac-clear{
+      position:absolute;top:50%;right:10px;transform:translateY(-50%);
+      background:#e5e7eb;color:#4b5563;border:0;border-radius:50%;
+      width:22px;height:22px;font-size:14px;line-height:1;padding:0;cursor:pointer;
+      display:none;align-items:center;justify-content:center
+    }
+    .ac-clear.show{display:flex}
+    .ac-list{
+      position:absolute;top:calc(100% + 4px);left:0;right:0;
+      background:#fff;border:1px solid #d1d5db;border-radius:10px;
+      max-height:260px;overflow-y:auto;z-index:50;
+      box-shadow:0 8px 24px rgba(0,0,0,.1);
+      display:none
+    }
+    .ac-list.show{display:block}
+    .ac-item{
+      padding:10px 12px;cursor:pointer;font-size:15px;
+      border-bottom:1px solid #f3f4f6
+    }
+    .ac-item:last-child{border-bottom:0}
+    .ac-item:hover,.ac-item.active{background:#eff6ff;color:#1e40af}
+    .ac-item.empty{color:#9ca3af;text-align:center;cursor:default}
+    .ac-item .tag{font-size:12px;color:#6b7280;margin-left:8px}
+    .ac-item:hover .tag,.ac-item.active .tag{color:#1e40af}
+    .ac-picked{
+      background:#f0fdf4 !important;border-color:#86efac !important;
+      color:#166534;font-weight:700
+    }
   </style>
 </head>
 <body>
 <div class="wrap">
 
-  <!-- 載入中 -->
   <div id="pageLoading" class="card center">
     <div class="big"><span class="spinner"></span>載入中...</div>
-    <div class="hint" id="loadingHint">正在驗證身分，請稍候</div>
+    <div class="hint" id="loadingHint">正在驗證身分,請稍候</div>
   </div>
 
-  <!-- 未授權 -->
   <div id="pageDenied" class="card hidden">
     <h2>⚠️ 尚未開通</h2>
     <div id="deniedMsg" class="hint" style="font-size:15px;color:#374151"></div>
@@ -64,7 +94,6 @@
     </div>
   </div>
 
-  <!-- 主選單 -->
   <div id="pageMenu" class="hidden">
     <div class="card">
       <div class="userbar">
@@ -81,31 +110,41 @@
     </div>
   </div>
 
-  <!-- 表單 -->
   <div id="pageForm" class="hidden">
     <div class="card">
       <div class="userbar">
         <div>👤 <span id="userNameForm">-</span></div>
-        <div>
-          <span id="taskPill" class="pill swap">換電作業</span>
-        </div>
+        <div><span id="taskPill" class="pill swap">換電作業</span></div>
       </div>
 
       <h2 style="margin-top:14px" id="formTitle">作業回報</h2>
 
       <div class="row">
         <label>行政區<span class="req">*</span></label>
-        <select id="fDistrict" onchange="onPick('district')"><option value="">請選擇</option></select>
+        <select id="fDistrict" onchange="onDistrictChange()"><option value="">請選擇</option></select>
       </div>
 
       <div class="row">
         <label>責任區<span class="req">*</span></label>
-        <select id="fZone" onchange="onPick('zone')"><option value="">請選擇</option></select>
+        <select id="fZone" onchange="onZoneChange()"><option value="">請選擇</option></select>
       </div>
 
-      <div class="row">
+      <div class="row ac-wrap" id="stationWrap">
         <label>場站名稱<span class="req">*</span></label>
-        <select id="fStation" onchange="onPick('station')"><option value="">請選擇</option></select>
+        <div class="ac-input-wrap">
+          <input
+            id="fStation"
+            type="text"
+            autocomplete="off"
+            placeholder="輸入場站名稱關鍵字搜尋"
+            oninput="onStationInput()"
+            onfocus="onStationFocus()"
+            onblur="onStationBlur()"
+            onkeydown="onStationKey(event)"
+          />
+          <button type="button" class="ac-clear" id="fStationClear" onclick="clearStation()">×</button>
+        </div>
+        <div class="ac-list" id="fStationList"></div>
       </div>
 
       <div class="row">
@@ -115,11 +154,11 @@
 
       <div id="pumpFields" class="hidden">
         <div class="row">
-          <label>打氣前 前胎壓（PSI）<span class="req">*</span></label>
+          <label>打氣前 前胎壓(PSI)<span class="req">*</span></label>
           <input id="fPsiFront" type="number" inputmode="decimal" placeholder="例如 40" step="0.1" min="0"/>
         </div>
         <div class="row">
-          <label>打氣前 後胎壓（PSI）<span class="req">*</span></label>
+          <label>打氣前 後胎壓(PSI)<span class="req">*</span></label>
           <input id="fPsiRear" type="number" inputmode="decimal" placeholder="例如 45" step="0.1" min="0"/>
         </div>
       </div>
@@ -133,7 +172,6 @@
     </div>
   </div>
 
-  <!-- 成功 -->
   <div id="pageSuccess" class="hidden">
     <div class="card center">
       <div style="font-size:56px">✅</div>
@@ -155,21 +193,21 @@
    * ⚠️ 部署前請改這兩行
    * ========================================================= */
   const LIFF_ID  = "2009174277-0sLqDpFL";
-  const GAS_URL  = "https://script.google.com/macros/s/AKfycbyk42RdWvnjzw8mk4V2BoKGoBr9a9g-RFRYqOlk1J7QKk-ojGsJsphamaLpzw4vA4Y/exec"; // .../exec 結尾
+  const GAS_URL  = "https://script.google.com/macros/s/AKfycbyk42RdWvnjzw8mk4V2BoKGoBr9a9g-RFRYqOlk1J7QKk-ojGsJsphamaLpzw4vA4Y/exec";
   /* ========================================================= */
 
   const state = {
     userId: "",
     displayName: "",
     userName: "",
-    taskType: "",      // swap / pump / clean
-    stations: [],      // [{district, zone, station}, ...]
-    picked: { district: "", zone: "", station: "" }
+    taskType: "",
+    stations: [],
+    picked: { district: "", zone: "", station: "" },
+    acActiveIndex: -1
   };
 
   const TASK_LABEL = { swap: "換電作業", pump: "打氣作業", clean: "清潔作業" };
 
-  /* ---------- 頁面切換 ---------- */
   function showPage(id) {
     ["pageLoading","pageDenied","pageMenu","pageForm","pageSuccess"].forEach(p => {
       document.getElementById(p).classList.toggle("hidden", p !== id);
@@ -182,14 +220,10 @@
     el.className = ok ? "ok" : "bad";
   }
 
-  /* ---------- LIFF ---------- */
   async function initLiff() {
     try {
       await liff.init({ liffId: LIFF_ID });
-      if (!liff.isLoggedIn()) {
-        liff.login();
-        return;
-      }
+      if (!liff.isLoggedIn()) { liff.login(); return; }
       const profile = await liff.getProfile();
       state.userId = profile.userId;
       state.displayName = profile.displayName || "";
@@ -198,17 +232,14 @@
     } catch (err) {
       showPage("pageDenied");
       document.getElementById("deniedMsg").textContent =
-        "LIFF 初始化失敗：" + (err && err.message ? err.message : err);
+        "LIFF 初始化失敗:" + (err && err.message ? err.message : err);
     }
   }
 
   function liffClose() {
-    try {
-      if (typeof liff !== "undefined" && liff.closeWindow) liff.closeWindow();
-    } catch (_) {}
+    try { if (typeof liff !== "undefined" && liff.closeWindow) liff.closeWindow(); } catch (_) {}
   }
 
-  /* ---------- 呼叫後端 ---------- */
   async function callApi(action, body) {
     const res = await fetch(GAS_URL, {
       method: "POST",
@@ -218,7 +249,6 @@
     return await res.json();
   }
 
-  /* ---------- 驗證身分 ---------- */
   async function checkAuth() {
     const res = await callApi("checkAuth", {
       userId: state.userId,
@@ -227,8 +257,7 @@
 
     if (!res.ok || !res.canUse) {
       showPage("pageDenied");
-      document.getElementById("deniedMsg").textContent =
-        res.message || "無使用權限";
+      document.getElementById("deniedMsg").textContent = res.message || "無使用權限";
       return;
     }
 
@@ -236,7 +265,6 @@
     document.getElementById("userName").textContent = state.userName;
     document.getElementById("userNameForm").textContent = state.userName;
 
-    // 預先抓場站（之後進表單就不用等）
     try {
       const r = await callApi("getStations", {});
       if (r.ok) state.stations = r.stations || [];
@@ -245,7 +273,6 @@
     showPage("pageMenu");
   }
 
-  /* ---------- 選單 ---------- */
   function goMenu() {
     state.taskType = "";
     state.picked = { district: "", zone: "", station: "" };
@@ -259,6 +286,7 @@
     document.getElementById("fCarNo").value = "";
     document.getElementById("fPsiFront").value = "";
     document.getElementById("fPsiRear").value = "";
+    document.getElementById("fStation").value = "";
     setStatus("", true);
 
     document.getElementById("formTitle").textContent = TASK_LABEL[type];
@@ -268,41 +296,47 @@
 
     document.getElementById("pumpFields").classList.toggle("hidden", type !== "pump");
 
-    refillDropdowns();
+    rebuildAll();
     showPage("pageForm");
   }
 
-  /* ---------- 三層聯動 ---------- */
-  // 根據 state.picked 篩選可用選項，並重新填下拉
-  function refillDropdowns() {
+  /* =========================================================
+   * 三層聯動核心
+   * ========================================================= */
+  function availableOptions(target) {
     const { district, zone, station } = state.picked;
+    const filtered = state.stations.filter(s => {
+      if (target !== "district" && district && s.district !== district) return false;
+      if (target !== "zone"     && zone     && s.zone     !== zone)     return false;
+      if (target !== "station"  && station  && s.station  !== station)  return false;
+      return true;
+    });
+    const set = new Set(filtered.map(s => s[target]));
+    return Array.from(set).sort((a,b) => String(a).localeCompare(String(b), "zh-Hant"));
+  }
 
-    // 篩選函式：某一欄要顯示哪些選項時，用「其他已選欄」當條件
-    function optionsFor(target) {
-      const filtered = state.stations.filter(s => {
-        if (target !== "district" && district && s.district !== district) return false;
-        if (target !== "zone"     && zone     && s.zone     !== zone)     return false;
-        if (target !== "station"  && station  && s.station  !== station)  return false;
-        return true;
-      });
-      const set = new Set(filtered.map(s => s[target]));
-      return Array.from(set).sort((a,b) => a.localeCompare(b, "zh-Hant"));
+  function rebuildAll() {
+    const dOpts = availableOptions("district");
+    const zOpts = availableOptions("zone");
+    const sOpts = availableOptions("station");
+
+    fillSelect("fDistrict", dOpts, state.picked.district);
+    fillSelect("fZone",     zOpts, state.picked.zone);
+
+    const stationInput = document.getElementById("fStation");
+    stationInput.value = state.picked.station || "";
+    stationInput.classList.toggle("ac-picked", !!state.picked.station);
+    document.getElementById("fStationClear").classList.toggle("show", !!state.picked.station);
+
+    if (document.getElementById("fStationList").classList.contains("show")) {
+      renderStationList(stationInput.value);
     }
 
-    const dOpts = optionsFor("district");
-    const zOpts = optionsFor("zone");
-    const sOpts = optionsFor("station");
-
-    fillSelect("fDistrict", dOpts, district);
-    fillSelect("fZone",     zOpts, zone);
-    fillSelect("fStation",  sOpts, station);
-
-    // 唯一值自動填（會觸發下一輪篩選）
     let changed = false;
-    if (!district && dOpts.length === 1) { state.picked.district = dOpts[0]; changed = true; }
-    if (!zone     && zOpts.length === 1) { state.picked.zone     = zOpts[0]; changed = true; }
-    if (!station  && sOpts.length === 1) { state.picked.station  = sOpts[0]; changed = true; }
-    if (changed) refillDropdowns();
+    if (!state.picked.district && dOpts.length === 1) { state.picked.district = dOpts[0]; changed = true; }
+    if (!state.picked.zone     && zOpts.length === 1) { state.picked.zone     = zOpts[0]; changed = true; }
+    if (!state.picked.station  && sOpts.length === 1) { state.picked.station  = sOpts[0]; changed = true; }
+    if (changed) rebuildAll();
   }
 
   function fillSelect(id, options, selected) {
@@ -312,19 +346,153 @@
       options.map(o => `<option value="${escapeHtml(o)}"${o === prev ? " selected" : ""}>${escapeHtml(o)}</option>`).join("");
   }
 
-  function onPick(which) {
+  function onDistrictChange() {
     state.picked.district = document.getElementById("fDistrict").value;
-    state.picked.zone     = document.getElementById("fZone").value;
-    state.picked.station  = document.getElementById("fStation").value;
-    // 如果使用者把某一欄改成「請選擇」（空值），就讓它空出來，下拉重新計算
-    refillDropdowns();
+    rebuildAll();
+  }
+
+  function onZoneChange() {
+    state.picked.zone = document.getElementById("fZone").value;
+    rebuildAll();
+  }
+
+  /* =========================================================
+   * 場站自動完成
+   * ========================================================= */
+  function onStationInput() {
+    const input = document.getElementById("fStation");
+    const q = input.value.trim();
+
+    if (state.picked.station && state.picked.station !== q) {
+      state.picked.station = "";
+      input.classList.remove("ac-picked");
+      document.getElementById("fStationClear").classList.toggle("show", !!q);
+      rebuildAll();
+      input.value = q;
+    }
+
+    renderStationList(q);
+    state.acActiveIndex = -1;
+  }
+
+  function onStationFocus() {
+    const input = document.getElementById("fStation");
+    renderStationList(input.value.trim());
+  }
+
+  function onStationBlur() {
+    setTimeout(() => {
+      document.getElementById("fStationList").classList.remove("show");
+    }, 200);
+  }
+
+  function onStationKey(e) {
+    const list = document.getElementById("fStationList");
+    const items = list.querySelectorAll(".ac-item:not(.empty)");
+    if (!list.classList.contains("show") || items.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      state.acActiveIndex = Math.min(state.acActiveIndex + 1, items.length - 1);
+      updateAcActive(items);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      state.acActiveIndex = Math.max(state.acActiveIndex - 1, 0);
+      updateAcActive(items);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const idx = state.acActiveIndex >= 0 ? state.acActiveIndex : 0;
+      const name = items[idx].getAttribute("data-name");
+      if (name) pickStation(name);
+    } else if (e.key === "Escape") {
+      list.classList.remove("show");
+    }
+  }
+
+  function updateAcActive(items) {
+    items.forEach((it, i) => it.classList.toggle("active", i === state.acActiveIndex));
+    if (state.acActiveIndex >= 0 && items[state.acActiveIndex]) {
+      items[state.acActiveIndex].scrollIntoView({ block: "nearest" });
+    }
+  }
+
+  function renderStationList(keyword) {
+    const list = document.getElementById("fStationList");
+    const kw = String(keyword || "").trim().toLowerCase();
+
+    let candidates = state.stations.filter(s => {
+      if (state.picked.district && s.district !== state.picked.district) return false;
+      if (state.picked.zone     && s.zone     !== state.picked.zone)     return false;
+      return true;
+    });
+
+    if (kw) {
+      candidates = candidates.filter(s =>
+        s.station.toLowerCase().includes(kw) ||
+        s.district.toLowerCase().includes(kw) ||
+        s.zone.toLowerCase().includes(kw)
+      );
+    }
+
+    const seen = new Set();
+    const unique = [];
+    for (const s of candidates) {
+      if (seen.has(s.station)) continue;
+      seen.add(s.station);
+      unique.push(s);
+    }
+
+    unique.sort((a, b) => a.station.localeCompare(b.station, "zh-Hant"));
+
+    const MAX = 50;
+    const shown = unique.slice(0, MAX);
+
+    if (shown.length === 0) {
+      list.innerHTML = '<div class="ac-item empty">找不到符合的場站</div>';
+    } else {
+      list.innerHTML = shown.map(s => {
+        const tag = (s.district && s.zone) ? '<span class="tag">' + escapeHtml(s.district) + ' / ' + escapeHtml(s.zone) + '</span>' : '';
+        return '<div class="ac-item" data-name="' + escapeHtml(s.station) + '" onmousedown="pickStation(\'' + escapeJs(s.station) + '\')">' + escapeHtml(s.station) + tag + '</div>';
+      }).join("") + (unique.length > MAX ? '<div class="ac-item empty">還有 ' + (unique.length - MAX) + ' 筆...請輸入更精確的關鍵字</div>' : "");
+    }
+
+    list.classList.add("show");
+    state.acActiveIndex = -1;
+  }
+
+  function pickStation(name) {
+    const match = state.stations.find(s =>
+      s.station === name &&
+      (!state.picked.district || s.district === state.picked.district) &&
+      (!state.picked.zone     || s.zone     === state.picked.zone)
+    ) || state.stations.find(s => s.station === name);
+
+    if (!match) return;
+
+    state.picked.station  = match.station;
+    state.picked.district = match.district;
+    state.picked.zone     = match.zone;
+
+    document.getElementById("fStationList").classList.remove("show");
+    rebuildAll();
+  }
+
+  function clearStation() {
+    state.picked.station = "";
+    document.getElementById("fStation").value = "";
+    document.getElementById("fStation").classList.remove("ac-picked");
+    document.getElementById("fStationClear").classList.remove("show");
+    rebuildAll();
+    document.getElementById("fStation").focus();
   }
 
   function escapeHtml(s){
     return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
   }
+  function escapeJs(s){
+    return String(s).replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+  }
 
-  /* ---------- 送出 ---------- */
   async function submitForm() {
     const btn = document.getElementById("btnSubmit");
     const { district, zone, station } = state.picked;
@@ -354,8 +522,7 @@
         displayName: state.displayName,
         taskType: state.taskType,
         district, zone, station,
-        carNo,
-        psiFront, psiRear
+        carNo, psiFront, psiRear
       });
 
       if (!res.ok) {
@@ -368,27 +535,21 @@
       startCountdown(3);
     } catch (err) {
       btn.disabled = false;
-      setStatus("連線失敗：" + (err && err.message ? err.message : err), false);
+      setStatus("連線失敗:" + (err && err.message ? err.message : err), false);
     }
   }
 
-  /* ---------- 倒數關閉 ---------- */
   function startCountdown(sec) {
     const el = document.getElementById("countdown");
     let n = sec;
     el.textContent = n;
     const t = setInterval(() => {
       n--;
-      if (n <= 0) {
-        clearInterval(t);
-        liffClose();
-      } else {
-        el.textContent = n;
-      }
+      if (n <= 0) { clearInterval(t); liffClose(); }
+      else { el.textContent = n; }
     }, 1000);
   }
 
-  /* ---------- 啟動 ---------- */
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initLiff);
   } else {
