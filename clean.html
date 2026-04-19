@@ -42,7 +42,6 @@
     .pill.pump{background:#fce7f3;color:#9d174d}
     .pill.clean{background:#ccfbf1;color:#115e59}
 
-    /* 返回按鈕(表單上方) */
     .backBar{
       display:flex;align-items:center;gap:6px;
       padding:6px 10px;margin-bottom:10px;
@@ -54,23 +53,14 @@
     .backBar:hover,.backBar:active{background:#f3f4f6;border-color:#d1d5db}
     .backBar .ic{font-size:16px;line-height:1}
 
-    /* 狀態頁 */
-    .statusWrap{
-      min-height:100vh;
-      display:flex;align-items:center;justify-content:center;
-      padding:16px;
-    }
+    .statusWrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
     .statusCard{
       background:#fff;border-radius:24px;
       box-shadow:0 12px 32px rgba(0,0,0,.10);
       padding:36px 28px 32px;
-      width:min(360px,92vw);
-      text-align:center;
+      width:min(360px,92vw);text-align:center;
     }
-    .app-header{
-      display:flex;align-items:center;justify-content:center;
-      gap:7px;margin-bottom:24px;
-    }
+    .app-header{display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:24px}
     .app-dot{width:8px;height:8px;border-radius:50%;background:#4b89dc}
     .app-name{font-size:12px;font-weight:700;color:#4b89dc;letter-spacing:.04em}
     .icon-circle{
@@ -82,17 +72,14 @@
     .icon-circle.yellow { background:#fef3c7 }
     .icon-circle.red    { background:#fee2e2 }
     .icon-circle.orange { background:#ffedd5 }
-
     .status-title{font-size:18px;font-weight:900;margin-bottom:8px;line-height:1.4}
     .status-desc {font-size:14px;color:#6b7280;line-height:1.7;white-space:pre-wrap}
-
     .divider{width:40px;height:2px;background:#f3f4f6;border-radius:2px;margin:18px auto}
     .badge{display:inline-block;font-size:12px;font-weight:700;padding:5px 16px;border-radius:20px}
     .badge.blue   { background:#dbeafe;color:#1d4ed8 }
     .badge.yellow { background:#fef3c7;color:#92400e }
     .badge.red    { background:#fee2e2;color:#991b1b }
     .badge.orange { background:#ffedd5;color:#9a3412 }
-
     .status-row{display:flex;align-items:center;justify-content:center;gap:7px;font-size:13px;color:#4b89dc;font-weight:700}
     .spinner-sm{
       width:14px;height:14px;border-radius:50%;
@@ -152,6 +139,7 @@
       font-family:"JetBrains Mono","Courier New",monospace;
       font-size:14px;letter-spacing:0.5px;text-align:center
     }
+    .pumpRow input.psiInvalid{border-color:#dc2626;background:#fef2f2}
     .pumpRow .cellBtn{flex-shrink:0}
     .pumpRow .carBtn{width:36px;height:40px;font-size:18px}
     @media (max-width:360px){
@@ -159,23 +147,24 @@
       .pumpRow input{padding:10px 4px;font-size:13px;letter-spacing:0}
       .pumpRow .carBtn{width:32px;height:40px}
     }
-    /* 打氣表頭:兩行 */
+    /* 打氣表頭:單行 */
     .pumpHeader{
-      display:flex;gap:5px;align-items:flex-end;
-      font-size:11px;color:#6b7280;font-weight:700;
+      display:flex;gap:5px;align-items:center;
+      font-size:12px;color:#374151;font-weight:700;
       margin-bottom:6px;padding:0 2px
     }
-    .pumpHeader .h-cell{display:flex;flex-direction:column;align-items:center;line-height:1.3}
-    .pumpHeader .h-cell .h-sub{color:#9ca3af;font-size:10px;font-weight:600}
+    .pumpHeader .h-cell{text-align:center}
     .pumpHeader .h-cellCar{flex:1.6}
     .pumpHeader .h-cellPsi{flex:1}
     .pumpHeader .h-cellBtn{flex-shrink:0;width:36px}
-    @media (max-width:360px){.pumpHeader .h-cellBtn{width:32px}}
+    @media (max-width:360px){
+      .pumpHeader{font-size:11px}
+      .pumpHeader .h-cellBtn{width:32px}
+    }
   </style>
 </head>
 <body>
 
-<!-- 狀態頁 -->
 <div id="statusPage" class="statusWrap">
   <div class="statusCard">
     <div class="app-header">
@@ -220,7 +209,6 @@
   </div>
 </div>
 
-<!-- 應用主體 -->
 <div id="appPage" class="hidden">
   <div class="wrap">
 
@@ -242,7 +230,6 @@
 
     <div id="pageForm" class="hidden">
 
-      <!-- ★ 返回主選單按鈕(表單最上方,明顯可見) -->
       <button type="button" class="backBar" onclick="goMenu()">
         <span class="ic">←</span>
         <span>返回主選單</span>
@@ -316,6 +303,8 @@
 
   const CAR_NO_PATTERN = /^0\d{6}$/;
   const CAR_NO_PLACEHOLDER = "0301234";
+  const PSI_MIN = 0;
+  const PSI_MAX = 100;
 
   const state = {
     userId: "",
@@ -543,10 +532,9 @@
 
     let candidates = state.stations.slice();
     if (kw) {
+      // ★ 只比對「場站名稱」,不再比對行政區/責任區
       candidates = candidates.filter(s =>
-        s.station.toLowerCase().includes(kw) ||
-        s.district.toLowerCase().includes(kw) ||
-        s.zone.toLowerCase().includes(kw)
+        s.station.toLowerCase().includes(kw)
       );
     }
 
@@ -630,20 +618,12 @@
   function renderPumpList() {
     const wrap = document.getElementById("carList");
 
-    // 打氣表頭:兩行(打氣前 / 前胎壓)
+    // ★ 單行表頭:打氣前胎壓 / 打氣後胎壓
     const header =
       '<div class="pumpHeader">' +
-        '<div class="h-cell h-cellCar">' +
-          '<span>車號</span>' +
-        '</div>' +
-        '<div class="h-cell h-cellPsi">' +
-          '<span class="h-sub">打氣前</span>' +
-          '<span>前胎壓</span>' +
-        '</div>' +
-        '<div class="h-cell h-cellPsi">' +
-          '<span class="h-sub">打氣前</span>' +
-          '<span>後胎壓</span>' +
-        '</div>' +
+        '<div class="h-cell h-cellCar">車號</div>' +
+        '<div class="h-cell h-cellPsi">打氣前胎壓</div>' +
+        '<div class="h-cell h-cellPsi">打氣後胎壓</div>' +
         '<div class="h-cell h-cellBtn"></div>' +
       '</div>';
 
@@ -654,6 +634,10 @@
       const isLast = (i === state.pumpData.length - 1);
       const canDel = state.pumpData.length > 1;
 
+      // 胎壓驗證樣式
+      const psiFrontInvalid = isPsiInvalid(item.psiFront) ? "psiInvalid" : "";
+      const psiRearInvalid  = isPsiInvalid(item.psiRear)  ? "psiInvalid" : "";
+
       return '<div class="pumpRow">' +
         '<div class="cell cellCar">' +
           '<input class="carInput ' + valClass + '" ' +
@@ -663,14 +647,18 @@
             'oninput="onPumpCarInput(' + i + ', this)" />' +
         '</div>' +
         '<div class="cell cellPsi">' +
-          '<input type="number" inputmode="decimal" step="0.1" min="0" ' +
-            'placeholder="前" ' +
+          '<input type="number" inputmode="decimal" step="0.1" ' +
+            'min="' + PSI_MIN + '" max="' + PSI_MAX + '" ' +
+            'class="' + psiFrontInvalid + '" ' +
+            'placeholder="前輪" ' +
             'value="' + escapeHtml(item.psiFront || "") + '" ' +
             'oninput="onPumpPsiInput(' + i + ', \'psiFront\', this)" />' +
         '</div>' +
         '<div class="cell cellPsi">' +
-          '<input type="number" inputmode="decimal" step="0.1" min="0" ' +
-            'placeholder="後" ' +
+          '<input type="number" inputmode="decimal" step="0.1" ' +
+            'min="' + PSI_MIN + '" max="' + PSI_MAX + '" ' +
+            'class="' + psiRearInvalid + '" ' +
+            'placeholder="後輪" ' +
             'value="' + escapeHtml(item.psiRear || "") + '" ' +
             'oninput="onPumpPsiInput(' + i + ', \'psiRear\', this)" />' +
         '</div>' +
@@ -697,6 +685,15 @@
     if (val.length !== 7) return "車號需 7 位數";
     if (!val.startsWith("0")) return "車號開頭必須為 0";
     return "車號格式錯誤";
+  }
+
+  // 胎壓驗證:空白不算錯(會在送出時擋),有值時要在 0-100 之間且為數字
+  function isPsiInvalid(val) {
+    const s = String(val || "").trim();
+    if (!s) return false;
+    const n = Number(s);
+    if (!isFinite(n)) return true;
+    return n < PSI_MIN || n > PSI_MAX;
   }
 
   function onCarInput(idx, input) {
@@ -730,7 +727,22 @@
   }
 
   function onPumpPsiInput(idx, key, input) {
-    state.pumpData[idx][key] = input.value;
+    let v = input.value;
+    // 即時擋下超過 100 的輸入:如果超過就回退到 100
+    if (v !== "" && isFinite(Number(v))) {
+      const n = Number(v);
+      if (n > PSI_MAX) {
+        v = String(PSI_MAX);
+        input.value = v;
+      } else if (n < PSI_MIN) {
+        v = String(PSI_MIN);
+        input.value = v;
+      }
+    }
+    state.pumpData[idx][key] = v;
+
+    // 即時更新紅框樣式
+    input.classList.toggle("psiInvalid", isPsiInvalid(v));
   }
 
   function addRow() {
@@ -760,7 +772,6 @@
     renderCarArea();
   }
 
-  /* utils */
   function escapeHtml(s){
     return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
   }
@@ -768,7 +779,6 @@
     return String(s == null ? "" : s).replace(/\\/g,"\\\\").replace(/'/g,"\\'");
   }
 
-  /* 送出 */
   async function submitForm() {
     const btn = document.getElementById("btnSubmit");
 
@@ -808,6 +818,10 @@
         if (!pf || !pr) { setStatusMsg("第 " + (i+1) + " 列前/後胎壓必填", false); return; }
         if (!isFinite(Number(pf)) || !isFinite(Number(pr))) {
           setStatusMsg("第 " + (i+1) + " 列胎壓須為數字", false); return;
+        }
+        const nf = Number(pf), nr = Number(pr);
+        if (nf < PSI_MIN || nf > PSI_MAX || nr < PSI_MIN || nr > PSI_MAX) {
+          setStatusMsg("第 " + (i+1) + " 列胎壓需在 " + PSI_MIN + "-" + PSI_MAX + " 之間", false); return;
         }
       }
 
