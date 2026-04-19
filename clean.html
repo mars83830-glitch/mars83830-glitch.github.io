@@ -243,7 +243,6 @@
       <div class="card">
         <div class="userbar">
           <div>👤 <span id="userName">-</span></div>
-          <div class="ok">已登入</div>
         </div>
         <h2 style="margin-top:14px">請選擇作業</h2>
         <div class="hint">點選下方作業類型開始填寫</div>
@@ -257,18 +256,13 @@
 
     <div id="pageForm" class="hidden">
 
-      <button type="button" class="backBar" onclick="goMenu()">
-        <span class="ic">←</span>
-        <span>返回主選單</span>
-      </button>
-
       <div class="card">
         <div class="userbar">
           <div>👤 <span id="userNameForm">-</span></div>
           <div><span id="taskPill" class="pill swap">換電作業</span></div>
         </div>
 
-        <h2 style="margin-top:14px" id="formTitle">作業回報．桃園營運處</h2>
+        <h2 style="margin-top:14px" id="formTitle">作業回報</h2>
 
         <div class="row ac-wrap" id="stationWrap">
           <label>場站名稱<span class="req">*</span></label>
@@ -488,7 +482,7 @@
     document.getElementById("fStationClear").classList.remove("show");
     setStatusMsg("", true);
 
-    document.getElementById("formTitle").textContent = "作業回報．桃園營運處";
+    document.getElementById("formTitle").textContent = TASK_LABEL[type] + "回報";
     const pill = document.getElementById("taskPill");
     pill.className = "pill " + type;
     pill.textContent = TASK_LABEL[type];
