@@ -76,22 +76,55 @@
       color:#166534;font-weight:700
     }
 
-    /* 車號列表 */
-    .carRow{display:flex;gap:8px;margin-bottom:8px;align-items:flex-start}
-    .carInputWrap{flex:1;position:relative}
-    .carInput{width:100%;font-family:"JetBrains Mono","Courier New",monospace;letter-spacing:1px}
+    /* =========================
+     * 車號列表(通用)
+     * ========================= */
+    .carRow{display:flex;gap:6px;margin-bottom:8px;align-items:flex-start}
+    .carInputWrap{flex:1;min-width:0;position:relative}
+    .carInput{width:100%;font-family:"JetBrains Mono","Courier New",monospace;letter-spacing:1px;padding:11px 10px}
     .carInput.invalid{border-color:#dc2626;background:#fef2f2}
     .carInput.valid{border-color:#86efac;background:#f0fdf4}
     .carBtn{
-      flex-shrink:0;width:44px;height:44px;padding:0;
-      font-size:22px;font-weight:900;border-radius:10px;
+      flex-shrink:0;width:40px;height:44px;padding:0;
+      font-size:20px;font-weight:900;border-radius:10px;
       display:flex;align-items:center;justify-content:center
     }
     .carBtnAdd{background:#2563eb;color:#fff;border:0}
     .carBtnDel{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca}
-    .carBtnDel:disabled{opacity:.3;cursor:not-allowed}
-    .carNote{font-size:12px;color:#6b7280;margin-top:-4px;margin-bottom:4px}
-    .carError{font-size:12px;color:#dc2626;margin-top:2px;min-height:16px}
+    .carErrRow{font-size:12px;color:#dc2626;margin-top:-4px;margin-bottom:4px;padding-left:2px;min-height:16px}
+
+    /* =========================
+     * 打氣列:車號 + 前胎壓 + 後胎壓 + 按鈕(橫排不換行)
+     * ========================= */
+    .pumpRow{display:flex;gap:5px;margin-bottom:4px;align-items:center;flex-wrap:nowrap}
+    .pumpRow .cell{min-width:0;position:relative}
+    .pumpRow .cellCar{flex:1.6}          /* 車號:給多一點寬度 */
+    .pumpRow .cellPsi{flex:1}            /* 前/後胎壓:平均分 */
+    .pumpRow input{
+      width:100%;padding:10px 6px;
+      font-family:"JetBrains Mono","Courier New",monospace;
+      font-size:14px;letter-spacing:0.5px;text-align:center
+    }
+    .pumpRow .cellBtn{flex-shrink:0}
+    .pumpRow .carBtn{width:36px;height:40px;font-size:18px}
+    /* 非常窄的手機(<360px)再縮 padding */
+    @media (max-width:360px){
+      .pumpRow{gap:3px}
+      .pumpRow input{padding:10px 4px;font-size:13px;letter-spacing:0}
+      .pumpRow .carBtn{width:32px;height:40px}
+    }
+    /* 胎壓欄的迷你標籤(在輸入上方) */
+    .pumpHeader{
+      display:flex;gap:5px;align-items:center;
+      font-size:11px;color:#6b7280;font-weight:700;
+      margin-bottom:4px;padding:0 2px
+    }
+    .pumpHeader .h-cellCar{flex:1.6;text-align:center}
+    .pumpHeader .h-cellPsi{flex:1;text-align:center}
+    .pumpHeader .h-cellBtn{flex-shrink:0;width:36px}
+    @media (max-width:360px){
+      .pumpHeader .h-cellBtn{width:32px}
+    }
   </style>
 </head>
 <body>
@@ -135,10 +168,9 @@
 
       <h2 style="margin-top:14px" id="formTitle">作業回報</h2>
 
-      <!-- 場站搜尋 -->
+      <!-- 場站 -->
       <div class="row ac-wrap" id="stationWrap">
         <label>場站名稱<span class="req">*</span></label>
-        <div class="carNote">點選清單內的場站才能送出(不能只打關鍵字)</div>
         <div class="ac-input-wrap">
           <input
             id="fStation"
@@ -155,23 +187,11 @@
         <div class="ac-list" id="fStationList"></div>
       </div>
 
-      <!-- 車號(可多筆) -->
+      <!-- 車號區(隨作業類型切換) -->
       <div class="row">
-        <label>車號<span class="req">*</span></label>
-        <div class="carNote">必須 7 位數,開頭為 0(例如 0123456)。可新增多筆,一次上傳多台。</div>
+        <label id="carLabel">車號<span class="req">*</span></label>
+        <div class="hint" style="margin-bottom:8px">可新增多筆,一次上傳多台</div>
         <div id="carList"></div>
-      </div>
-
-      <!-- 胎壓(僅打氣) -->
-      <div id="pumpFields" class="hidden">
-        <div class="row">
-          <label>打氣前 前胎壓(PSI)<span class="req">*</span></label>
-          <input id="fPsiFront" type="number" inputmode="decimal" placeholder="例如 40" step="0.1" min="0"/>
-        </div>
-        <div class="row">
-          <label>打氣前 後胎壓(PSI)<span class="req">*</span></label>
-          <input id="fPsiRear" type="number" inputmode="decimal" placeholder="例如 45" step="0.1" min="0"/>
-        </div>
       </div>
 
       <div id="statusMsg"></div>
@@ -207,7 +227,7 @@
   const GAS_URL  = "https://script.google.com/macros/s/AKfycbyk42RdWvnjzw8mk4V2BoKGoBr9a9g-RFRYqOlk1J7QKk-ojGsJsphamaLpzw4vA4Y/exec";
   /* ========================================================= */
 
-  const CAR_NO_PATTERN = /^0\d{6}$/; // 0 開頭 + 共 7 位數字
+  const CAR_NO_PATTERN = /^0\d{6}$/;
 
   const state = {
     userId: "",
@@ -215,9 +235,11 @@
     userName: "",
     taskType: "",
     stations: [],
-    pickedStation: "",   // 只有當使用者「從清單選中」才會有值
+    pickedStation: "",
     acActiveIndex: -1,
-    carNos: [""]         // 車號陣列,至少 1 個
+    // 兩套資料結構
+    carNos: [""],                                   // 換電/清潔用
+    pumpData: [{ carNo:"", psiFront:"", psiRear:"" }] // 打氣用
   };
 
   const TASK_LABEL = { swap: "換電作業", pump: "打氣作業", clean: "清潔作業" };
@@ -250,8 +272,19 @@
     }
   }
 
+  // 改良版關閉:LINE App 內用 closeWindow,外部(瀏覽器測試)走降級
   function liffClose() {
-    try { if (typeof liff !== "undefined" && liff.closeWindow) liff.closeWindow(); } catch (_) {}
+    try {
+      if (typeof liff !== "undefined") {
+        if (liff.isInClient && liff.isInClient()) {
+          liff.closeWindow();
+          return;
+        }
+      }
+    } catch (_) {}
+    // 瀏覽器測試時:改顯示提示(無法 close,因為不是 LIFF 環境)
+    const sum = document.getElementById("successSummary");
+    if (sum) sum.textContent += "(瀏覽器測試環境無法自動關閉)";
   }
 
   async function callApi(action, body) {
@@ -291,6 +324,7 @@
     state.taskType = "";
     state.pickedStation = "";
     state.carNos = [""];
+    state.pumpData = [{ carNo:"", psiFront:"", psiRear:"" }];
     setStatus("", true);
     showPage("pageMenu");
   }
@@ -299,8 +333,7 @@
     state.taskType = type;
     state.pickedStation = "";
     state.carNos = [""];
-    document.getElementById("fPsiFront").value = "";
-    document.getElementById("fPsiRear").value = "";
+    state.pumpData = [{ carNo:"", psiFront:"", psiRear:"" }];
     document.getElementById("fStation").value = "";
     document.getElementById("fStation").classList.remove("ac-picked");
     document.getElementById("fStationClear").classList.remove("show");
@@ -311,20 +344,17 @@
     pill.className = "pill " + type;
     pill.textContent = TASK_LABEL[type];
 
-    document.getElementById("pumpFields").classList.toggle("hidden", type !== "pump");
-
-    renderCarList();
+    renderCarArea();
     showPage("pageForm");
   }
 
   /* =========================================================
-   * 場站搜尋
+   * 場站搜尋(同前版本)
    * ========================================================= */
   function onStationInput() {
     const input = document.getElementById("fStation");
     const q = input.value.trim();
 
-    // 使用者改動輸入 → 已選值失效
     if (state.pickedStation && state.pickedStation !== q) {
       state.pickedStation = "";
       input.classList.remove("ac-picked");
@@ -381,7 +411,6 @@
     const kw = String(keyword || "").trim().toLowerCase();
 
     let candidates = state.stations.slice();
-
     if (kw) {
       candidates = candidates.filter(s =>
         s.station.toLowerCase().includes(kw) ||
@@ -390,7 +419,6 @@
       );
     }
 
-    // 同一場站名可能出現多列,去重
     const seen = new Set();
     const unique = [];
     for (const s of candidates) {
@@ -420,7 +448,6 @@
   function pickStation(name) {
     const match = state.stations.find(s => s.station === name);
     if (!match) return;
-
     state.pickedStation = match.station;
     const input = document.getElementById("fStation");
     input.value = match.station;
@@ -439,93 +466,185 @@
   }
 
   /* =========================================================
-   * 車號多筆
+   * 車號區域(分作業類型)
    * ========================================================= */
 
+  function renderCarArea() {
+    if (state.taskType === "pump") {
+      renderPumpList();
+    } else {
+      renderCarList();
+    }
+  }
+
+  // 換電/清潔:單欄車號
   function renderCarList() {
     const wrap = document.getElementById("carList");
     wrap.innerHTML = state.carNos.map((val, i) => {
-      const isValid = CAR_NO_PATTERN.test(val);
-      const isTouched = val.length > 0;
-      const validClass = !isTouched ? "" : (isValid ? "valid" : "invalid");
-      const errMsg = (!isTouched || isValid) ? "" :
-                     (val.length !== 7 ? "需 7 位數" :
-                      !val.startsWith("0") ? "開頭必須為 0" : "格式錯誤");
-
+      const valClass = validClassFor(val);
+      const errMsg = errMsgFor(val);
       const isLast = (i === state.carNos.length - 1);
       const canDel = state.carNos.length > 1;
 
       return '<div class="carRow">' +
         '<div class="carInputWrap">' +
-          '<input class="carInput ' + validClass + '" ' +
-            'type="tel" inputmode="numeric" pattern="[0-9]*" ' +
-            'maxlength="7" ' +
+          '<input class="carInput ' + valClass + '" ' +
+            'type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="7" ' +
             'placeholder="0123456" ' +
             'value="' + escapeHtml(val) + '" ' +
             'oninput="onCarInput(' + i + ', this)" />' +
-          '<div class="carError">' + escapeHtml(errMsg) + '</div>' +
         '</div>' +
         (isLast
-          ? '<button type="button" class="carBtn carBtnAdd" onclick="addCar()" title="新增車號">+</button>'
-          : '<button type="button" class="carBtn carBtnDel" onclick="removeCar(' + i + ')" ' +
-            (canDel ? '' : 'disabled') + ' title="刪除車號">−</button>'
+          ? '<button type="button" class="carBtn carBtnAdd" onclick="addRow()">+</button>'
+          : '<button type="button" class="carBtn carBtnDel" onclick="removeRow(' + i + ')"' + (canDel ? '' : ' disabled') + '>−</button>'
         ) +
+      '</div>' +
+      '<div class="carErrRow">' + escapeHtml(errMsg) + '</div>';
+    }).join("");
+  }
+
+  // 打氣:車號 + 前胎壓 + 後胎壓 + 按鈕(橫排)
+  function renderPumpList() {
+    const wrap = document.getElementById("carList");
+
+    // 標頭提示
+    const header =
+      '<div class="pumpHeader">' +
+        '<div class="h-cellCar">車號</div>' +
+        '<div class="h-cellPsi">前胎壓</div>' +
+        '<div class="h-cellPsi">後胎壓</div>' +
+        '<div class="h-cellBtn"></div>' +
       '</div>';
+
+    const rows = state.pumpData.map((item, i) => {
+      const carVal = item.carNo || "";
+      const valClass = validClassFor(carVal);
+      const errMsg = errMsgFor(carVal);
+      const isLast = (i === state.pumpData.length - 1);
+      const canDel = state.pumpData.length > 1;
+
+      return '<div class="pumpRow">' +
+        '<div class="cell cellCar">' +
+          '<input class="carInput ' + valClass + '" ' +
+            'type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="7" ' +
+            'placeholder="0123456" ' +
+            'value="' + escapeHtml(carVal) + '" ' +
+            'oninput="onPumpCarInput(' + i + ', this)" />' +
+        '</div>' +
+        '<div class="cell cellPsi">' +
+          '<input type="number" inputmode="decimal" step="0.1" min="0" ' +
+            'placeholder="前" ' +
+            'value="' + escapeHtml(item.psiFront || "") + '" ' +
+            'oninput="onPumpPsiInput(' + i + ', \'psiFront\', this)" />' +
+        '</div>' +
+        '<div class="cell cellPsi">' +
+          '<input type="number" inputmode="decimal" step="0.1" min="0" ' +
+            'placeholder="後" ' +
+            'value="' + escapeHtml(item.psiRear || "") + '" ' +
+            'oninput="onPumpPsiInput(' + i + ', \'psiRear\', this)" />' +
+        '</div>' +
+        '<div class="cell cellBtn">' +
+          (isLast
+            ? '<button type="button" class="carBtn carBtnAdd" onclick="addRow()">+</button>'
+            : '<button type="button" class="carBtn carBtnDel" onclick="removeRow(' + i + ')"' + (canDel ? '' : ' disabled') + '>−</button>'
+          ) +
+        '</div>' +
+      '</div>' +
+      '<div class="carErrRow">' + escapeHtml(errMsg) + '</div>';
     }).join("");
 
-    // 如果最後一列還沒有 + 按鈕(上面邏輯讓最後一列永遠是 +),但如果只有 1 列且使用者想刪,也要有刪除
-    // 上面已處理:最後一列=+,其他=-;但若只有一列時,無刪除鈕,改為 + 鈕
-    // 這個情境下如果使用者需要刪除唯一一列,可以用「清空」達到相同效果,不另加鈕
+    wrap.innerHTML = header + rows;
   }
+
+  function validClassFor(val) {
+    if (!val) return "";
+    return CAR_NO_PATTERN.test(val) ? "valid" : "invalid";
+  }
+
+  function errMsgFor(val) {
+    if (!val || CAR_NO_PATTERN.test(val)) return "";
+    if (val.length !== 7) return "車號需 7 位數";
+    if (!val.startsWith("0")) return "車號開頭必須為 0";
+    return "車號格式錯誤";
+  }
+
+  /* ---------- 輸入事件 ---------- */
 
   function onCarInput(idx, input) {
-    // 只保留 0-9
     const cleaned = String(input.value || "").replace(/\D/g, "").slice(0, 7);
     state.carNos[idx] = cleaned;
-
-    // 如果值被清理過,或長度到達檢查點,重繪以更新顏色與錯誤訊息
-    // 但不要每次 keystroke 都重繪(會失焦),只在值變化時更新該欄的 class
     if (input.value !== cleaned) input.value = cleaned;
 
-    // 即時更新 class
+    // 即時更新樣式(不整個重繪,避免失焦)
     input.classList.remove("valid","invalid");
-    if (cleaned.length > 0) {
-      if (CAR_NO_PATTERN.test(cleaned)) input.classList.add("valid");
-      else input.classList.add("invalid");
-    }
+    const c = validClassFor(cleaned);
+    if (c) input.classList.add(c);
 
-    // 更新錯誤訊息
-    const errEl = input.parentElement.querySelector(".carError");
-    if (cleaned.length === 0 || CAR_NO_PATTERN.test(cleaned)) {
-      errEl.textContent = "";
-    } else {
-      errEl.textContent = cleaned.length !== 7 ? "需 7 位數" :
-                          !cleaned.startsWith("0") ? "開頭必須為 0" : "格式錯誤";
+    // 更新同列錯誤訊息
+    const errRow = input.closest(".carRow").nextElementSibling;
+    if (errRow && errRow.classList.contains("carErrRow")) {
+      errRow.textContent = errMsgFor(cleaned);
     }
   }
 
-  function addCar() {
-    state.carNos.push("");
-    renderCarList();
-    // 自動 focus 到新加的最後一格
+  function onPumpCarInput(idx, input) {
+    const cleaned = String(input.value || "").replace(/\D/g, "").slice(0, 7);
+    state.pumpData[idx].carNo = cleaned;
+    if (input.value !== cleaned) input.value = cleaned;
+
+    input.classList.remove("valid","invalid");
+    const c = validClassFor(cleaned);
+    if (c) input.classList.add(c);
+
+    const errRow = input.closest(".pumpRow").nextElementSibling;
+    if (errRow && errRow.classList.contains("carErrRow")) {
+      errRow.textContent = errMsgFor(cleaned);
+    }
+  }
+
+  function onPumpPsiInput(idx, key, input) {
+    state.pumpData[idx][key] = input.value;
+  }
+
+  /* ---------- 新增/刪除列 ---------- */
+
+  function addRow() {
+    if (state.taskType === "pump") {
+      state.pumpData.push({ carNo:"", psiFront:"", psiRear:"" });
+    } else {
+      state.carNos.push("");
+    }
+    renderCarArea();
     setTimeout(() => {
-      const inputs = document.querySelectorAll("#carList .carInput");
-      if (inputs.length) inputs[inputs.length - 1].focus();
+      const inputs = document.querySelectorAll("#carList input");
+      if (inputs.length) {
+        // 聚焦到新列的第一個輸入(車號)
+        const lastRow = document.querySelectorAll("#carList .pumpRow, #carList .carRow");
+        if (lastRow.length) {
+          const firstInput = lastRow[lastRow.length - 1].querySelector("input");
+          if (firstInput) firstInput.focus();
+        }
+      }
     }, 0);
   }
 
-  function removeCar(idx) {
-    if (state.carNos.length <= 1) return;
-    state.carNos.splice(idx, 1);
-    renderCarList();
+  function removeRow(idx) {
+    if (state.taskType === "pump") {
+      if (state.pumpData.length <= 1) return;
+      state.pumpData.splice(idx, 1);
+    } else {
+      if (state.carNos.length <= 1) return;
+      state.carNos.splice(idx, 1);
+    }
+    renderCarArea();
   }
 
   /* ---------- utils ---------- */
   function escapeHtml(s){
-    return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+    return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
   }
   function escapeJs(s){
-    return String(s).replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+    return String(s == null ? "" : s).replace(/\\/g,"\\\\").replace(/'/g,"\\'");
   }
 
   /* =========================================================
@@ -534,54 +653,77 @@
   async function submitForm() {
     const btn = document.getElementById("btnSubmit");
 
-    // 場站必須是「從清單選中」的
     if (!state.pickedStation) {
       setStatus("請從建議清單中點選場站(不能只打關鍵字)", false);
       return;
     }
-    // 防呆:輸入框內容必須等於已選值
     const stationInputValue = document.getElementById("fStation").value.trim();
     if (stationInputValue !== state.pickedStation) {
       setStatus("場站與輸入內容不一致,請重新選擇", false);
       return;
     }
 
-    // 車號:去空白、去重
-    const cleaned = state.carNos.map(c => String(c || "").trim()).filter(c => c);
-    if (cleaned.length === 0) {
-      setStatus("請至少輸入一個車號", false);
-      return;
-    }
-    const invalid = cleaned.filter(c => !CAR_NO_PATTERN.test(c));
-    if (invalid.length > 0) {
-      setStatus("車號格式錯誤(需 7 位數且開頭為 0):" + invalid.join("、"), false);
-      return;
-    }
-    const uniqueCars = Array.from(new Set(cleaned));
+    const body = {
+      userId: state.userId,
+      displayName: state.displayName,
+      taskType: state.taskType,
+      station: state.pickedStation
+    };
 
-    // 胎壓(打氣)
-    let psiFront = "", psiRear = "";
+    let summary = "";
+
     if (state.taskType === "pump") {
-      psiFront = document.getElementById("fPsiFront").value.trim();
-      psiRear  = document.getElementById("fPsiRear").value.trim();
-      if (!psiFront || !psiRear) { setStatus("前後胎壓必填", false); return; }
-      if (!isFinite(Number(psiFront)) || !isFinite(Number(psiRear))) {
-        setStatus("胎壓必須為數字", false); return;
+      // 去除空白列
+      const filled = state.pumpData.filter(it =>
+        (it.carNo && String(it.carNo).trim()) ||
+        (it.psiFront && String(it.psiFront).trim()) ||
+        (it.psiRear  && String(it.psiRear ).trim())
+      );
+      if (filled.length === 0) { setStatus("請至少輸入一筆資料", false); return; }
+
+      for (let i = 0; i < filled.length; i++) {
+        const it = filled[i];
+        const carNo = String(it.carNo || "").trim();
+        const pf = String(it.psiFront || "").trim();
+        const pr = String(it.psiRear  || "").trim();
+        if (!CAR_NO_PATTERN.test(carNo)) {
+          setStatus("第 " + (i+1) + " 列車號格式錯誤(需 7 位數且開頭為 0)", false); return;
+        }
+        if (!pf || !pr) { setStatus("第 " + (i+1) + " 列前/後胎壓必填", false); return; }
+        if (!isFinite(Number(pf)) || !isFinite(Number(pr))) {
+          setStatus("第 " + (i+1) + " 列胎壓須為數字", false); return;
+        }
       }
+
+      // 去重(以車號)
+      const seen = new Set();
+      const unique = [];
+      for (const it of filled) {
+        const c = String(it.carNo).trim();
+        if (seen.has(c)) continue;
+        seen.add(c);
+        unique.push({ carNo:c, psiFront:String(it.psiFront).trim(), psiRear:String(it.psiRear).trim() });
+      }
+
+      body.pumpData = unique;
+      summary = "已記錄 " + unique.length + " 筆車號";
+    } else {
+      const cleaned = state.carNos.map(c => String(c || "").trim()).filter(c => c);
+      if (cleaned.length === 0) { setStatus("請至少輸入一個車號", false); return; }
+      const invalid = cleaned.filter(c => !CAR_NO_PATTERN.test(c));
+      if (invalid.length > 0) {
+        setStatus("車號格式錯誤(需 7 位數且開頭為 0):" + invalid.join("、"), false); return;
+      }
+      const unique = Array.from(new Set(cleaned));
+      body.carNos = unique;
+      summary = "已記錄 " + unique.length + " 筆車號";
     }
 
     btn.disabled = true;
     setStatus("送出中...", true);
 
     try {
-      const res = await callApi("submitTask", {
-        userId: state.userId,
-        displayName: state.displayName,
-        taskType: state.taskType,
-        station: state.pickedStation,
-        carNos: uniqueCars,
-        psiFront, psiRear
-      });
+      const res = await callApi("submitTask", body);
 
       if (!res.ok) {
         btn.disabled = false;
@@ -590,7 +732,7 @@
       }
 
       document.getElementById("successSummary").textContent =
-        "已記錄 " + (res.count || uniqueCars.length) + " 筆車號";
+        "已記錄 " + (res.count || 0) + " 筆資料";
       showPage("pageSuccess");
       startCountdown(3);
     } catch (err) {
@@ -605,8 +747,12 @@
     el.textContent = n;
     const t = setInterval(() => {
       n--;
-      if (n <= 0) { clearInterval(t); liffClose(); }
-      else { el.textContent = n; }
+      if (n <= 0) {
+        clearInterval(t);
+        liffClose();
+      } else {
+        el.textContent = n;
+      }
     }, 1000);
   }
 
