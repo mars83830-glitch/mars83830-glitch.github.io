@@ -121,8 +121,8 @@
     .carInput.invalid{border-color:#dc2626;background:#fef2f2}
     .carInput.valid{border-color:#86efac;background:#f0fdf4}
     .carBtn{
-      flex-shrink:0;width:40px;height:44px;padding:0;
-      font-size:20px;font-weight:900;border-radius:10px;
+      flex-shrink:0;width:40px;height:36px;padding:0;
+      font-size:18px;font-weight:900;border-radius:8px;
       display:flex;align-items:center;justify-content:center
     }
     .carBtnAdd{background:#2563eb;color:#fff;border:0}
@@ -166,11 +166,11 @@
     }
     .pumpRow input.psiInvalid{border-color:#dc2626;background:#fef2f2}
     .pumpRow .cellBtn{flex-shrink:0}
-    .pumpRow .carBtn{width:36px;height:40px;font-size:18px}
+    .pumpRow .carBtn{width:36px;height:34px;font-size:16px}
     @media (max-width:360px){
       .pumpRow{gap:3px}
       .pumpRow input{padding:10px 4px;font-size:13px;letter-spacing:0}
-      .pumpRow .carBtn{width:32px;height:40px}
+      .pumpRow .carBtn{width:32px;height:34px}
     }
     /* 打氣表頭:車號 + 胎壓(橫跨兩欄) */
     .pumpHeader{
@@ -261,8 +261,6 @@
           <div>👤 <span id="userNameForm">-</span></div>
           <div><span id="taskPill" class="pill swap">換電作業</span></div>
         </div>
-
-        <h2 style="margin-top:14px" id="formTitle">作業回報</h2>
 
         <div class="row ac-wrap" id="stationWrap">
           <label>場站名稱<span class="req">*</span></label>
@@ -482,7 +480,6 @@
     document.getElementById("fStationClear").classList.remove("show");
     setStatusMsg("", true);
 
-    document.getElementById("formTitle").textContent = TASK_LABEL[type] + "回報";
     const pill = document.getElementById("taskPill");
     pill.className = "pill " + type;
     pill.textContent = TASK_LABEL[type];
