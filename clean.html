@@ -16,11 +16,13 @@
     .row{margin:4px 0}
     label{display:block;font-size:13px;font-weight:700;margin-bottom:6px;color:#374151}
     label .req{color:#dc2626;margin-left:4px}
-    input,select,button,textarea{font-size:15px;padding:11px 12px;border:1px solid #d1d5db;border-radius:10px;width:100%;background:#fff;color:#111827;font-family:inherit}
-    /* placeholder 統一用淺灰色,跟真正輸入的黑字區分 */
-    input::placeholder,textarea::placeholder{color:#9ca3af;opacity:1}
-    input::-webkit-input-placeholder,textarea::-webkit-input-placeholder{color:#9ca3af}
-    input::-moz-placeholder,textarea::-moz-placeholder{color:#9ca3af;opacity:1}
+    input,select,button,textarea{font-size:15px;padding:11px 12px;border:1px solid #9ca3af;border-radius:10px;width:100%;background:#fff;color:#111827;font-family:inherit;font-weight:700}
+    /* placeholder 統一用淺灰色,跟真正輸入的黑字區分(且字不加粗) */
+    input::placeholder,textarea::placeholder{color:#9ca3af;opacity:1;font-weight:400}
+    input::-webkit-input-placeholder,textarea::-webkit-input-placeholder{color:#9ca3af;font-weight:400}
+    input::-moz-placeholder,textarea::-moz-placeholder{color:#9ca3af;opacity:1;font-weight:400}
+    /* focus 時外框變藍,視覺回饋更明顯 */
+    input:focus,select:focus,textarea:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.15)}
     button{cursor:pointer;font-weight:700}
     .btnMain{background:#2563eb;color:#fff;border:0;padding:14px}
     .btnMain:disabled{background:#9ca3af;cursor:not-allowed}
