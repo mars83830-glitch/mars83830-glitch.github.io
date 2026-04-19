@@ -192,8 +192,7 @@
       <div class="icon-circle blue">📋</div>
       <div class="status-title" style="color:#1d4ed8">驗證身分中</div>
       <div class="status-desc">正在確認你的帳號權限,請稍候...</div>
-      <div class="divider"></div>
-      <div class="status-row">
+      <div class="status-row" style="margin-top:14px">
         <div class="spinner-sm"></div>
         連線中
       </div>
@@ -257,7 +256,7 @@
           <div><span id="taskPill" class="pill swap">換電作業</span></div>
         </div>
 
-        <h2 style="margin-top:14px" id="formTitle">桃園營運處|作業回報</h2>
+        <h2 style="margin-top:14px" id="formTitle">作業回報．桃園營運處</h2>
 
         <div class="row ac-wrap" id="stationWrap">
           <label>場站名稱<span class="req">*</span></label>
@@ -477,7 +476,7 @@
     document.getElementById("fStationClear").classList.remove("show");
     setStatusMsg("", true);
 
-    document.getElementById("formTitle").textContent = "桃園營運處|作業回報";
+    document.getElementById("formTitle").textContent = "作業回報．桃園營運處";
     const pill = document.getElementById("taskPill");
     pill.className = "pill " + type;
     pill.textContent = TASK_LABEL[type];
