@@ -115,7 +115,7 @@
     .ac-picked{background:#f0fdf4!important;border-color:#86efac!important;color:#166534;font-weight:700}
 
     /* 車號列表 */
-    .carRow{display:flex;gap:6px;margin-bottom:2px;align-items:flex-start}
+    .carRow{display:flex;gap:6px;margin-bottom:2px;align-items:center}
     .carInputWrap{flex:1;min-width:0;position:relative}
     .carInput{width:100%;font-family:"JetBrains Mono","Courier New",monospace;letter-spacing:1px;padding:11px 10px}
     .carInput.invalid{border-color:#dc2626;background:#fef2f2}
@@ -143,13 +143,13 @@
 
     /* 序號標記(車號列前方) */
     .carSeq{
-      flex-shrink:0;width:28px;height:44px;
+      flex-shrink:0;width:28px;height:36px;
       display:flex;align-items:center;justify-content:center;
       font-size:14px;font-weight:700;color:#6b7280;
       font-family:"JetBrains Mono","Courier New",monospace;
       user-select:none;
     }
-    .pumpRow .carSeq{height:40px;width:24px;font-size:13px}
+    .pumpRow .carSeq{height:34px;width:24px;font-size:13px}
     @media (max-width:360px){
       .pumpRow .carSeq{width:20px;font-size:12px}
     }
