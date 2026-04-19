@@ -129,6 +129,18 @@
     .carBtnDel{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca}
     .carErrRow{font-size:12px;color:#dc2626;margin-top:-4px;margin-bottom:4px;padding-left:2px;min-height:16px}
 
+    /* 新增車號大按鈕(車號列表下方) */
+    .addRowBtn{
+      width:100%;margin-top:6px;padding:10px;
+      background:#eff6ff;color:#2563eb;
+      border:1px dashed #93c5fd;border-radius:10px;
+      font-size:14px;font-weight:700;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;gap:6px;
+      transition:all .15s;
+    }
+    .addRowBtn:hover,.addRowBtn:active{background:#dbeafe;border-color:#60a5fa}
+    .addRowBtn .plus{font-size:18px;font-weight:900;line-height:1}
+
     /* 序號標記(車號列前方) */
     .carSeq{
       flex-shrink:0;width:28px;height:44px;
@@ -618,11 +630,10 @@
 
   function renderCarList() {
     const wrap = document.getElementById("carList");
-    wrap.innerHTML = state.carNos.map((val, i) => {
+    const canDel = state.carNos.length > 1;
+    const rows = state.carNos.map((val, i) => {
       const valClass = validClassFor(val);
       const errMsg = errMsgFor(val);
-      const isLast = (i === state.carNos.length - 1);
-      const canDel = state.carNos.length > 1;
 
       return '<div class="carRow">' +
         '<div class="carSeq">' + (i + 1) + '.</div>' +
@@ -633,13 +644,13 @@
             'value="' + escapeHtml(val) + '" ' +
             'oninput="onCarInput(' + i + ', this)" />' +
         '</div>' +
-        (isLast
-          ? '<button type="button" class="carBtn carBtnAdd" onclick="addRow()">+</button>'
-          : '<button type="button" class="carBtn carBtnDel" onclick="removeRow(' + i + ')"' + (canDel ? '' : ' disabled') + '>−</button>'
-        ) +
+        '<button type="button" class="carBtn carBtnDel" onclick="removeRow(' + i + ')"' + (canDel ? '' : ' disabled') + '>−</button>' +
       '</div>' +
       '<div class="carErrRow">' + escapeHtml(errMsg) + '</div>';
     }).join("");
+
+    const addBtn = '<button type="button" class="addRowBtn" onclick="addRow()"><span class="plus">+</span>新增車號</button>';
+    wrap.innerHTML = rows + addBtn;
   }
 
   function renderPumpList() {
@@ -658,7 +669,6 @@
       const carVal = item.carNo || "";
       const valClass = validClassFor(carVal);
       const errMsg = errMsgFor(carVal);
-      const isLast = (i === state.pumpData.length - 1);
       const canDel = state.pumpData.length > 1;
 
       // 胎壓驗證樣式
@@ -691,16 +701,14 @@
             'oninput="onPumpPsiInput(' + i + ', \'psiRear\', this)" />' +
         '</div>' +
         '<div class="cell cellBtn">' +
-          (isLast
-            ? '<button type="button" class="carBtn carBtnAdd" onclick="addRow()">+</button>'
-            : '<button type="button" class="carBtn carBtnDel" onclick="removeRow(' + i + ')"' + (canDel ? '' : ' disabled') + '>−</button>'
-          ) +
+          '<button type="button" class="carBtn carBtnDel" onclick="removeRow(' + i + ')"' + (canDel ? '' : ' disabled') + '>−</button>' +
         '</div>' +
       '</div>' +
       '<div class="carErrRow">' + escapeHtml(errMsg) + '</div>';
     }).join("");
 
-    wrap.innerHTML = header + rows;
+    const addBtn = '<button type="button" class="addRowBtn" onclick="addRow()"><span class="plus">+</span>新增車號</button>';
+    wrap.innerHTML = header + rows + addBtn;
   }
 
   function validClassFor(val) {
