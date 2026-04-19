@@ -16,8 +16,7 @@
     .row{margin:12px 0}
     label{display:block;font-size:13px;font-weight:700;margin-bottom:6px;color:#374151}
     label .req{color:#dc2626;margin-left:4px}
-    input,select,button{font-size:15px;padding:11px 12px;border:1px solid #d1d5db;border-radius:10px;width:100%;background:#fff;color:#111827;font-family:inherit}
-    select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%236b7280' d='M6 8L0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:10px;padding-right:32px}
+    input,select,button,textarea{font-size:15px;padding:11px 12px;border:1px solid #d1d5db;border-radius:10px;width:100%;background:#fff;color:#111827;font-family:inherit}
     button{cursor:pointer;font-weight:700}
     .btnMain{background:#2563eb;color:#fff;border:0;padding:14px}
     .btnMain:disabled{background:#9ca3af;cursor:not-allowed}
@@ -45,7 +44,7 @@
     .pill.pump{background:#fce7f3;color:#9d174d}
     .pill.clean{background:#ccfbf1;color:#115e59}
 
-    /* 自動完成下拉 */
+    /* 場站搜尋 */
     .ac-wrap{position:relative}
     .ac-input-wrap{position:relative}
     .ac-clear{
@@ -76,6 +75,23 @@
       background:#f0fdf4 !important;border-color:#86efac !important;
       color:#166534;font-weight:700
     }
+
+    /* 車號列表 */
+    .carRow{display:flex;gap:8px;margin-bottom:8px;align-items:flex-start}
+    .carInputWrap{flex:1;position:relative}
+    .carInput{width:100%;font-family:"JetBrains Mono","Courier New",monospace;letter-spacing:1px}
+    .carInput.invalid{border-color:#dc2626;background:#fef2f2}
+    .carInput.valid{border-color:#86efac;background:#f0fdf4}
+    .carBtn{
+      flex-shrink:0;width:44px;height:44px;padding:0;
+      font-size:22px;font-weight:900;border-radius:10px;
+      display:flex;align-items:center;justify-content:center
+    }
+    .carBtnAdd{background:#2563eb;color:#fff;border:0}
+    .carBtnDel{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca}
+    .carBtnDel:disabled{opacity:.3;cursor:not-allowed}
+    .carNote{font-size:12px;color:#6b7280;margin-top:-4px;margin-bottom:4px}
+    .carError{font-size:12px;color:#dc2626;margin-top:2px;min-height:16px}
   </style>
 </head>
 <body>
@@ -119,18 +135,10 @@
 
       <h2 style="margin-top:14px" id="formTitle">作業回報</h2>
 
-      <div class="row">
-        <label>行政區<span class="req">*</span></label>
-        <select id="fDistrict" onchange="onDistrictChange()"><option value="">請選擇</option></select>
-      </div>
-
-      <div class="row">
-        <label>責任區<span class="req">*</span></label>
-        <select id="fZone" onchange="onZoneChange()"><option value="">請選擇</option></select>
-      </div>
-
+      <!-- 場站搜尋 -->
       <div class="row ac-wrap" id="stationWrap">
         <label>場站名稱<span class="req">*</span></label>
+        <div class="carNote">點選清單內的場站才能送出(不能只打關鍵字)</div>
         <div class="ac-input-wrap">
           <input
             id="fStation"
@@ -147,11 +155,14 @@
         <div class="ac-list" id="fStationList"></div>
       </div>
 
+      <!-- 車號(可多筆) -->
       <div class="row">
         <label>車號<span class="req">*</span></label>
-        <input id="fCarNo" type="text" inputmode="text" placeholder="請輸入車號" autocomplete="off"/>
+        <div class="carNote">必須 7 位數,開頭為 0(例如 0123456)。可新增多筆,一次上傳多台。</div>
+        <div id="carList"></div>
       </div>
 
+      <!-- 胎壓(僅打氣) -->
       <div id="pumpFields" class="hidden">
         <div class="row">
           <label>打氣前 前胎壓(PSI)<span class="req">*</span></label>
@@ -176,7 +187,7 @@
     <div class="card center">
       <div style="font-size:56px">✅</div>
       <div class="big">送出成功</div>
-      <div class="hint">資料已記錄</div>
+      <div class="hint" id="successSummary">資料已記錄</div>
       <div class="countdown" id="countdown">3</div>
       <div class="hint">視窗即將自動關閉</div>
       <div class="backRow">
@@ -190,11 +201,13 @@
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
   /* =========================================================
-   * ⚠️ 部署前請改這兩行
+   * 部署設定
    * ========================================================= */
   const LIFF_ID  = "2009174277-0sLqDpFL";
   const GAS_URL  = "https://script.google.com/macros/s/AKfycbyk42RdWvnjzw8mk4V2BoKGoBr9a9g-RFRYqOlk1J7QKk-ojGsJsphamaLpzw4vA4Y/exec";
   /* ========================================================= */
+
+  const CAR_NO_PATTERN = /^0\d{6}$/; // 0 開頭 + 共 7 位數字
 
   const state = {
     userId: "",
@@ -202,8 +215,9 @@
     userName: "",
     taskType: "",
     stations: [],
-    picked: { district: "", zone: "", station: "" },
-    acActiveIndex: -1
+    pickedStation: "",   // 只有當使用者「從清單選中」才會有值
+    acActiveIndex: -1,
+    carNos: [""]         // 車號陣列,至少 1 個
   };
 
   const TASK_LABEL = { swap: "換電作業", pump: "打氣作業", clean: "清潔作業" };
@@ -275,18 +289,21 @@
 
   function goMenu() {
     state.taskType = "";
-    state.picked = { district: "", zone: "", station: "" };
+    state.pickedStation = "";
+    state.carNos = [""];
     setStatus("", true);
     showPage("pageMenu");
   }
 
   function goTask(type) {
     state.taskType = type;
-    state.picked = { district: "", zone: "", station: "" };
-    document.getElementById("fCarNo").value = "";
+    state.pickedStation = "";
+    state.carNos = [""];
     document.getElementById("fPsiFront").value = "";
     document.getElementById("fPsiRear").value = "";
     document.getElementById("fStation").value = "";
+    document.getElementById("fStation").classList.remove("ac-picked");
+    document.getElementById("fStationClear").classList.remove("show");
     setStatus("", true);
 
     document.getElementById("formTitle").textContent = TASK_LABEL[type];
@@ -296,80 +313,23 @@
 
     document.getElementById("pumpFields").classList.toggle("hidden", type !== "pump");
 
-    rebuildAll();
+    renderCarList();
     showPage("pageForm");
   }
 
   /* =========================================================
-   * 三層聯動核心
-   * ========================================================= */
-  function availableOptions(target) {
-    const { district, zone, station } = state.picked;
-    const filtered = state.stations.filter(s => {
-      if (target !== "district" && district && s.district !== district) return false;
-      if (target !== "zone"     && zone     && s.zone     !== zone)     return false;
-      if (target !== "station"  && station  && s.station  !== station)  return false;
-      return true;
-    });
-    const set = new Set(filtered.map(s => s[target]));
-    return Array.from(set).sort((a,b) => String(a).localeCompare(String(b), "zh-Hant"));
-  }
-
-  function rebuildAll() {
-    const dOpts = availableOptions("district");
-    const zOpts = availableOptions("zone");
-    const sOpts = availableOptions("station");
-
-    fillSelect("fDistrict", dOpts, state.picked.district);
-    fillSelect("fZone",     zOpts, state.picked.zone);
-
-    const stationInput = document.getElementById("fStation");
-    stationInput.value = state.picked.station || "";
-    stationInput.classList.toggle("ac-picked", !!state.picked.station);
-    document.getElementById("fStationClear").classList.toggle("show", !!state.picked.station);
-
-    if (document.getElementById("fStationList").classList.contains("show")) {
-      renderStationList(stationInput.value);
-    }
-
-    let changed = false;
-    if (!state.picked.district && dOpts.length === 1) { state.picked.district = dOpts[0]; changed = true; }
-    if (!state.picked.zone     && zOpts.length === 1) { state.picked.zone     = zOpts[0]; changed = true; }
-    if (!state.picked.station  && sOpts.length === 1) { state.picked.station  = sOpts[0]; changed = true; }
-    if (changed) rebuildAll();
-  }
-
-  function fillSelect(id, options, selected) {
-    const el = document.getElementById(id);
-    const prev = selected || "";
-    el.innerHTML = '<option value="">請選擇</option>' +
-      options.map(o => `<option value="${escapeHtml(o)}"${o === prev ? " selected" : ""}>${escapeHtml(o)}</option>`).join("");
-  }
-
-  function onDistrictChange() {
-    state.picked.district = document.getElementById("fDistrict").value;
-    rebuildAll();
-  }
-
-  function onZoneChange() {
-    state.picked.zone = document.getElementById("fZone").value;
-    rebuildAll();
-  }
-
-  /* =========================================================
-   * 場站自動完成
+   * 場站搜尋
    * ========================================================= */
   function onStationInput() {
     const input = document.getElementById("fStation");
     const q = input.value.trim();
 
-    if (state.picked.station && state.picked.station !== q) {
-      state.picked.station = "";
+    // 使用者改動輸入 → 已選值失效
+    if (state.pickedStation && state.pickedStation !== q) {
+      state.pickedStation = "";
       input.classList.remove("ac-picked");
-      document.getElementById("fStationClear").classList.toggle("show", !!q);
-      rebuildAll();
-      input.value = q;
     }
+    document.getElementById("fStationClear").classList.toggle("show", !!q);
 
     renderStationList(q);
     state.acActiveIndex = -1;
@@ -420,11 +380,7 @@
     const list = document.getElementById("fStationList");
     const kw = String(keyword || "").trim().toLowerCase();
 
-    let candidates = state.stations.filter(s => {
-      if (state.picked.district && s.district !== state.picked.district) return false;
-      if (state.picked.zone     && s.zone     !== state.picked.zone)     return false;
-      return true;
-    });
+    let candidates = state.stations.slice();
 
     if (kw) {
       candidates = candidates.filter(s =>
@@ -434,6 +390,7 @@
       );
     }
 
+    // 同一場站名可能出現多列,去重
     const seen = new Set();
     const unique = [];
     for (const s of candidates) {
@@ -461,31 +418,109 @@
   }
 
   function pickStation(name) {
-    const match = state.stations.find(s =>
-      s.station === name &&
-      (!state.picked.district || s.district === state.picked.district) &&
-      (!state.picked.zone     || s.zone     === state.picked.zone)
-    ) || state.stations.find(s => s.station === name);
-
+    const match = state.stations.find(s => s.station === name);
     if (!match) return;
 
-    state.picked.station  = match.station;
-    state.picked.district = match.district;
-    state.picked.zone     = match.zone;
-
+    state.pickedStation = match.station;
+    const input = document.getElementById("fStation");
+    input.value = match.station;
+    input.classList.add("ac-picked");
+    document.getElementById("fStationClear").classList.add("show");
     document.getElementById("fStationList").classList.remove("show");
-    rebuildAll();
   }
 
   function clearStation() {
-    state.picked.station = "";
-    document.getElementById("fStation").value = "";
-    document.getElementById("fStation").classList.remove("ac-picked");
+    state.pickedStation = "";
+    const input = document.getElementById("fStation");
+    input.value = "";
+    input.classList.remove("ac-picked");
     document.getElementById("fStationClear").classList.remove("show");
-    rebuildAll();
-    document.getElementById("fStation").focus();
+    input.focus();
   }
 
+  /* =========================================================
+   * 車號多筆
+   * ========================================================= */
+
+  function renderCarList() {
+    const wrap = document.getElementById("carList");
+    wrap.innerHTML = state.carNos.map((val, i) => {
+      const isValid = CAR_NO_PATTERN.test(val);
+      const isTouched = val.length > 0;
+      const validClass = !isTouched ? "" : (isValid ? "valid" : "invalid");
+      const errMsg = (!isTouched || isValid) ? "" :
+                     (val.length !== 7 ? "需 7 位數" :
+                      !val.startsWith("0") ? "開頭必須為 0" : "格式錯誤");
+
+      const isLast = (i === state.carNos.length - 1);
+      const canDel = state.carNos.length > 1;
+
+      return '<div class="carRow">' +
+        '<div class="carInputWrap">' +
+          '<input class="carInput ' + validClass + '" ' +
+            'type="tel" inputmode="numeric" pattern="[0-9]*" ' +
+            'maxlength="7" ' +
+            'placeholder="0123456" ' +
+            'value="' + escapeHtml(val) + '" ' +
+            'oninput="onCarInput(' + i + ', this)" />' +
+          '<div class="carError">' + escapeHtml(errMsg) + '</div>' +
+        '</div>' +
+        (isLast
+          ? '<button type="button" class="carBtn carBtnAdd" onclick="addCar()" title="新增車號">+</button>'
+          : '<button type="button" class="carBtn carBtnDel" onclick="removeCar(' + i + ')" ' +
+            (canDel ? '' : 'disabled') + ' title="刪除車號">−</button>'
+        ) +
+      '</div>';
+    }).join("");
+
+    // 如果最後一列還沒有 + 按鈕(上面邏輯讓最後一列永遠是 +),但如果只有 1 列且使用者想刪,也要有刪除
+    // 上面已處理:最後一列=+,其他=-;但若只有一列時,無刪除鈕,改為 + 鈕
+    // 這個情境下如果使用者需要刪除唯一一列,可以用「清空」達到相同效果,不另加鈕
+  }
+
+  function onCarInput(idx, input) {
+    // 只保留 0-9
+    const cleaned = String(input.value || "").replace(/\D/g, "").slice(0, 7);
+    state.carNos[idx] = cleaned;
+
+    // 如果值被清理過,或長度到達檢查點,重繪以更新顏色與錯誤訊息
+    // 但不要每次 keystroke 都重繪(會失焦),只在值變化時更新該欄的 class
+    if (input.value !== cleaned) input.value = cleaned;
+
+    // 即時更新 class
+    input.classList.remove("valid","invalid");
+    if (cleaned.length > 0) {
+      if (CAR_NO_PATTERN.test(cleaned)) input.classList.add("valid");
+      else input.classList.add("invalid");
+    }
+
+    // 更新錯誤訊息
+    const errEl = input.parentElement.querySelector(".carError");
+    if (cleaned.length === 0 || CAR_NO_PATTERN.test(cleaned)) {
+      errEl.textContent = "";
+    } else {
+      errEl.textContent = cleaned.length !== 7 ? "需 7 位數" :
+                          !cleaned.startsWith("0") ? "開頭必須為 0" : "格式錯誤";
+    }
+  }
+
+  function addCar() {
+    state.carNos.push("");
+    renderCarList();
+    // 自動 focus 到新加的最後一格
+    setTimeout(() => {
+      const inputs = document.querySelectorAll("#carList .carInput");
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    }, 0);
+  }
+
+  function removeCar(idx) {
+    if (state.carNos.length <= 1) return;
+    state.carNos.splice(idx, 1);
+    renderCarList();
+  }
+
+  /* ---------- utils ---------- */
   function escapeHtml(s){
     return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
   }
@@ -493,16 +528,38 @@
     return String(s).replace(/\\/g,"\\\\").replace(/'/g,"\\'");
   }
 
+  /* =========================================================
+   * 送出
+   * ========================================================= */
   async function submitForm() {
     const btn = document.getElementById("btnSubmit");
-    const { district, zone, station } = state.picked;
-    const carNo = document.getElementById("fCarNo").value.trim();
 
-    if (!district || !zone || !station) {
-      setStatus("請選擇完整的行政區 / 責任區 / 場站", false); return;
+    // 場站必須是「從清單選中」的
+    if (!state.pickedStation) {
+      setStatus("請從建議清單中點選場站(不能只打關鍵字)", false);
+      return;
     }
-    if (!carNo) { setStatus("車號必填", false); return; }
+    // 防呆:輸入框內容必須等於已選值
+    const stationInputValue = document.getElementById("fStation").value.trim();
+    if (stationInputValue !== state.pickedStation) {
+      setStatus("場站與輸入內容不一致,請重新選擇", false);
+      return;
+    }
 
+    // 車號:去空白、去重
+    const cleaned = state.carNos.map(c => String(c || "").trim()).filter(c => c);
+    if (cleaned.length === 0) {
+      setStatus("請至少輸入一個車號", false);
+      return;
+    }
+    const invalid = cleaned.filter(c => !CAR_NO_PATTERN.test(c));
+    if (invalid.length > 0) {
+      setStatus("車號格式錯誤(需 7 位數且開頭為 0):" + invalid.join("、"), false);
+      return;
+    }
+    const uniqueCars = Array.from(new Set(cleaned));
+
+    // 胎壓(打氣)
     let psiFront = "", psiRear = "";
     if (state.taskType === "pump") {
       psiFront = document.getElementById("fPsiFront").value.trim();
@@ -521,8 +578,9 @@
         userId: state.userId,
         displayName: state.displayName,
         taskType: state.taskType,
-        district, zone, station,
-        carNo, psiFront, psiRear
+        station: state.pickedStation,
+        carNos: uniqueCars,
+        psiFront, psiRear
       });
 
       if (!res.ok) {
@@ -531,6 +589,8 @@
         return;
       }
 
+      document.getElementById("successSummary").textContent =
+        "已記錄 " + (res.count || uniqueCars.length) + " 筆車號";
       showPage("pageSuccess");
       startCountdown(3);
     } catch (err) {
