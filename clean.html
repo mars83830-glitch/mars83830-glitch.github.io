@@ -22,7 +22,7 @@
     .btnMain:disabled{background:#9ca3af;cursor:not-allowed}
     .btnSecondary{background:#fff;color:#374151;border:1px solid #d1d5db}
     .taskGrid{display:grid;grid-template-columns:1fr;gap:12px}
-    .taskBtn{padding:22px 16px;border-radius:14px;border:0;font-size:20px;font-weight:900;color:#fff;text-align:center;display:flex;align-items:center;justify-content:center;gap:14px}
+    .taskBtn{padding:22px 16px;border-radius:14px;border:0;font-size:20px;font-weight:900;color:#fff;text-align:left;display:flex;align-items:center;gap:14px}
     .taskBtn .ic{font-size:28px}
     .swap{background:#1e79ff}
     .pump{background:#c2185b}
@@ -277,8 +277,8 @@
         </div>
 
         <div class="row">
-          <label id="carLabel">車號<span class="req">*</span></label>
-          <div class="hint" style="margin-bottom:8px">可新增多筆,一次上傳多台</div>
+          <label id="carLabel">車號<span class="req" id="carReq">*</span></label>
+          <div class="hint" id="carHint" style="margin-bottom:8px">可新增多筆,一次上傳多台</div>
           <div id="carList"></div>
         </div>
 
@@ -480,6 +480,17 @@
     const pill = document.getElementById("taskPill");
     pill.className = "pill " + type;
     pill.textContent = TASK_LABEL[type];
+
+    // 清潔作業車號為選填(其他為必填)
+    const carReq  = document.getElementById("carReq");
+    const carHint = document.getElementById("carHint");
+    if (type === "clean") {
+      carReq.style.display = "none";
+      carHint.textContent = "選填,可新增多筆。若未填則視為純清潔場站";
+    } else {
+      carReq.style.display = "";
+      carHint.textContent = "可新增多筆,一次上傳多台";
+    }
 
     renderCarArea();
     showApp("pageForm");
@@ -854,12 +865,18 @@
       body.pumpData = unique;
     } else {
       const cleaned = state.carNos.map(c => String(c || "").trim()).filter(c => c);
-      if (cleaned.length === 0) { setStatusMsg("請至少輸入一個車號", false); return; }
-      const invalid = cleaned.filter(c => !CAR_NO_PATTERN.test(c));
-      if (invalid.length > 0) {
-        setStatusMsg("車號格式錯誤(需 7 位數且開頭為 0):" + invalid.join("、"), false); return;
+
+      // 清潔作業:沒填車號時,後台寫入「純清潔場站」
+      if (state.taskType === "clean" && cleaned.length === 0) {
+        body.carNos = ["純清潔場站"];
+      } else {
+        if (cleaned.length === 0) { setStatusMsg("請至少輸入一個車號", false); return; }
+        const invalid = cleaned.filter(c => !CAR_NO_PATTERN.test(c));
+        if (invalid.length > 0) {
+          setStatusMsg("車號格式錯誤(需 7 位數且開頭為 0):" + invalid.join("、"), false); return;
+        }
+        body.carNos = Array.from(new Set(cleaned));
       }
-      body.carNos = Array.from(new Set(cleaned));
     }
 
     btn.disabled = true;
