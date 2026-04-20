@@ -17,11 +17,9 @@
     label{display:block;font-size:13px;font-weight:700;margin-bottom:6px;color:#374151}
     label .req{color:#dc2626;margin-left:4px}
     input,select,button,textarea{font-size:15px;padding:11px 12px;border:1px solid #9ca3af;border-radius:10px;width:100%;background:#fff;color:#111827;font-family:inherit;font-weight:700}
-    /* placeholder 統一用淺灰色,跟真正輸入的黑字區分(且字不加粗) */
     input::placeholder,textarea::placeholder{color:#9ca3af;opacity:1;font-weight:400}
     input::-webkit-input-placeholder,textarea::-webkit-input-placeholder{color:#9ca3af;font-weight:400}
     input::-moz-placeholder,textarea::-moz-placeholder{color:#9ca3af;opacity:1;font-weight:400}
-    /* focus 時外框變藍,視覺回饋更明顯 */
     input:focus,select:focus,textarea:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.15)}
     button{cursor:pointer;font-weight:700}
     .btnMain{background:#2563eb;color:#fff;border:0;padding:14px}
@@ -133,9 +131,11 @@
     }
     .carBtnAdd{background:#2563eb;color:#fff;border:0}
     .carBtnDel{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca}
+    .carBtnScan{background:#ede9fe;color:#6d28d9;border:1px solid #c4b5fd;font-size:16px}
+    .carBtnScan:active{background:#ddd6fe}
     .carErrRow{font-size:12px;color:#dc2626;margin-top:-2px;margin-bottom:0px;padding-left:2px;min-height:0}
 
-    /* 新增車號大按鈕(車號列表下方) */
+    /* 新增車號大按鈕 */
     .addRowBtn{
       width:100%;margin-top:6px;padding:10px;
       background:#eff6ff;color:#2563eb;
@@ -147,7 +147,7 @@
     .addRowBtn:hover,.addRowBtn:active{background:#dbeafe;border-color:#60a5fa}
     .addRowBtn .plus{font-size:18px;font-weight:900;line-height:1}
 
-    /* 序號標記(車號列前方) */
+    /* 序號標記 */
     .carSeq{
       flex-shrink:0;width:28px;height:36px;
       display:flex;align-items:center;justify-content:center;
@@ -178,7 +178,6 @@
       .pumpRow input{padding:10px 4px;font-size:13px;letter-spacing:0}
       .pumpRow .carBtn{width:32px;height:34px}
     }
-    /* 打氣表頭:車號 + 胎壓(橫跨兩欄) */
     .pumpHeader{
       display:flex;gap:5px;align-items:center;
       font-size:12px;color:#374151;font-weight:700;
@@ -187,7 +186,6 @@
     .pumpHeader .h-cell{text-align:center}
     .pumpHeader .h-seq{flex-shrink:0;width:24px}
     .pumpHeader .h-cellCar{flex:1.6}
-    /* 胎壓標題橫跨兩欄(前輪+後輪+中間 gap) */
     .pumpHeader .h-cellPsiMerged{flex:2;text-align:center}
     .pumpHeader .h-cellBtn{flex-shrink:0;width:36px}
     @media (max-width:360px){
@@ -195,6 +193,103 @@
       .pumpHeader .h-seq{width:20px}
       .pumpHeader .h-cellBtn{width:32px}
     }
+
+    /* ========== OCR 相機掃描視窗 ========== */
+    .ocrOverlay{
+      position:fixed;inset:0;background:#000;z-index:9999;
+      display:none;flex-direction:column;
+    }
+    .ocrOverlay.show{display:flex}
+    .ocrVideoWrap{
+      flex:1;position:relative;overflow:hidden;background:#000;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .ocrVideo{
+      width:100%;height:100%;object-fit:cover;
+    }
+    /* 對準框 */
+    .ocrGuide{
+      position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+      width:min(82vw,360px);height:80px;
+      border:3px solid #fbbf24;border-radius:12px;
+      box-shadow:0 0 0 9999px rgba(0,0,0,.55);
+      pointer-events:none;
+    }
+    .ocrGuideLabel{
+      position:absolute;top:calc(50% - 70px);left:50%;transform:translateX(-50%);
+      color:#fbbf24;font-size:13px;font-weight:700;letter-spacing:1px;
+      text-shadow:0 1px 2px rgba(0,0,0,.8);
+      pointer-events:none;white-space:nowrap;
+    }
+    .ocrTopBar{
+      position:absolute;top:0;left:0;right:0;
+      padding:14px 16px;display:flex;justify-content:space-between;align-items:center;
+      color:#fff;font-size:14px;font-weight:700;
+      background:linear-gradient(to bottom,rgba(0,0,0,.5),transparent);
+      z-index:2;
+    }
+    .ocrCloseBtn{
+      background:rgba(255,255,255,.15);color:#fff;border:0;
+      width:36px;height:36px;border-radius:50%;font-size:18px;padding:0;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .ocrBottomBar{
+      padding:20px 16px calc(20px + env(safe-area-inset-bottom));
+      background:#000;display:flex;gap:12px;align-items:center;justify-content:center;
+    }
+    .ocrShutterBtn{
+      width:72px;height:72px;border-radius:50%;
+      background:#fff;border:4px solid #fbbf24;
+      font-size:28px;padding:0;color:#111;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .ocrShutterBtn:disabled{opacity:.5}
+    .ocrHint{
+      position:absolute;bottom:20px;left:50%;transform:translateX(-50%);
+      color:#fff;font-size:13px;text-align:center;
+      text-shadow:0 1px 2px rgba(0,0,0,.8);
+      z-index:2;white-space:nowrap;
+    }
+    .ocrProgress{
+      position:absolute;inset:0;background:rgba(0,0,0,.75);
+      display:none;flex-direction:column;align-items:center;justify-content:center;
+      color:#fff;gap:14px;z-index:3;
+    }
+    .ocrProgress.show{display:flex}
+    .ocrSpinner{
+      width:44px;height:44px;border-radius:50%;
+      border:4px solid rgba(251,191,36,.3);border-top-color:#fbbf24;
+      animation:spin .8s linear infinite;
+    }
+    .ocrProgressText{font-size:15px;font-weight:700}
+    .ocrProgressSub{font-size:12px;color:#d1d5db}
+
+    /* 多候選選擇 */
+    .ocrPickWrap{
+      position:absolute;inset:0;background:rgba(0,0,0,.85);
+      display:none;flex-direction:column;align-items:center;justify-content:center;
+      padding:20px;gap:12px;z-index:4;
+    }
+    .ocrPickWrap.show{display:flex}
+    .ocrPickTitle{color:#fff;font-size:15px;font-weight:700;margin-bottom:4px}
+    .ocrPickBtn{
+      min-width:180px;padding:14px 20px;
+      background:#fff;color:#111;border:0;border-radius:12px;
+      font-size:20px;font-weight:900;letter-spacing:2px;
+      font-family:"JetBrains Mono","Courier New",monospace;
+    }
+    .ocrPickCancel{
+      margin-top:8px;padding:10px 20px;
+      background:transparent;color:#fff;border:1px solid #6b7280;border-radius:10px;
+      font-size:14px;
+    }
+
+    /* 取景快閃 */
+    .ocrFlash{
+      position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:5;
+      transition:opacity .08s;
+    }
+    .ocrFlash.show{opacity:.85}
   </style>
 </head>
 <body>
@@ -288,7 +383,7 @@
 
         <div class="row">
           <label id="carLabel">車號<span class="req" id="carReq">*</span></label>
-          <div class="hint" id="carHint" style="margin-bottom:8px">可新增多筆,一次上傳多台</div>
+          <div class="hint" id="carHint" style="margin-bottom:8px">可新增多筆,一次上傳多台。點 📷 可掃描車號</div>
           <div id="carList"></div>
         </div>
 
@@ -317,7 +412,46 @@
   </div>
 </div>
 
+<!-- OCR 相機掃描視窗 -->
+<div id="ocrOverlay" class="ocrOverlay">
+  <div class="ocrVideoWrap">
+    <video id="ocrVideo" class="ocrVideo" autoplay playsinline muted></video>
+
+    <div class="ocrTopBar">
+      <div>📷 掃描車號</div>
+      <button type="button" class="ocrCloseBtn" onclick="closeOcr()">✕</button>
+    </div>
+
+    <div class="ocrGuideLabel">將車號對準黃框</div>
+    <div class="ocrGuide"></div>
+
+    <div class="ocrHint">車號為 7 位數字、開頭為 0</div>
+
+    <div class="ocrFlash" id="ocrFlash"></div>
+
+    <div class="ocrProgress" id="ocrProgress">
+      <div class="ocrSpinner"></div>
+      <div class="ocrProgressText" id="ocrProgressText">辨識中...</div>
+      <div class="ocrProgressSub" id="ocrProgressSub"></div>
+    </div>
+
+    <div class="ocrPickWrap" id="ocrPickWrap">
+      <div class="ocrPickTitle">辨識到多個車號,請選擇:</div>
+      <div id="ocrPickList" style="display:flex;flex-direction:column;gap:10px"></div>
+      <button type="button" class="ocrPickCancel" onclick="hideOcrPick()">重新掃描</button>
+    </div>
+  </div>
+
+  <div class="ocrBottomBar">
+    <button type="button" id="ocrShutterBtn" class="ocrShutterBtn" onclick="captureAndRecognize()">📷</button>
+  </div>
+</div>
+
+<canvas id="ocrCanvas" style="display:none"></canvas>
+
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<!-- Tesseract.js (約 700KB,首次載入模型 ~2MB 會快取) -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
   /* =========================================================
    * 部署設定
@@ -490,15 +624,14 @@
     pill.className = "pill " + type;
     pill.textContent = TASK_LABEL[type];
 
-    // 清潔作業車號為選填(其他為必填)
     const carReq  = document.getElementById("carReq");
     const carHint = document.getElementById("carHint");
     if (type === "clean") {
       carReq.style.display = "none";
-      carHint.textContent = "選填,可新增多筆。若未填則視為純清潔場站";
+      carHint.textContent = "選填,可新增多筆。若未填則視為純清潔場站。點 📷 可掃描車號";
     } else {
       carReq.style.display = "";
-      carHint.textContent = "可新增多筆,一次上傳多台";
+      carHint.textContent = "可新增多筆,一次上傳多台。點 📷 可掃描車號";
     }
 
     renderCarArea();
@@ -567,7 +700,6 @@
 
     let candidates = state.stations.slice();
     if (kw) {
-      // ★ 只比對「場站名稱」,不再比對行政區/責任區
       candidates = candidates.filter(s =>
         s.station.toLowerCase().includes(kw)
       );
@@ -641,6 +773,7 @@
             'value="' + escapeHtml(val) + '" ' +
             'oninput="onCarInput(' + i + ', this)" />' +
         '</div>' +
+        '<button type="button" class="carBtn carBtnScan" onclick="openOcr(' + i + ', \'car\')" title="掃描車號">📷</button>' +
         '<button type="button" class="carBtn carBtnDel" onclick="removeRow(' + i + ')"' + (canDel ? '' : ' disabled') + '>−</button>' +
       '</div>' +
       '<div class="carErrRow">' + escapeHtml(errMsg) + '</div>';
@@ -653,7 +786,6 @@
   function renderPumpList() {
     const wrap = document.getElementById("carList");
 
-    // ★ 單行表頭:車號 | 打氣前胎壓(橫跨前輪/後輪兩欄)
     const header =
       '<div class="pumpHeader">' +
         '<div class="h-seq"></div>' +
@@ -668,18 +800,18 @@
       const errMsg = errMsgFor(carVal);
       const canDel = state.pumpData.length > 1;
 
-      // 胎壓驗證樣式
       const psiFrontInvalid = isPsiInvalid(item.psiFront) ? "psiInvalid" : "";
       const psiRearInvalid  = isPsiInvalid(item.psiRear)  ? "psiInvalid" : "";
 
       return '<div class="pumpRow">' +
         '<div class="carSeq">' + (i + 1) + '.</div>' +
-        '<div class="cell cellCar">' +
-          '<input class="carInput ' + valClass + '" ' +
+        '<div class="cell cellCar" style="display:flex;gap:3px;align-items:center">' +
+          '<input class="carInput ' + valClass + '" style="flex:1" ' +
             'type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="7" ' +
             'placeholder="' + CAR_NO_PLACEHOLDER + '" ' +
             'value="' + escapeHtml(carVal) + '" ' +
             'oninput="onPumpCarInput(' + i + ', this)" />' +
+          '<button type="button" class="carBtn carBtnScan" onclick="openOcr(' + i + ', \'pump\')" title="掃描車號">📷</button>' +
         '</div>' +
         '<div class="cell cellPsi">' +
           '<input type="number" inputmode="decimal" step="0.1" ' +
@@ -720,7 +852,6 @@
     return "車號格式錯誤";
   }
 
-  // 胎壓驗證:空白不算錯(會在送出時擋),有值時要在 0-100 之間且為數字
   function isPsiInvalid(val) {
     const s = String(val || "").trim();
     if (!s) return false;
@@ -761,7 +892,6 @@
 
   function onPumpPsiInput(idx, key, input) {
     let v = input.value;
-    // 即時擋下超過 100 的輸入:如果超過就回退到 100
     if (v !== "" && isFinite(Number(v))) {
       const n = Number(v);
       if (n > PSI_MAX) {
@@ -773,8 +903,6 @@
       }
     }
     state.pumpData[idx][key] = v;
-
-    // 即時更新紅框樣式
     input.classList.toggle("psiInvalid", isPsiInvalid(v));
   }
 
@@ -810,6 +938,275 @@
   }
   function escapeJs(s){
     return String(s == null ? "" : s).replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+  }
+
+  /* ============================================================
+   * OCR 掃描車號 (Tesseract.js)
+   * ============================================================ */
+  const ocr = {
+    stream: null,
+    worker: null,
+    workerReady: false,
+    workerInitializing: false,
+    targetIdx: -1,
+    targetKind: "" // "car" | "pump"
+  };
+
+  // 延遲初始化 worker (第一次按掃描時建立)
+  async function ensureOcrWorker() {
+    if (ocr.workerReady) return ocr.worker;
+    if (ocr.workerInitializing) {
+      // 等現有的初始化完成
+      while (ocr.workerInitializing) {
+        await new Promise(r => setTimeout(r, 100));
+      }
+      return ocr.worker;
+    }
+
+    ocr.workerInitializing = true;
+    try {
+      setOcrProgress("載入辨識引擎...", "首次使用需下載模型(約 2MB)");
+      const worker = await Tesseract.createWorker("eng", 1, {
+        logger: m => {
+          if (m.status === "loading tesseract core") {
+            setOcrProgress("載入辨識引擎...", "下載核心 " + Math.round((m.progress || 0) * 100) + "%");
+          } else if (m.status === "loading language traineddata") {
+            setOcrProgress("載入辨識引擎...", "下載語言資料 " + Math.round((m.progress || 0) * 100) + "%");
+          } else if (m.status === "initializing api") {
+            setOcrProgress("載入辨識引擎...", "準備中 " + Math.round((m.progress || 0) * 100) + "%");
+          } else if (m.status === "recognizing text") {
+            setOcrProgress("辨識中...", Math.round((m.progress || 0) * 100) + "%");
+          }
+        }
+      });
+
+      await worker.setParameters({
+        tessedit_char_whitelist: "0123456789",
+        tessedit_pageseg_mode: Tesseract.PSM ? Tesseract.PSM.SINGLE_LINE : "7"
+      });
+
+      ocr.worker = worker;
+      ocr.workerReady = true;
+      return worker;
+    } finally {
+      ocr.workerInitializing = false;
+    }
+  }
+
+  async function openOcr(idx, kind) {
+    ocr.targetIdx = idx;
+    ocr.targetKind = kind;
+
+    document.getElementById("ocrOverlay").classList.add("show");
+    hideOcrProgress();
+    hideOcrPick();
+
+    // 開啟相機
+    try {
+      ocr.stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: "environment" },
+          width:  { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
+      });
+      const video = document.getElementById("ocrVideo");
+      video.srcObject = ocr.stream;
+      await video.play().catch(() => {});
+    } catch (err) {
+      alert("無法開啟相機:" + (err && err.message ? err.message : err) + "\n請確認已授權相機權限");
+      closeOcr();
+      return;
+    }
+
+    // 背景預先載入 OCR worker (不擋 UI)
+    ensureOcrWorker().catch(() => {});
+  }
+
+  function closeOcr() {
+    const overlay = document.getElementById("ocrOverlay");
+    overlay.classList.remove("show");
+    hideOcrProgress();
+    hideOcrPick();
+
+    if (ocr.stream) {
+      ocr.stream.getTracks().forEach(t => t.stop());
+      ocr.stream = null;
+    }
+    const video = document.getElementById("ocrVideo");
+    try { video.pause(); } catch(_) {}
+    video.srcObject = null;
+  }
+
+  function setOcrProgress(text, sub) {
+    const p = document.getElementById("ocrProgress");
+    p.classList.add("show");
+    document.getElementById("ocrProgressText").textContent = text || "辨識中...";
+    document.getElementById("ocrProgressSub").textContent  = sub  || "";
+  }
+
+  function hideOcrProgress() {
+    document.getElementById("ocrProgress").classList.remove("show");
+  }
+
+  function showOcrPick(candidates) {
+    const list = document.getElementById("ocrPickList");
+    list.innerHTML = candidates.map(c =>
+      '<button type="button" class="ocrPickBtn" onclick="pickOcrResult(\'' + escapeJs(c) + '\')">' + escapeHtml(c) + '</button>'
+    ).join("");
+    document.getElementById("ocrPickWrap").classList.add("show");
+  }
+
+  function hideOcrPick() {
+    document.getElementById("ocrPickWrap").classList.remove("show");
+  }
+
+  function pickOcrResult(carNo) {
+    applyOcrResult(carNo);
+  }
+
+  async function captureAndRecognize() {
+    const shutter = document.getElementById("ocrShutterBtn");
+    if (shutter.disabled) return;
+    shutter.disabled = true;
+
+    // 快閃動畫
+    const flash = document.getElementById("ocrFlash");
+    flash.classList.add("show");
+    setTimeout(() => flash.classList.remove("show"), 120);
+
+    try {
+      // 1. 從 video 擷取當前幀
+      const video = document.getElementById("ocrVideo");
+      const canvas = document.getElementById("ocrCanvas");
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+      if (!vw || !vh) {
+        alert("相機尚未就緒,請稍候再試");
+        return;
+      }
+
+      // 2. 計算對準框在 video 座標中的位置
+      //    對準框在畫面上是置中、寬度 min(82vw,360px)、高度 80px
+      //    video 以 object-fit:cover 顯示,所以需把 CSS 座標換算到 video 實際像素
+      const videoRect = video.getBoundingClientRect();
+      const guideEl = document.querySelector(".ocrGuide");
+      const guideRect = guideEl.getBoundingClientRect();
+
+      // cover 模式:video 的實際像素比例 vs 顯示大小
+      const scaleX = vw / videoRect.width;
+      const scaleY = vh / videoRect.height;
+      // cover 會取較大的縮放,反推在 video 座標裡對準框的位置
+      const scale = Math.max(scaleX, scaleY);
+      const displayedW = vw / scale; // video 在畫面上實際顯示的寬度
+      const displayedH = vh / scale;
+      const offsetX = (videoRect.width  - displayedW) / 2;
+      const offsetY = (videoRect.height - displayedH) / 2;
+
+      let cropX = Math.round((guideRect.left - videoRect.left - offsetX) * scale);
+      let cropY = Math.round((guideRect.top  - videoRect.top  - offsetY) * scale);
+      let cropW = Math.round(guideRect.width  * scale);
+      let cropH = Math.round(guideRect.height * scale);
+
+      // 邊界保護
+      cropX = Math.max(0, Math.min(cropX, vw - 10));
+      cropY = Math.max(0, Math.min(cropY, vh - 10));
+      cropW = Math.min(cropW, vw - cropX);
+      cropH = Math.min(cropH, vh - cropY);
+
+      // 3. 把裁切區放大到辨識用的 canvas (放大 + 灰階 + 二值化)
+      const TARGET_W = 600;
+      const ratio = TARGET_W / cropW;
+      const TARGET_H = Math.round(cropH * ratio);
+      canvas.width  = TARGET_W;
+      canvas.height = TARGET_H;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, TARGET_W, TARGET_H);
+
+      // 灰階 + 對比增強
+      const imgData = ctx.getImageData(0, 0, TARGET_W, TARGET_H);
+      const d = imgData.data;
+      // 先算平均亮度
+      let sum = 0;
+      for (let i = 0; i < d.length; i += 4) {
+        sum += (d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114);
+      }
+      const avg = sum / (d.length / 4);
+      const threshold = avg * 0.85; // 稍微偏暗的門檻,避免文字被吃掉
+      for (let i = 0; i < d.length; i += 4) {
+        const gray = d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114;
+        const v = gray < threshold ? 0 : 255;
+        d[i] = d[i+1] = d[i+2] = v;
+      }
+      ctx.putImageData(imgData, 0, 0);
+
+      // 4. 丟給 Tesseract
+      setOcrProgress("辨識中...", "0%");
+      const worker = await ensureOcrWorker();
+      const { data } = await worker.recognize(canvas);
+
+      hideOcrProgress();
+
+      const text = (data && data.text) ? data.text : "";
+      const digits = text.replace(/\D/g, "");
+
+      // 5. 抓符合格式的車號
+      const candidates = extractCarNoCandidates(digits);
+
+      if (candidates.length === 0) {
+        // 嘗試寬鬆抓:取連續 7 位數
+        const looseMatch = digits.match(/\d{7}/g);
+        if (looseMatch && looseMatch.length > 0) {
+          // 找不到 0 開頭,但有 7 位數,給使用者看看是不是辨識錯
+          alert("辨識到:" + looseMatch.join("、") + "\n但不符合車號格式(需 0 開頭)\n請重新對準或手動輸入");
+        } else {
+          alert("辨識失敗,請重新對準黃框再拍一次\n(辨識結果:" + (text.trim() || "(無)") + ")");
+        }
+        return;
+      }
+
+      if (candidates.length === 1) {
+        applyOcrResult(candidates[0]);
+      } else {
+        showOcrPick(candidates);
+      }
+    } catch (err) {
+      hideOcrProgress();
+      alert("辨識發生錯誤:" + (err && err.message ? err.message : err));
+    } finally {
+      shutter.disabled = false;
+    }
+  }
+
+  // 從 OCR 純數字字串抽取「0 開頭 + 7 位」候選
+  function extractCarNoCandidates(digits) {
+    const set = new Set();
+    const results = [];
+    for (let i = 0; i <= digits.length - 7; i++) {
+      const seg = digits.substr(i, 7);
+      if (/^0\d{6}$/.test(seg)) {
+        if (!set.has(seg)) {
+          set.add(seg);
+          results.push(seg);
+        }
+      }
+    }
+    return results;
+  }
+
+  function applyOcrResult(carNo) {
+    const idx = ocr.targetIdx;
+    const kind = ocr.targetKind;
+    if (idx < 0) { closeOcr(); return; }
+
+    if (kind === "pump") {
+      if (state.pumpData[idx]) state.pumpData[idx].carNo = carNo;
+    } else {
+      if (idx < state.carNos.length) state.carNos[idx] = carNo;
+    }
+    renderCarArea();
+    closeOcr();
   }
 
   async function submitForm() {
@@ -871,7 +1268,6 @@
     } else {
       const cleaned = state.carNos.map(c => String(c || "").trim()).filter(c => c);
 
-      // 清潔作業:沒填車號時,後台寫入「純清潔場站」
       if (state.taskType === "clean" && cleaned.length === 0) {
         body.carNos = ["純清潔場站"];
       } else {
@@ -916,6 +1312,14 @@
       else { el.textContent = n; }
     }, 1000);
   }
+
+  // 關閉頁面時清掉相機
+  window.addEventListener("pagehide", () => {
+    if (ocr.stream) {
+      ocr.stream.getTracks().forEach(t => t.stop());
+      ocr.stream = null;
+    }
+  });
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initLiff);
