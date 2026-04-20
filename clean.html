@@ -210,16 +210,23 @@
     /* 對準框 */
     .ocrGuide{
       position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-      width:min(82vw,360px);height:80px;
-      border:3px solid #fbbf24;border-radius:12px;
+      width:min(72vw,300px);height:100px;
+      border:3px solid #fbbf24;border-radius:10px;
       box-shadow:0 0 0 9999px rgba(0,0,0,.55);
       pointer-events:none;
     }
     .ocrGuideLabel{
-      position:absolute;top:calc(50% - 70px);left:50%;transform:translateX(-50%);
+      position:absolute;top:calc(50% - 80px);left:50%;transform:translateX(-50%);
       color:#fbbf24;font-size:13px;font-weight:700;letter-spacing:1px;
       text-shadow:0 1px 2px rgba(0,0,0,.8);
       pointer-events:none;white-space:nowrap;
+    }
+    .ocrGuideSubLabel{
+      position:absolute;top:calc(50% + 65px);left:50%;transform:translateX(-50%);
+      color:#fff;font-size:12px;font-weight:400;
+      text-shadow:0 1px 2px rgba(0,0,0,.8);
+      pointer-events:none;white-space:nowrap;
+      background:rgba(0,0,0,.4);padding:3px 10px;border-radius:12px;
     }
     .ocrTopBar{
       position:absolute;top:0;left:0;right:0;
@@ -427,6 +434,7 @@
 
     <div class="ocrGuideLabel">將車號對準黃框</div>
     <div class="ocrGuide"></div>
+    <div class="ocrGuideSubLabel">單行或兩行都可以 · 整組塞進框內</div>
 
     <div class="ocrHint">車號為 7 位數字、開頭為 0</div>
 
@@ -442,6 +450,15 @@
       <div class="ocrPickTitle">辨識到多個車號,請選擇:</div>
       <div id="ocrPickList" style="display:flex;flex-direction:column;gap:10px"></div>
       <button type="button" class="ocrPickCancel" onclick="hideOcrPick()">重新掃描</button>
+    </div>
+
+    <!-- 辨識失敗除錯視窗 -->
+    <div class="ocrPickWrap" id="ocrDebugWrap" style="overflow-y:auto">
+      <div class="ocrPickTitle" style="color:#fbbf24">⚠️ 辨識失敗</div>
+      <img id="ocrDebugImg" style="max-width:90vw;max-height:120px;border:2px solid #fbbf24;border-radius:8px;background:#fff" />
+      <div style="font-size:11px;color:#9ca3af">↑ 系統實際辨識的畫面(預處理後)</div>
+      <div id="ocrDebugText" style="color:#fff;font-size:13px;line-height:1.8;white-space:pre-wrap;text-align:left;background:rgba(255,255,255,.08);padding:10px;border-radius:8px;max-width:90vw;font-family:monospace"></div>
+      <button type="button" class="ocrPickCancel" onclick="hideOcrDebug()">重新掃描</button>
     </div>
   </div>
 
@@ -1006,7 +1023,7 @@
 
       await worker.setParameters({
         tessedit_char_whitelist: "0123456789",
-        tessedit_pageseg_mode: Tesseract.PSM ? Tesseract.PSM.SINGLE_LINE : "7"
+        tessedit_pageseg_mode: Tesseract.PSM ? Tesseract.PSM.SINGLE_BLOCK : "6"
       });
 
       ocr.worker = worker;
@@ -1033,6 +1050,7 @@
     document.getElementById("ocrOverlay").classList.add("show");
     hideOcrProgress();
     hideOcrPick();
+    hideOcrDebug();
 
     // 開啟相機
     try {
@@ -1062,6 +1080,7 @@
     overlay.classList.remove("show");
     hideOcrProgress();
     hideOcrPick();
+    hideOcrDebug();
     setOcrMiniStatus("");
 
     if (ocr.stream) {
@@ -1107,6 +1126,23 @@
 
   function hideOcrPick() {
     document.getElementById("ocrPickWrap").classList.remove("show");
+  }
+
+  // 除錯視窗(辨識失敗時)
+  function showOcrDebug(text, imgData) {
+    document.getElementById("ocrDebugText").textContent = text;
+    const img = document.getElementById("ocrDebugImg");
+    if (imgData) {
+      img.src = imgData;
+      img.style.display = "";
+    } else {
+      img.style.display = "none";
+    }
+    document.getElementById("ocrDebugWrap").classList.add("show");
+  }
+
+  function hideOcrDebug() {
+    document.getElementById("ocrDebugWrap").classList.remove("show");
   }
 
   function pickOcrResult(carNo) {
@@ -1156,6 +1192,12 @@
       let cropW = Math.round(guideRect.width  * scale);
       let cropH = Math.round(guideRect.height * scale);
 
+      // 向外擴 15% 容錯(避免使用者沒對很準時完全裁掉邊緣的字)
+      const expandX = Math.round(cropW * 0.15);
+      const expandY = Math.round(cropH * 0.25);
+      cropX -= expandX; cropW += expandX * 2;
+      cropY -= expandY; cropH += expandY * 2;
+
       // 邊界保護
       cropX = Math.max(0, Math.min(cropX, vw - 10));
       cropY = Math.max(0, Math.min(cropY, vh - 10));
@@ -1163,53 +1205,142 @@
       cropH = Math.min(cropH, vh - cropY);
 
       // 3. 把裁切區放大到辨識用的 canvas (放大 + 灰階 + 二值化)
-      const TARGET_W = 600;
+      const TARGET_W = 1200;  // 更大的輸入尺寸,提升小字辨識率
       const ratio = TARGET_W / cropW;
       const TARGET_H = Math.round(cropH * ratio);
       canvas.width  = TARGET_W;
       canvas.height = TARGET_H;
       const ctx = canvas.getContext("2d", { willReadFrequently: true });
+
+      // 設定 imageSmoothing 讓放大時保持清晰
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+
+      // 先清成白色背景
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, TARGET_W, TARGET_H);
       ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, TARGET_W, TARGET_H);
 
-      // 灰階 + 對比增強
+      // 轉灰階 + 對比增強
       const imgData = ctx.getImageData(0, 0, TARGET_W, TARGET_H);
       const d = imgData.data;
-      // 先算平均亮度
-      let sum = 0;
-      for (let i = 0; i < d.length; i += 4) {
-        sum += (d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114);
+      const grayArr = new Uint8Array(d.length / 4);
+      for (let i = 0, j = 0; i < d.length; i += 4, j++) {
+        grayArr[j] = Math.round(d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114);
       }
-      const avg = sum / (d.length / 4);
-      const threshold = avg * 0.85; // 稍微偏暗的門檻,避免文字被吃掉
-      for (let i = 0; i < d.length; i += 4) {
-        const gray = d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114;
-        const v = gray < threshold ? 0 : 255;
+
+      // Otsu 自動求最佳二值化門檻
+      const hist = new Array(256).fill(0);
+      for (let i = 0; i < grayArr.length; i++) hist[grayArr[i]]++;
+      const total = grayArr.length;
+      let sumAll = 0;
+      for (let t = 0; t < 256; t++) sumAll += t * hist[t];
+      let sumB = 0, wB = 0, varMax = 0, threshold = 128;
+      for (let t = 0; t < 256; t++) {
+        wB += hist[t]; if (wB === 0) continue;
+        const wF = total - wB; if (wF === 0) break;
+        sumB += t * hist[t];
+        const mB = sumB / wB;
+        const mF = (sumAll - sumB) / wF;
+        const between = wB * wF * (mB - mF) * (mB - mF);
+        if (between > varMax) { varMax = between; threshold = t; }
+      }
+
+      // 套用二值化
+      for (let i = 0, j = 0; i < d.length; i += 4, j++) {
+        const v = grayArr[j] < threshold ? 0 : 255;
         d[i] = d[i+1] = d[i+2] = v;
       }
       ctx.putImageData(imgData, 0, 0);
 
-      // 4. 丟給 Tesseract
+      // 存除錯用的預處理圖(base64)
+      const debugImage = canvas.toDataURL("image/png");
+
+      // 4. 丟給 Tesseract - 多階段嘗試
       setOcrProgress("辨識中...", "0%");
       const worker = await ensureOcrWorker(true);
-      const { data } = await worker.recognize(canvas);
+
+      // 準備 3 種 PSM 模式嘗試(優先用 SINGLE_BLOCK,因為能同時處理單行跟兩行)
+      const psmModes = [
+        { mode: (Tesseract.PSM && Tesseract.PSM.SINGLE_BLOCK) || "6",  label: "單塊文字" },
+        { mode: (Tesseract.PSM && Tesseract.PSM.SPARSE_TEXT) || "11", label: "稀疏文字" },
+        { mode: (Tesseract.PSM && Tesseract.PSM.SINGLE_LINE) || "7",  label: "單行" }
+      ];
+
+      let text = "";
+      let digits = "";
+      let candidates = [];
+      const allAttempts = [];  // 紀錄所有嘗試的結果,失敗時給除錯用
+
+      for (let i = 0; i < psmModes.length; i++) {
+        const { mode, label } = psmModes[i];
+        setOcrProgress("辨識中...", label + " (" + (i+1) + "/" + psmModes.length + ")");
+
+        try {
+          await worker.setParameters({ tessedit_pageseg_mode: mode });
+        } catch (_) {}
+
+        const r = await worker.recognize(canvas);
+        const t = (r.data && r.data.text) ? r.data.text : "";
+        const dg = t.replace(/\D/g, "");
+        const cands = extractCarNoCandidates(dg);
+
+        allAttempts.push({ label, text: t.trim(), digits: dg });
+
+        if (cands.length > 0) {
+          // 找到合格車號,停止嘗試
+          text = t;
+          digits = dg;
+          candidates = cands;
+          break;
+        }
+
+        // 保留最多數字的結果,給除錯參考
+        if (dg.length > digits.length) {
+          text = t;
+          digits = dg;
+        }
+      }
+
+      // 恢復回預設 PSM 供下次
+      try {
+        await worker.setParameters({
+          tessedit_pageseg_mode: (Tesseract.PSM && Tesseract.PSM.SINGLE_BLOCK) || "6"
+        });
+      } catch (_) {}
 
       hideOcrProgress();
 
-      const text = (data && data.text) ? data.text : "";
-      const digits = text.replace(/\D/g, "");
-
-      // 5. 抓符合格式的車號
-      const candidates = extractCarNoCandidates(digits);
-
+      // 5. 處理結果
       if (candidates.length === 0) {
-        // 嘗試寬鬆抓:取連續 7 位數
-        const looseMatch = digits.match(/\d{7}/g);
-        if (looseMatch && looseMatch.length > 0) {
-          // 找不到 0 開頭,但有 7 位數,給使用者看看是不是辨識錯
-          alert("辨識到:" + looseMatch.join("、") + "\n但不符合車號格式(需 0 開頭)\n請重新對準或手動輸入");
-        } else {
-          alert("辨識失敗,請重新對準黃框再拍一次\n(辨識結果:" + (text.trim() || "(無)") + ")");
+        // 嘗試把所有階段讀到的數字合併,再掃一次 0\d{6}
+        const allDigits = allAttempts.map(a => a.digits).join("");
+        const mergedCandidates = extractCarNoCandidates(allDigits);
+        if (mergedCandidates.length > 0) {
+          if (mergedCandidates.length === 1) applyOcrResult(mergedCandidates[0]);
+          else showOcrPick(mergedCandidates);
+          return;
         }
+
+        // 真的都辨識不出來 → 顯示除錯資訊
+        let info = "3 種模式都辨識不出車號\n\n";
+        allAttempts.forEach(a => {
+          info += "【" + a.label + "】\n";
+          info += "文字:" + (a.text || "(無)") + "\n";
+          info += "數字:" + (a.digits || "(無)") + "\n\n";
+        });
+
+        const looseMatch = allDigits.match(/\d{6,8}/g);
+        if (looseMatch && looseMatch.length > 0) {
+          info += "接近 7 位數的序列:" + looseMatch.join("、") + "\n\n";
+        }
+
+        info += "請確認:\n";
+        info += "1. 車號有完整塞進黃框?\n";
+        info += "2. 光線是否充足?\n";
+        info += "3. 鏡頭對焦清楚?";
+
+        showOcrDebug(info, debugImage);
         return;
       }
 
