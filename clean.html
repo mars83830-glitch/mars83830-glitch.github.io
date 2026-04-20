@@ -418,7 +418,10 @@
     <video id="ocrVideo" class="ocrVideo" autoplay playsinline muted></video>
 
     <div class="ocrTopBar">
-      <div>📷 掃描車號</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span>📷 掃描車號</span>
+        <span id="ocrMiniStatus" style="font-size:12px;color:#fbbf24;font-weight:400;display:none"></span>
+      </div>
       <button type="button" class="ocrCloseBtn" onclick="closeOcr()">✕</button>
     </div>
 
@@ -952,30 +955,51 @@
     targetKind: "" // "car" | "pump"
   };
 
-  // 延遲初始化 worker (第一次按掃描時建立)
-  async function ensureOcrWorker() {
+  // 延遲初始化 worker
+  // showProgress=true 時顯示全屏進度條(按快門時用)
+  // showProgress=false 時只更新左上角小提示(背景預載時用)
+  async function ensureOcrWorker(showProgress) {
     if (ocr.workerReady) return ocr.worker;
     if (ocr.workerInitializing) {
       // 等現有的初始化完成
       while (ocr.workerInitializing) {
         await new Promise(r => setTimeout(r, 100));
       }
+      // 如果需要顯示進度(按快門進來等待完成),結束時把小提示關掉
+      if (showProgress) hideOcrProgress();
+      setOcrMiniStatus("");
       return ocr.worker;
     }
 
     ocr.workerInitializing = true;
     try {
-      setOcrProgress("載入辨識引擎...", "首次使用需下載模型(約 2MB)");
+      if (showProgress) {
+        setOcrProgress("載入辨識引擎...", "首次使用需下載模型(約 2MB)");
+      } else {
+        setOcrMiniStatus("引擎載入中...");
+      }
+
       const worker = await Tesseract.createWorker("eng", 1, {
         logger: m => {
+          const pct = Math.round((m.progress || 0) * 100);
+          let text = "", sub = "";
           if (m.status === "loading tesseract core") {
-            setOcrProgress("載入辨識引擎...", "下載核心 " + Math.round((m.progress || 0) * 100) + "%");
+            text = "載入辨識引擎..."; sub = "下載核心 " + pct + "%";
           } else if (m.status === "loading language traineddata") {
-            setOcrProgress("載入辨識引擎...", "下載語言資料 " + Math.round((m.progress || 0) * 100) + "%");
+            text = "載入辨識引擎..."; sub = "下載語言資料 " + pct + "%";
           } else if (m.status === "initializing api") {
-            setOcrProgress("載入辨識引擎...", "準備中 " + Math.round((m.progress || 0) * 100) + "%");
+            text = "載入辨識引擎..."; sub = "準備中 " + pct + "%";
           } else if (m.status === "recognizing text") {
-            setOcrProgress("辨識中...", Math.round((m.progress || 0) * 100) + "%");
+            text = "辨識中..."; sub = pct + "%";
+          } else {
+            return;
+          }
+
+          if (showProgress) {
+            setOcrProgress(text, sub);
+          } else {
+            // 背景預載:不擋畫面,只在左上角顯示簡短狀態
+            setOcrMiniStatus(text === "辨識中..." ? "辨識中 " + pct + "%" : "引擎載入中 " + pct + "%");
           }
         }
       });
@@ -987,7 +1011,16 @@
 
       ocr.worker = worker;
       ocr.workerReady = true;
+
+      // 載完要把 UI 關掉(logger 不會主動清)
+      hideOcrProgress();
+      setOcrMiniStatus("");
+
       return worker;
+    } catch (err) {
+      hideOcrProgress();
+      setOcrMiniStatus("");
+      throw err;
     } finally {
       ocr.workerInitializing = false;
     }
@@ -1020,8 +1053,8 @@
       return;
     }
 
-    // 背景預先載入 OCR worker (不擋 UI)
-    ensureOcrWorker().catch(() => {});
+    // 背景預先載入 OCR worker (不擋 UI,只在左上角顯示小字)
+    ensureOcrWorker(false).catch(() => {});
   }
 
   function closeOcr() {
@@ -1029,6 +1062,7 @@
     overlay.classList.remove("show");
     hideOcrProgress();
     hideOcrPick();
+    setOcrMiniStatus("");
 
     if (ocr.stream) {
       ocr.stream.getTracks().forEach(t => t.stop());
@@ -1048,6 +1082,19 @@
 
   function hideOcrProgress() {
     document.getElementById("ocrProgress").classList.remove("show");
+  }
+
+  // 左上角的小狀態提示(不擋畫面)
+  function setOcrMiniStatus(text) {
+    const el = document.getElementById("ocrMiniStatus");
+    if (!el) return;
+    if (text) {
+      el.textContent = text;
+      el.style.display = "";
+    } else {
+      el.textContent = "";
+      el.style.display = "none";
+    }
   }
 
   function showOcrPick(candidates) {
@@ -1143,7 +1190,7 @@
 
       // 4. 丟給 Tesseract
       setOcrProgress("辨識中...", "0%");
-      const worker = await ensureOcrWorker();
+      const worker = await ensureOcrWorker(true);
       const { data } = await worker.recognize(canvas);
 
       hideOcrProgress();
