@@ -210,19 +210,19 @@
     /* 對準框 */
     .ocrGuide{
       position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-      width:min(72vw,300px);height:100px;
-      border:3px solid #fbbf24;border-radius:10px;
+      width:min(65vw,220px);height:min(65vw,220px);
+      border:3px solid #fbbf24;border-radius:12px;
       box-shadow:0 0 0 9999px rgba(0,0,0,.55);
       pointer-events:none;
     }
     .ocrGuideLabel{
-      position:absolute;top:calc(50% - 80px);left:50%;transform:translateX(-50%);
+      position:absolute;top:calc(50% - min(65vw,220px)/2 - 26px);left:50%;transform:translateX(-50%);
       color:#fbbf24;font-size:13px;font-weight:700;letter-spacing:1px;
       text-shadow:0 1px 2px rgba(0,0,0,.8);
       pointer-events:none;white-space:nowrap;
     }
     .ocrGuideSubLabel{
-      position:absolute;top:calc(50% + 65px);left:50%;transform:translateX(-50%);
+      position:absolute;top:calc(50% + min(65vw,220px)/2 + 12px);left:50%;transform:translateX(-50%);
       color:#fff;font-size:12px;font-weight:400;
       text-shadow:0 1px 2px rgba(0,0,0,.8);
       pointer-events:none;white-space:nowrap;
@@ -434,7 +434,7 @@
 
     <div class="ocrGuideLabel">將車號對準黃框</div>
     <div class="ocrGuide"></div>
-    <div class="ocrGuideSubLabel">單行或兩行都可以 · 整組塞進框內</div>
+    <div class="ocrGuideSubLabel">單行或兩行皆可 · 避開水珠反光</div>
 
     <div class="ocrHint">車號為 7 位數字、開頭為 0</div>
 
@@ -1204,10 +1204,12 @@
       cropW = Math.min(cropW, vw - cropX);
       cropH = Math.min(cropH, vh - cropY);
 
-      // 3. 把裁切區放大到辨識用的 canvas (放大 + 灰階 + 二值化)
-      const TARGET_W = 1200;  // 更大的輸入尺寸,提升小字辨識率
-      const ratio = TARGET_W / cropW;
-      const TARGET_H = Math.round(cropH * ratio);
+      // 3. 把裁切區放大到辨識用的 canvas (維持原比例放大)
+      // 以較長邊放大到 1000px,避免方形圖被拉伸
+      const MAX_EDGE = 1000;
+      const scaleRatio = MAX_EDGE / Math.max(cropW, cropH);
+      const TARGET_W = Math.round(cropW * scaleRatio);
+      const TARGET_H = Math.round(cropH * scaleRatio);
       canvas.width  = TARGET_W;
       canvas.height = TARGET_H;
       const ctx = canvas.getContext("2d", { willReadFrequently: true });
@@ -1283,7 +1285,26 @@
         const r = await worker.recognize(canvas);
         const t = (r.data && r.data.text) ? r.data.text : "";
         const dg = t.replace(/\D/g, "");
-        const cands = extractCarNoCandidates(dg);
+
+        // 嘗試 A:直接掃連續字串
+        let cands = extractCarNoCandidates(dg);
+
+        // 嘗試 B:抓出每行數字,用「上行+下行」跟「下行+上行」組合
+        if (cands.length === 0) {
+          const lines = t.split(/\r?\n/).map(l => l.replace(/\D/g, "")).filter(l => l.length > 0);
+          if (lines.length >= 2) {
+            // 相鄰兩行依序組合 + 反向組合
+            for (let k = 0; k < lines.length - 1; k++) {
+              const joinA = lines[k] + lines[k+1];
+              const joinB = lines[k+1] + lines[k];
+              cands = cands.concat(extractCarNoCandidates(joinA));
+              cands = cands.concat(extractCarNoCandidates(joinB));
+            }
+            // 去重
+            const seen = new Set();
+            cands = cands.filter(c => { if (seen.has(c)) return false; seen.add(c); return true; });
+          }
+        }
 
         allAttempts.push({ label, text: t.trim(), digits: dg });
 
