@@ -326,7 +326,8 @@
   const GAS_URL  = "https://script.google.com/macros/s/AKfycbyk42RdWvnjzw8mk4V2BoKGoBr9a9g-RFRYqOlk1J7QKk-ojGsJsphamaLpzw4vA4Y/exec";
   /* ========================================================= */
 
-  const CAR_NO_PATTERN = /^0\d{6}$/;
+  // 車號格式:7 位數,開頭必須為 01、02、03
+  const CAR_NO_PATTERN = /^0[123]\d{5}$/;
   const CAR_NO_PLACEHOLDER = "0301234";
   const PSI_MIN = 0;
   const PSI_MAX = 100;
@@ -717,6 +718,7 @@
     if (!val || CAR_NO_PATTERN.test(val)) return "";
     if (val.length !== 7) return "車號需 7 位數";
     if (!val.startsWith("0")) return "車號開頭必須為 0";
+    if (!/^0[123]/.test(val)) return "車號需以 01、02、03 開頭";
     return "車號格式錯誤";
   }
 
@@ -846,7 +848,7 @@
         const pf = String(it.psiFront || "").trim();
         const pr = String(it.psiRear  || "").trim();
         if (!CAR_NO_PATTERN.test(carNo)) {
-          setStatusMsg("第 " + (i+1) + " 列車號格式錯誤(需 7 位數且開頭為 0)", false); return;
+          setStatusMsg("第 " + (i+1) + " 列車號格式錯誤(需 7 位數且開頭為 01、02、03)", false); return;
         }
         if (!pf || !pr) { setStatusMsg("第 " + (i+1) + " 列前/後胎壓必填", false); return; }
         if (!isFinite(Number(pf)) || !isFinite(Number(pr))) {
@@ -878,7 +880,7 @@
         if (cleaned.length === 0) { setStatusMsg("請至少輸入一個車號", false); return; }
         const invalid = cleaned.filter(c => !CAR_NO_PATTERN.test(c));
         if (invalid.length > 0) {
-          setStatusMsg("車號格式錯誤(需 7 位數且開頭為 0):" + invalid.join("、"), false); return;
+          setStatusMsg("車號格式錯誤(需 7 位數且開頭為 01、02、03):" + invalid.join("、"), false); return;
         }
         body.carNos = Array.from(new Set(cleaned));
       }
