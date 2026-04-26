@@ -873,11 +873,13 @@
       border: 3px solid var(--brand-100);
       border-top-color: var(--brand-500);
       border-radius: 50%;
+      will-change: transform;
       animation: spin .8s linear infinite;
     }
 
     @keyframes spin {
-      to { transform: rotate(360deg); }
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
     }
 
     .leave-stats {
