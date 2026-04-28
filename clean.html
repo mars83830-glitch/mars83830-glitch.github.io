@@ -267,7 +267,14 @@
           <div><span id="taskPill" class="pill swap">換電作業</span></div>
         </div>
 
-        <div class="row ac-wrap" id="stationWrap">
+        <div class="row hidden" id="batteryDepotWrap">
+          <label>電池領用處<span class="req">*</span></label>
+          <select id="fBatteryDepot">
+            <option value="">請選擇電池領用處</option>
+          </select>
+        </div>
+
+        <div class="row ac-wrap" id="stationWrap" style="margin-top:12px">
           <label>場站名稱<span class="req">*</span></label>
           <div class="ac-input-wrap">
             <input
@@ -283,13 +290,6 @@
             <button type="button" class="ac-clear" id="fStationClear" onclick="clearStation()">×</button>
           </div>
           <div class="ac-list" id="fStationList"></div>
-        </div>
-
-        <div class="row hidden" id="batteryDepotWrap" style="margin-top:12px">
-          <label>電池領用處<span class="req">*</span></label>
-          <select id="fBatteryDepot">
-            <option value="">請選擇電池領用處</option>
-          </select>
         </div>
 
         <div class="row">
