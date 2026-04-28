@@ -20,6 +20,7 @@
     input::placeholder,textarea::placeholder{color:#9ca3af;opacity:1;font-weight:400}
     input::-webkit-input-placeholder,textarea::-webkit-input-placeholder{color:#9ca3af;font-weight:400}
     input::-moz-placeholder,textarea::-moz-placeholder{color:#9ca3af;opacity:1;font-weight:400}
+    select.is-placeholder{color:#9ca3af;font-weight:400}
     input:focus,select:focus,textarea:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.15)}
     button{cursor:pointer;font-weight:700}
     .btnMain{background:#2563eb;color:#fff;border:0;padding:14px}
@@ -396,12 +397,17 @@
   function renderBatteryDepots() {
     const sel = document.getElementById("fBatteryDepot");
     if (!sel) return;
-    const html = ['<option value="">請選擇電池領用處</option>']
+    // placeholder 用 disabled + hidden:不會出現在原生選單中,但仍可作為預設顯示文字
+    const html = ['<option value="" disabled selected hidden>請選擇電池領用處</option>']
       .concat(BATTERY_DEPOTS.map(d =>
         '<option value="' + escapeHtml(d) + '">' + escapeHtml(d) + '</option>'
       ))
       .join("");
     sel.innerHTML = html;
+    sel.classList.add("is-placeholder");
+    sel.onchange = function() {
+      sel.classList.toggle("is-placeholder", !sel.value);
+    };
   }
 
   async function initLiff() {
@@ -522,9 +528,11 @@
     document.getElementById("fStationClear").classList.remove("show");
     setStatusMsg("", true);
 
-    // 電池領用處:僅換電作業顯示
+    // 電池領用處:僅換電作業顯示;切換時重置回 placeholder 狀態
     const depotWrap = document.getElementById("batteryDepotWrap");
-    document.getElementById("fBatteryDepot").value = "";
+    const depotSel  = document.getElementById("fBatteryDepot");
+    depotSel.selectedIndex = 0;
+    depotSel.classList.add("is-placeholder");
     depotWrap.classList.toggle("hidden", type !== "swap");
 
     const pill = document.getElementById("taskPill");
