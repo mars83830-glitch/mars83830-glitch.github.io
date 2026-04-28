@@ -17,11 +17,9 @@
     label{display:block;font-size:13px;font-weight:700;margin-bottom:6px;color:#374151}
     label .req{color:#dc2626;margin-left:4px}
     input,select,button,textarea{font-size:15px;padding:11px 12px;border:1px solid #9ca3af;border-radius:10px;width:100%;background:#fff;color:#111827;font-family:inherit;font-weight:700}
-    /* placeholder 統一用淺灰色,跟真正輸入的黑字區分(且字不加粗) */
     input::placeholder,textarea::placeholder{color:#9ca3af;opacity:1;font-weight:400}
     input::-webkit-input-placeholder,textarea::-webkit-input-placeholder{color:#9ca3af;font-weight:400}
     input::-moz-placeholder,textarea::-moz-placeholder{color:#9ca3af;opacity:1;font-weight:400}
-    /* focus 時外框變藍,視覺回饋更明顯 */
     input:focus,select:focus,textarea:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.15)}
     button{cursor:pointer;font-weight:700}
     .btnMain{background:#2563eb;color:#fff;border:0;padding:14px}
@@ -286,6 +284,13 @@
           <div class="ac-list" id="fStationList"></div>
         </div>
 
+        <div class="row hidden" id="batteryDepotWrap" style="margin-top:12px">
+          <label>電池領用處<span class="req">*</span></label>
+          <select id="fBatteryDepot">
+            <option value="">請選擇電池領用處</option>
+          </select>
+        </div>
+
         <div class="row">
           <label id="carLabel">車號<span class="req" id="carReq">*</span></label>
           <div class="hint" id="carHint" style="margin-bottom:8px">可新增多筆,一次上傳多台</div>
@@ -325,6 +330,24 @@
   const LIFF_ID  = "2009174277-0sLqDpFL";
   const GAS_URL  = "https://script.google.com/macros/s/AKfycbyk42RdWvnjzw8mk4V2BoKGoBr9a9g-RFRYqOlk1J7QKk-ojGsJsphamaLpzw4vA4Y/exec";
   /* ========================================================= */
+
+  /* =========================================================
+   * ★★★★★ 可設定區:電池領用處(換電作業下拉選單) ★★★★★
+   *
+   * 新增/移除電池領用處時,只要修改下方陣列即可
+   * ⚠ 後端 Code.txt 的 ALLOWED_DEPOTS 也要同步修改
+   * ========================================================= */
+  const BATTERY_DEPOTS = [
+    "高城維調",
+    "桃園客服中心",
+    "中壢客服中心",
+    "南崁維調",
+    "楊梅維調",
+    "內壢總倉"
+  ];
+  /* =========================================================
+   * ★★★★★ 可設定區結束 ★★★★★
+   * ========================================================= */
 
   // 車號格式:7 位數,開頭必須為 01、02、03
   const CAR_NO_PATTERN = /^0[123]\d{5}$/;
@@ -370,7 +393,19 @@
     el.className = ok ? "ok" : "bad";
   }
 
+  function renderBatteryDepots() {
+    const sel = document.getElementById("fBatteryDepot");
+    if (!sel) return;
+    const html = ['<option value="">請選擇電池領用處</option>']
+      .concat(BATTERY_DEPOTS.map(d =>
+        '<option value="' + escapeHtml(d) + '">' + escapeHtml(d) + '</option>'
+      ))
+      .join("");
+    sel.innerHTML = html;
+  }
+
   async function initLiff() {
+    renderBatteryDepots();
     showStatus("stateLoading");
     try {
       await liff.init({ liffId: LIFF_ID });
@@ -486,6 +521,11 @@
     document.getElementById("fStation").classList.remove("ac-picked");
     document.getElementById("fStationClear").classList.remove("show");
     setStatusMsg("", true);
+
+    // 電池領用處:僅換電作業顯示
+    const depotWrap = document.getElementById("batteryDepotWrap");
+    document.getElementById("fBatteryDepot").value = "";
+    depotWrap.classList.toggle("hidden", type !== "swap");
 
     const pill = document.getElementById("taskPill");
     pill.className = "pill " + type;
@@ -827,12 +867,25 @@
       return;
     }
 
+    // 換電作業:電池領用處必填
+    let batteryDepot = "";
+    if (state.taskType === "swap") {
+      batteryDepot = document.getElementById("fBatteryDepot").value;
+      if (!batteryDepot) {
+        setStatusMsg("請選擇電池領用處", false);
+        return;
+      }
+    }
+
     const body = {
       userId: state.userId,
       displayName: state.displayName,
       taskType: state.taskType,
       station: state.pickedStation
     };
+    if (state.taskType === "swap") {
+      body.batteryDepot = batteryDepot;
+    }
 
     if (state.taskType === "pump") {
       const filled = state.pumpData.filter(it =>
