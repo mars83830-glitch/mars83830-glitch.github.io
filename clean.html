@@ -13,13 +13,19 @@
     h2{font-size:22px}
     h3{font-size:18px}
     .hint{font-size:13px;color:#6b7280;line-height:1.6}
-    .row{margin:4px 0}
+    .row{margin:12px 0}
+    .row:first-child{margin-top:0}
+    /* 標籤+提示語並排 */
+    .labelRow{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+    .labelRow label{margin-bottom:0}
+    .labelRow .hintInline{font-size:12px;color:#6b7280;font-weight:400;line-height:1.4}
     label{display:block;font-size:13px;font-weight:700;margin-bottom:6px;color:#374151}
     label .req{color:#dc2626;margin-left:4px}
     input,select,button,textarea{font-size:15px;padding:11px 12px;border:1px solid #9ca3af;border-radius:10px;width:100%;background:#fff;color:#111827;font-family:inherit;font-weight:700}
     input::placeholder,textarea::placeholder{color:#9ca3af;opacity:1;font-weight:400}
     input::-webkit-input-placeholder,textarea::-webkit-input-placeholder{color:#9ca3af;font-weight:400}
     input::-moz-placeholder,textarea::-moz-placeholder{color:#9ca3af;opacity:1;font-weight:400}
+    /* select 在 placeholder 狀態時的灰字樣式 */
     select.is-placeholder{color:#9ca3af;font-weight:400}
     input:focus,select:focus,textarea:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.15)}
     button{cursor:pointer;font-weight:700}
@@ -274,7 +280,7 @@
           </select>
         </div>
 
-        <div class="row ac-wrap" id="stationWrap" style="margin-top:12px">
+        <div class="row ac-wrap" id="stationWrap">
           <label>場站名稱<span class="req">*</span></label>
           <div class="ac-input-wrap">
             <input
@@ -293,8 +299,10 @@
         </div>
 
         <div class="row">
-          <label id="carLabel">車號<span class="req" id="carReq">*</span></label>
-          <div class="hint" id="carHint" style="margin-bottom:8px">可新增多筆,一次上傳多台</div>
+          <div class="labelRow">
+            <label id="carLabel">車號<span class="req" id="carReq">*</span></label>
+            <span class="hintInline" id="carHint">可新增多筆,一次上傳多台</span>
+          </div>
           <div id="carList"></div>
         </div>
 
