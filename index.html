@@ -325,6 +325,7 @@
       padding: 10px 20px;
       border-radius: 12px;
       line-height: 1.6;
+      white-space: pre-line;   /* ★ 讓 \n 變成換行（給多行錯誤提示用） */
     }
     .ov-detail.ok  { background: #f0fdf4; color: #15803d; }
     .ov-detail.err { background: #fef2f2; color: #dc2626; }
@@ -732,19 +733,56 @@ async function smartGeo(skipAccuracy){
 }
 
 /* ── Network ───────────────────────────────── */
-async function postGas(payload){
-  // ★ 修改 C：加 15 秒 timeout，避免 GAS 卡住或網路斷線時 fetch 一直等
-  const ctrl  = new AbortController();
-  const timer = setTimeout(()=>ctrl.abort(), 15000);
-  try{
-    const r=await fetch(GAS_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload),signal:ctrl.signal});
-    const txt=await r.text();let data={};try{data=JSON.parse(txt);}catch(_){}return{r,txt,data};
-  } catch(e){
-    if(e&&e.name==="AbortError") throw new Error("network_timeout");
-    throw e;
-  } finally {
-    clearTimeout(timer);
+async function postGas(payload, opts){
+  // ★ 修改 C：加 timeout，避免 GAS 卡住或網路斷線時 fetch 一直等
+  // ★ 修改 D：可選 retries — 給初始化這種非破壞性請求用，避免 GAS 冷啟動 / 4G 抖動誤判
+  //   注意：punch() 不要傳 retries，打卡是非冪等的，重試會造成重複打卡
+  const timeoutMs = (opts && opts.timeout) || 15000;
+  const retries   = (opts && opts.retries) || 0;
+
+  let lastErr;
+  for (let i = 0; i <= retries; i++) {
+    const ctrl  = new AbortController();
+    const timer = setTimeout(()=>ctrl.abort(), timeoutMs);
+    try{
+      const r=await fetch(GAS_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload),signal:ctrl.signal});
+      const txt=await r.text();let data={};try{data=JSON.parse(txt);}catch(_){}return{r,txt,data};
+    } catch(e){
+      lastErr = (e && e.name === "AbortError") ? new Error("network_timeout") : e;
+      if (i === retries) break;
+      await new Promise(r => setTimeout(r, 800 * (i + 1)));   // 0.8s, 1.6s
+    } finally {
+      clearTimeout(timer);
+    }
   }
+  throw lastErr;
+}
+
+// ★ 失敗回報（fire-and-forget，絕不影響打卡時間）
+//   1. 不 await，呼叫端打完繼續往下走
+//   2. 自帶 3 秒 timeout，連送出都失敗就直接放棄
+//   3. 全包在 try-catch，任何錯誤都吞掉（連 console 都不留）
+function reportError(kind, stage, message) {
+  try {
+    const ctrl = new AbortController();
+    setTimeout(function(){ try { ctrl.abort(); } catch(_){} }, 3000);
+    fetch(GAS_URL, {
+      method: "POST",
+      headers: {"Content-Type":"text/plain;charset=utf-8"},
+      body: JSON.stringify({
+        action: "report",
+        kind: String(kind||""),
+        stage: String(stage||""),
+        message: String(message||""),
+        userId: (PROFILE && PROFILE.userId) || "",
+        displayName: (PROFILE && PROFILE.displayName) || "",
+        ua: (navigator && navigator.userAgent) || "",
+        ts: Date.now()
+      }),
+      signal: ctrl.signal,
+      keepalive: true
+    }).catch(function(){});
+  } catch(_) {}
 }
 
 /* ── Auth gate ─────────────────────────────── */
@@ -817,11 +855,17 @@ async function initAuth(){
     PROFILE=await liff.getProfile().catch(()=>{throw new Error("liff_profile_failed");});
     // ★ checkAuth 和 getLastPunch 同時送出，但不等 getLastPunch
     // checkAuth 完成就立即開放按鈕，getLastPunch 背景跑完再更新
+    // ★ 初始化對 GAS 冷啟動友善：放寬到 25 秒 + 一次自動 retry
     stage = "postGas.getLastPunch";
-    const lastPunchPromise = postGas({action:"getLastPunch",userId:PROFILE.userId||"",ts:Date.now()})
-      .catch(err => ({ data: null, _err: err }));   // ★ 防止 unhandled rejection
+    const lastPunchPromise = postGas(
+      {action:"getLastPunch",userId:PROFILE.userId||"",ts:Date.now()},
+      {timeout:25000, retries:1}
+    ).catch(err => ({ data: null, _err: err }));   // ★ 防止 unhandled rejection
     stage = "postGas.checkAuth";
-    const authRes = await postGas({action:"checkAuth",userId:PROFILE.userId||"",displayName:PROFILE.displayName||"",test:isTest()?"1":"0",ts:Date.now()});
+    const authRes = await postGas(
+      {action:"checkAuth",userId:PROFILE.userId||"",displayName:PROFILE.displayName||"",test:isTest()?"1":"0",ts:Date.now()},
+      {timeout:25000, retries:1}
+    );
     stage = "parseAuth";
     const data = authRes.data;
     showDbg({step:"checkAuth",profile:PROFILE,result:data});
@@ -843,10 +887,17 @@ async function initAuth(){
   }catch(e){
     const msg=e&&e.message||"";
     if(msg==="redirect_login")return;
-    if(msg==="liff_profile_failed"){ showAuthGate("liff_failed"); AUTH_READY=false; return; }
+    if(msg==="liff_profile_failed"){
+      showAuthGate("liff_failed");
+      AUTH_READY=false;
+      reportError("init_failed", stage, "liff_profile_failed");
+      return;
+    }
     // ★ 把 stage 帶進錯誤訊息，下次用戶截圖你就知道是哪一步炸
     showAuthGate("init_failed", `[${stage}] ${msg||'未知錯誤'}`);
     AUTH_READY=false;
+    // ★ 背景上報（fire-and-forget）
+    reportError("init_failed", stage, msg);
   }
 }
 
@@ -922,10 +973,19 @@ async function punch(job, step){
     const msg=e&&e.message||"";
     if(msg==="redirect_login"){ closeOverlay(); return; }
     let errDisplay = "打卡失敗，請稍後再試";
+    let reportKind = "punch_failed";
     if(!isTest()){
       if(msg==="liff_profile_failed"){ errDisplay="頁面放置過久，請重新整理後再打卡"; $idleWrap.style.display=""; idleShown=true; }
-      else if(msg.toLowerCase().includes("timeout")){ errDisplay="定位逾時，請開啟定位後再試"; }
-      else if(msg.includes("定位失敗")){ errDisplay="定位異常，請再試一次"; }
+      else if(msg.toLowerCase().includes("timeout")){
+        // 區分定位逾時 vs 網路逾時，方便後台分類診斷
+        if(msg.includes("定位")) reportKind = "geo_timeout";
+        else reportKind = "network_timeout";
+        errDisplay =
+          "定位逾時，請開啟 LINE 定位權限\n" +
+          "iOS：設定→LINE→位置→使用 App 期間\n" +
+          "Android：設定→應用程式→LINE→權限→位置→允許";
+      }
+      else if(msg.includes("定位失敗")){ errDisplay="定位異常，請再試一次"; reportKind="geo_failed"; }
       else { $idleWrap.style.display=""; idleShown=true; }
     } else {
       errDisplay=`錯誤：${msg}`;
@@ -933,6 +993,8 @@ async function punch(job, step){
       $idleWrap.style.display=""; idleShown=true;
     }
     showResult(false,"打卡失敗", errDisplay);
+    // ★ 背景上報（fire-and-forget），帶上 job/step 方便後台診斷
+    reportError(reportKind, `${job}.${step}`, msg);
   }
 }
 
