@@ -62,6 +62,20 @@
     .backBar:hover,.backBar:active{background:#f3f4f6;border-color:#d1d5db}
     .backBar .ic{font-size:16px;line-height:1}
 
+    .loadBanner{
+      display:flex;align-items:center;gap:10px;
+      padding:12px 14px;margin-bottom:12px;
+      background:#fef3c7;border:1px solid #f59e0b;border-radius:10px;
+      font-size:14px;font-weight:700;color:#92400e;
+    }
+    .loadBanner .spinner{
+      width:16px;height:16px;flex-shrink:0;
+      border:2px solid #f59e0b;border-top-color:transparent;
+      border-radius:50%;
+      animation:spin .8s linear infinite;
+    }
+    @keyframes spin{to{transform:rotate(360deg);}}
+
     .statusWrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
     .statusCard{
       background:#fff;border-radius:24px;
@@ -248,6 +262,11 @@
 <div id="appPage" class="hidden">
   <div class="wrap">
 
+    <div id="stationsLoadBanner" class="loadBanner hidden">
+      <div class="spinner"></div>
+      <div>正在載入場站清單,請稍候...</div>
+    </div>
+
     <div id="pageMenu" class="hidden">
       <div class="card">
         <div class="userbar">
@@ -362,6 +381,7 @@
   const PSI_MAX = 100;
 
   const STATION_TTL_MS = 5 * 60 * 1000; // 場站清單在瀏覽器端的快取期限
+  let stationsPromise = null; // 進行中的抓取 Promise(避免重複抓)
 
   const state = {
     userId: "",
@@ -480,7 +500,9 @@
       document.getElementById("userName").textContent = state.userName;
       document.getElementById("userNameForm").textContent = state.userName;
 
-      // 場站清單改為點作業按鈕(goTask)時才載,讓登入更快
+      // 登入完成後立刻在背景開始抓場站,等使用者點作業按鈕時通常已經抓完
+      refreshStations();
+
       showApp("pageMenu");
       return;
     }
@@ -536,6 +558,7 @@
     document.getElementById("fStation").value = "";
     document.getElementById("fStation").classList.remove("ac-picked");
     document.getElementById("fStationClear").classList.remove("show");
+    document.getElementById("btnSubmit").disabled = false;
     setStatusMsg("", true);
 
     // 電池領用處:僅換電作業顯示;切換時重置回 placeholder 狀態
@@ -563,31 +586,52 @@
     renderCarArea();
     showApp("pageForm");
 
-    // 進場站頁時抓場站清單;瀏覽器端有 TTL,連續鍵單不重抓
-    const fresh = state.stations.length > 0
-      && (Date.now() - state.stationsLoadedAt < STATION_TTL_MS);
-    if (fresh) return;
-
+    // 場站清單通常已經在登入後背景抓好了;若還在抓就 await,過期就重抓
     const stationInput = document.getElementById("fStation");
-    const originalPlaceholder = stationInput.placeholder;
-    stationInput.disabled = true;
-    stationInput.placeholder = "場站清單載入中...";
-    try {
-      const r = await callApi("getStations", {});
-      if (r.ok) {
-        state.stations = r.stations || [];
-        state.stationsLoadedAt = Date.now();
-      } else {
-        const tail = state.stations.length ? "將沿用上次資料。" : "請返回後重新進入。";
-        alert("場站清單載入失敗," + tail + "\n" + (r.message || ""));
+    if (stationsPromise || !isStationsFresh_()) {
+      stationInput.disabled = true;
+      try {
+        await refreshStations();
+      } finally {
+        stationInput.disabled = false;
       }
-    } catch (e) {
-      const tail = state.stations.length ? "將沿用上次資料。" : "請返回後重新進入。";
-      alert("場站清單載入失敗(網路錯誤)," + tail);
-    } finally {
-      stationInput.disabled = false;
-      stationInput.placeholder = originalPlaceholder;
     }
+  }
+
+  function isStationsFresh_() {
+    return state.stations.length > 0
+      && (Date.now() - state.stationsLoadedAt < STATION_TTL_MS);
+  }
+
+  function refreshStations() {
+    // 已在抓中 → 共用同一個 Promise,避免並發重複請求
+    if (stationsPromise) return stationsPromise;
+    // 還新鮮 → 不重抓
+    if (isStationsFresh_()) return Promise.resolve();
+
+    const banner = document.getElementById("stationsLoadBanner");
+    banner.classList.remove("hidden");
+
+    stationsPromise = callApi("getStations", {})
+      .then(r => {
+        if (r.ok) {
+          state.stations = r.stations || [];
+          state.stationsLoadedAt = Date.now();
+        } else {
+          const tail = state.stations.length ? "將沿用上次資料。" : "請返回後重新進入。";
+          alert("場站清單載入失敗," + tail + "\n" + (r.message || ""));
+        }
+      })
+      .catch(_ => {
+        const tail = state.stations.length ? "將沿用上次資料。" : "請返回後重新進入。";
+        alert("場站清單載入失敗(網路錯誤)," + tail);
+      })
+      .finally(() => {
+        stationsPromise = null;
+        banner.classList.add("hidden");
+      });
+
+    return stationsPromise;
   }
 
   /* 場站搜尋 */
