@@ -371,6 +371,8 @@
     stations: [],
     stationsLoadedAt: 0,
     pickedStation: "",
+    pickedDistrict: "",
+    pickedZone: "",
     acActiveIndex: -1,
     carNos: [""],
     pumpData: [{ carNo:"", psiFront:"", psiRear:"" }]
@@ -516,6 +518,8 @@
   function goMenu() {
     state.taskType = "";
     state.pickedStation = "";
+    state.pickedDistrict = "";
+    state.pickedZone = "";
     state.carNos = [""];
     state.pumpData = [{ carNo:"", psiFront:"", psiRear:"" }];
     setStatusMsg("", true);
@@ -525,6 +529,8 @@
   async function goTask(type) {
     state.taskType = type;
     state.pickedStation = "";
+    state.pickedDistrict = "";
+    state.pickedZone = "";
     state.carNos = [""];
     state.pumpData = [{ carNo:"", psiFront:"", psiRear:"" }];
     document.getElementById("fStation").value = "";
@@ -682,6 +688,8 @@
     const match = state.stations.find(s => s.station === name);
     if (!match) return;
     state.pickedStation = match.station;
+    state.pickedDistrict = match.district;
+    state.pickedZone = match.zone;
     const input = document.getElementById("fStation");
     input.value = match.station;
     input.classList.add("ac-picked");
@@ -691,6 +699,8 @@
 
   function clearStation() {
     state.pickedStation = "";
+    state.pickedDistrict = "";
+    state.pickedZone = "";
     const input = document.getElementById("fStation");
     input.value = "";
     input.classList.remove("ac-picked");
@@ -919,7 +929,9 @@
       userId: state.userId,
       displayName: state.displayName,
       taskType: state.taskType,
-      station: state.pickedStation
+      station: state.pickedStation,
+      district: state.pickedDistrict,
+      zone: state.pickedZone
     };
     if (state.taskType === "swap") {
       body.batteryDepot = batteryDepot;
