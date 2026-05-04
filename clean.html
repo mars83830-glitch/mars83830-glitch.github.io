@@ -74,8 +74,6 @@
       border-radius:50%;
       animation:spin .8s linear infinite;
     }
-    @keyframes spin{to{transform:rotate(360deg);}}
-
     .statusWrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
     .statusCard{
       background:#fff;border-radius:24px;
@@ -501,7 +499,7 @@
       document.getElementById("userNameForm").textContent = state.userName;
 
       // 登入完成後立刻在背景開始抓場站,等使用者點作業按鈕時通常已經抓完
-      refreshStations();
+      refreshStations({ background: true });
 
       showApp("pageMenu");
       return;
@@ -603,7 +601,9 @@
       && (Date.now() - state.stationsLoadedAt < STATION_TTL_MS);
   }
 
-  function refreshStations() {
+  function refreshStations(opts) {
+    const isBackground = !!(opts && opts.background);
+
     // 已在抓中 → 共用同一個 Promise,避免並發重複請求
     if (stationsPromise) return stationsPromise;
     // 還新鮮 → 不重抓
@@ -617,13 +617,16 @@
         if (r.ok) {
           state.stations = r.stations || [];
           state.stationsLoadedAt = Date.now();
-        } else {
-          const tail = state.stations.length ? "將沿用上次資料。" : "請返回後重新進入。";
-          alert("場站清單載入失敗," + tail + "\n" + (r.message || ""));
+          return;
         }
+        // 背景失敗:不彈窗(使用者可能還在主選單),等 goTask 時會自動重試並彈窗
+        if (isBackground) return;
+        const tail = state.stations.length ? "將沿用上次資料。" : "請重新點選作業。";
+        alert("場站清單載入失敗," + tail + "\n" + (r.message || ""));
       })
       .catch(_ => {
-        const tail = state.stations.length ? "將沿用上次資料。" : "請返回後重新進入。";
+        if (isBackground) return;
+        const tail = state.stations.length ? "將沿用上次資料。" : "請重新點選作業。";
         alert("場站清單載入失敗(網路錯誤)," + tail);
       })
       .finally(() => {
@@ -641,6 +644,8 @@
 
     if (state.pickedStation && state.pickedStation !== q) {
       state.pickedStation = "";
+      state.pickedDistrict = "";
+      state.pickedZone = "";
       input.classList.remove("ac-picked");
     }
     document.getElementById("fStationClear").classList.toggle("show", !!q);
