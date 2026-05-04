@@ -531,7 +531,7 @@
     showApp("pageMenu");
   }
 
-  function goTask(type) {
+  async function goTask(type) {
     state.taskType = type;
     state.pickedStation = "";
     state.carNos = [""];
@@ -565,6 +565,25 @@
 
     renderCarArea();
     showApp("pageForm");
+
+    // 進場站頁時重抓場站清單,避免分頁開太久看到過期資料
+    const stationInput = document.getElementById("fStation");
+    const originalPlaceholder = stationInput.placeholder;
+    stationInput.disabled = true;
+    stationInput.placeholder = "場站清單載入中...";
+    try {
+      const r = await callApi("getStations", {});
+      if (r.ok) {
+        state.stations = r.stations || [];
+      } else {
+        alert("場站清單更新失敗,將沿用上次資料。\n" + (r.message || ""));
+      }
+    } catch (e) {
+      alert("場站清單更新失敗(網路錯誤),將沿用上次資料。");
+    } finally {
+      stationInput.disabled = false;
+      stationInput.placeholder = originalPlaceholder;
+    }
   }
 
   /* 場站搜尋 */
