@@ -479,8 +479,14 @@
 
       try {
         const r = await callApi("getStations", {});
-        if (r.ok) state.stations = r.stations || [];
-      } catch (_) {}
+        if (r.ok) {
+          state.stations = r.stations || [];
+        } else {
+          alert("場站清單載入失敗,請關閉視窗後重新開啟。\n" + (r.message || ""));
+        }
+      } catch (e) {
+        alert("場站清單載入失敗(網路錯誤),請關閉視窗後重新開啟。");
+      }
 
       showApp("pageMenu");
       return;
