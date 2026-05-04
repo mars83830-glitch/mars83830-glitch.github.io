@@ -44,7 +44,6 @@
     .hidden{display:none!important}
     .center{text-align:center}
     .big{font-size:22px;font-weight:900;margin:10px 0}
-    .countdown{font-size:48px;font-weight:900;color:#16a34a;margin:18px 0}
     .backRow{display:flex;gap:10px;margin-top:16px}
     .backRow button{flex:1}
     .pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:700}
@@ -319,10 +318,9 @@
         <div style="font-size:56px">✅</div>
         <div class="big">送出成功</div>
         <div class="hint" id="successSummary">資料已記錄</div>
-        <div class="countdown" id="countdown">3</div>
-        <div class="hint">視窗即將自動關閉</div>
         <div class="backRow">
-          <button class="btnSecondary" onclick="liffClose()">立即關閉</button>
+          <button class="btnMain" onclick="continueNext()">繼續鍵下一單</button>
+          <button class="btnSecondary" onclick="liffClose()">離開</button>
         </div>
       </div>
     </div>
@@ -363,12 +361,15 @@
   const PSI_MIN = 0;
   const PSI_MAX = 100;
 
+  const STATION_TTL_MS = 5 * 60 * 1000; // 場站清單在瀏覽器端的快取期限
+
   const state = {
     userId: "",
     displayName: "",
     userName: "",
     taskType: "",
     stations: [],
+    stationsLoadedAt: 0,
     pickedStation: "",
     acActiveIndex: -1,
     carNos: [""],
@@ -556,7 +557,11 @@
     renderCarArea();
     showApp("pageForm");
 
-    // 進場站頁時重抓場站清單,避免分頁開太久看到過期資料
+    // 進場站頁時抓場站清單;瀏覽器端有 TTL,連續鍵單不重抓
+    const fresh = state.stations.length > 0
+      && (Date.now() - state.stationsLoadedAt < STATION_TTL_MS);
+    if (fresh) return;
+
     const stationInput = document.getElementById("fStation");
     const originalPlaceholder = stationInput.placeholder;
     stationInput.disabled = true;
@@ -565,6 +570,7 @@
       const r = await callApi("getStations", {});
       if (r.ok) {
         state.stations = r.stations || [];
+        state.stationsLoadedAt = Date.now();
       } else {
         const tail = state.stations.length ? "將沿用上次資料。" : "請返回後重新進入。";
         alert("場站清單載入失敗," + tail + "\n" + (r.message || ""));
@@ -986,22 +992,15 @@
       document.getElementById("successSummary").textContent =
         "已記錄 " + (res.count || 0) + " 筆資料";
       showApp("pageSuccess");
-      startCountdown(3);
     } catch (err) {
       btn.disabled = false;
       setStatusMsg("連線失敗:" + (err && err.message ? err.message : err), false);
     }
   }
 
-  function startCountdown(sec) {
-    const el = document.getElementById("countdown");
-    let n = sec;
-    el.textContent = n;
-    const t = setInterval(() => {
-      n--;
-      if (n <= 0) { clearInterval(t); liffClose(); }
-      else { el.textContent = n; }
-    }, 1000);
+  function continueNext() {
+    // 用同一個作業類別重新開一張表
+    goTask(state.taskType);
   }
 
   if (document.readyState === "loading") {
