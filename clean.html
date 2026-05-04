@@ -477,17 +477,7 @@
       document.getElementById("userName").textContent = state.userName;
       document.getElementById("userNameForm").textContent = state.userName;
 
-      try {
-        const r = await callApi("getStations", {});
-        if (r.ok) {
-          state.stations = r.stations || [];
-        } else {
-          alert("場站清單載入失敗,請關閉視窗後重新開啟。\n" + (r.message || ""));
-        }
-      } catch (e) {
-        alert("場站清單載入失敗(網路錯誤),請關閉視窗後重新開啟。");
-      }
-
+      // 場站清單改為點作業按鈕(goTask)時才載,讓登入更快
       showApp("pageMenu");
       return;
     }
@@ -576,10 +566,12 @@
       if (r.ok) {
         state.stations = r.stations || [];
       } else {
-        alert("場站清單更新失敗,將沿用上次資料。\n" + (r.message || ""));
+        const tail = state.stations.length ? "將沿用上次資料。" : "請返回後重新進入。";
+        alert("場站清單載入失敗," + tail + "\n" + (r.message || ""));
       }
     } catch (e) {
-      alert("場站清單更新失敗(網路錯誤),將沿用上次資料。");
+      const tail = state.stations.length ? "將沿用上次資料。" : "請返回後重新進入。";
+      alert("場站清單載入失敗(網路錯誤)," + tail);
     } finally {
       stationInput.disabled = false;
       stationInput.placeholder = originalPlaceholder;
