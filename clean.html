@@ -368,6 +368,11 @@
     "楊梅維調",
     "內壢總倉"
   ];
+
+  // 除錯用:把指定 LINE UserId 放進來,只有這些人送出後會看到耗時分析
+  const DEBUG_TIMING_USER_IDS = [
+  "Ua79005da65e940cf949197b96bd7e93f"
+  ];
   /* =========================================================
    * ★★★★★ 可設定區結束 ★★★★★
    * ========================================================= */
@@ -982,6 +987,9 @@
       district: state.pickedDistrict,
       zone: state.pickedZone
     };
+    if (DEBUG_TIMING_USER_IDS.includes(state.userId)) {
+      body.debugTiming = true;
+    }
     if (state.taskType === "swap") {
       body.batteryDepot = batteryDepot;
     }
@@ -1050,8 +1058,17 @@
         return;
       }
 
-      document.getElementById("successSummary").textContent =
-        "已記錄 " + (res.count || 0) + " 筆資料";
+      let summary = "已記錄 " + (res.count || 0) + " 筆資料";
+      if (res.debugTiming) {
+        const t = res.debugTiming;
+        summary += "｜耗時 " + t.totalMs + "ms" +
+          "｜權限 " + t.authMs + "ms" +
+          "｜場站 " + t.stationMs + "ms" +
+          "｜開表 " + t.sheetMs + "ms" +
+          "｜找列 " + t.lastRowMs + "ms" +
+          "｜寫入 " + t.setValuesMs + "ms";
+      }
+      document.getElementById("successSummary").textContent = summary;
       showApp("pageSuccess");
     } catch (err) {
       btn.disabled = false;
