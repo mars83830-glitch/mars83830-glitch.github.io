@@ -977,13 +977,20 @@ async function punch(job, step){
     if(!isTest()){
       if(msg==="liff_profile_failed"){ errDisplay="頁面放置過久，請重新整理後再打卡"; $idleWrap.style.display=""; idleShown=true; }
       else if(msg.toLowerCase().includes("timeout")){
-        // 區分定位逾時 vs 網路逾時，方便後台分類診斷
-        if(msg.includes("定位")) reportKind = "geo_timeout";
-        else reportKind = "network_timeout";
-        errDisplay =
-          "定位逾時，請開啟 LINE 定位權限\n" +
-          "iOS：設定→LINE→位置→使用 App 期間\n" +
-          "Android：設定→應用程式→LINE→權限→位置→允許";
+        // 區分定位逾時 vs 網路逾時，避免網路慢時誤導員工一直重按
+        if(msg.includes("定位")) {
+          reportKind = "geo_timeout";
+          errDisplay =
+            "定位逾時，請開啟 LINE 定位權限\n" +
+            "iOS：設定→LINE→位置→使用 App 期間\n" +
+            "Android：設定→應用程式→LINE→權限→位置→允許";
+        } else {
+          reportKind = "network_timeout";
+          errDisplay =
+            "系統回應較慢，打卡可能已送出。\n" +
+            "請先確認上次打卡或主管後台是否已更新。\n" +
+            "若沒有更新，再重新打卡。";
+        }
       }
       else if(msg.includes("定位失敗")){ errDisplay="定位異常，請再試一次"; reportKind="geo_failed"; }
       else { $idleWrap.style.display=""; idleShown=true; }
