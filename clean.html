@@ -575,7 +575,7 @@
     const carHint = document.getElementById("carHint");
     if (type === "clean") {
       carReq.style.display = "none";
-      carHint.textContent = "選填,可新增多筆。若未填則視為純清潔場站";
+      carHint.textContent = "選填,可新增多筆。若未填則視為清潔場站";
     } else {
       carReq.style.display = "";
       carHint.textContent = "可新增多筆,一次上傳多台";
@@ -1025,9 +1025,9 @@
     } else {
       const cleaned = state.carNos.map(c => String(c || "").trim()).filter(c => c);
 
-      // 清潔作業:沒填車號時,後台寫入「純清潔場站」
+      // 清潔作業:沒填車號時,後台寫入「清潔場站」
       if (state.taskType === "clean" && cleaned.length === 0) {
-        body.carNos = ["純清潔場站"];
+        body.carNos = ["清潔場站"];
       } else {
         if (cleaned.length === 0) { setStatusMsg("請至少輸入一個車號", false); return; }
         const invalid = cleaned.filter(c => !CAR_NO_PATTERN.test(c));
