@@ -737,7 +737,7 @@ async function postGas(payload, opts){
   // ★ 修改 C：加 timeout，避免 GAS 卡住或網路斷線時 fetch 一直等
   // ★ 修改 D：可選 retries — 給初始化這種非破壞性請求用，避免 GAS 冷啟動 / 4G 抖動誤判
   //   注意：punch() 不要傳 retries，打卡是非冪等的，重試會造成重複打卡
-  const timeoutMs = (opts && opts.timeout) || 15000;
+  const timeoutMs = (opts && opts.timeout) || 20000;
   const retries   = (opts && opts.retries) || 0;
 
   let lastErr;
