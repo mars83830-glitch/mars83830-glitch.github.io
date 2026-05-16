@@ -1350,9 +1350,9 @@
   <div class="modal-backdrop hidden" id="ruleModal" onclick="closeRuleModalByBackdrop(event)">
     <div class="modal-card">
       <h3 class="modal-title">📖 規則說明</h3>
-      <ol class="rule-list">
+      <ol class="rule-list" id="ptRuleList">
         <li>每週（星期日至星期六）須排定至少兩天休假。</li>
-        <li>相鄰班別之間需間隔至少 11 小時之休息時間。</li>
+        <li>跨日班別需間隔至少 11 小時之休息時間。</li>
         <li>至多連續出勤五日。</li>
         <li>國定假日排班將依實際人力需求做調整，且當日總工時最多 9 小時。</li>
       </ol>
@@ -1368,13 +1368,52 @@
     const LIFF_ID        = '2009174277-yJdVzIb0';
     const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbw5nLu4db1KvJkOl1j98srOVCsR8AgZh3TByl1SrQDAZgn0LROV6CHdhA5PwwVd6miA/exec';
 
-    const HOLIDAYS_2026 = new Set([
-      '2026-01-01',
-      '2026-02-16','2026-02-17','2026-02-18','2026-02-19','2026-02-20',
-      '2026-02-28','2026-04-04','2026-04-05','2026-05-01',
-      '2026-09-25','2026-09-28','2026-10-10',
-      '2026-10-24','2026-10-25','2026-10-26','2026-12-25'
-    ]);
+    // 設定（單一來源：後台 CONFIG）。
+    //   頁面載入後呼叫 action=getConfig 抓回來。
+    //   抓不到時用 fallback 預設值，不擋使用者繼續用。
+    //   變數名保留 HOLIDAYS_2026 是為了相容既有引用，不再代表特定年份。
+    let HOLIDAYS_2026 = new Set();
+    let PT_RULES = {
+      weeklyOffMin:         2,
+      maxConsecutiveDays:   5,
+      crossDayRestMinHours: 11,
+      holidayMaxHours:      9
+    };
+
+    async function loadConfigFromBackend(){
+      try{
+        const url = GAS_WEB_APP_URL + '?action=getConfig';
+        const res = await fetch(url, { method: 'GET' });
+        const data = await res.json();
+        if(!data || !data.ok) return;
+
+        if(Array.isArray(data.holidays)){
+          HOLIDAYS_2026 = new Set(data.holidays);
+        }
+        if(data.ptRules){
+          if(Number.isFinite(data.ptRules.weeklyOffMin))         PT_RULES.weeklyOffMin = data.ptRules.weeklyOffMin;
+          if(Number.isFinite(data.ptRules.maxConsecutiveDays))   PT_RULES.maxConsecutiveDays = data.ptRules.maxConsecutiveDays;
+          if(Number.isFinite(data.ptRules.crossDayRestMinHours)) PT_RULES.crossDayRestMinHours = data.ptRules.crossDayRestMinHours;
+          if(Number.isFinite(data.ptRules.holidayMaxHours))      PT_RULES.holidayMaxHours = data.ptRules.holidayMaxHours;
+        }
+      }catch(err){
+        // 失敗就靜默用 fallback，不擋使用者繼續用
+        console.warn('loadConfigFromBackend failed:', err);
+      }
+      applyConfigToUi();
+    }
+
+    // 把後台拉回來的設定值，套到 HTML 上靜態顯示的文字
+    function applyConfigToUi(){
+      const ul = document.getElementById('ptRuleList');
+      if(ul){
+        ul.innerHTML =
+          '<li>每週（星期日至星期六）須排定至少 ' + PT_RULES.weeklyOffMin + ' 天休假。</li>' +
+          '<li>跨日班別需間隔至少 ' + PT_RULES.crossDayRestMinHours + ' 小時之休息時間。</li>' +
+          '<li>至多連續出勤 ' + PT_RULES.maxConsecutiveDays + ' 日。</li>' +
+          '<li>國定假日排班將依實際人力需求做調整，且當日總工時最多 ' + PT_RULES.holidayMaxHours + ' 小時。</li>';
+      }
+    }
 
     // 升級後的時段配色：每個時段獨立色系（底色、文字、邊框）
     const TEMPLATE_COLORS = [
@@ -2287,6 +2326,9 @@
     }
 
     window.onload = async function(){
+      // 從後台抓設定（單一來源，目前只用到國定假日），渲染日曆前先 await
+      await loadConfigFromBackend();
+
       const base = getNextMonthBase();
       state.viewYear  = base.year;
       state.viewMonth = base.month;
