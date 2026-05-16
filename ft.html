@@ -1121,7 +1121,7 @@
     <div class="modal-card">
       <div class="modal-title">📖 排假規則</div>
       <ol class="rule-list">
-        <li>必休每月最多 4 天，其中六日合計最多 2 天。</li>
+        <li id="ruleRequiredOffText">必休每月最多 4 天，其中六日合計最多 2 天。</li>
         <li>選休天數依每月「YB桃園總群」公告為準，若排超出上限，即當月選休無效並由公司安排。</li>
         <li>特殊假上限依勞基法規定為準，請自行計算勿超休。</li>
         <li>如遇問題請先詢問主管再行排班，以保障自身權益。</li>
@@ -1147,16 +1147,61 @@
     var LIFF_ID = '2009174277-wCfVKJE3';
     var GAS_URL = 'https://script.google.com/macros/s/AKfycbw5nLu4db1KvJkOl1j98srOVCsR8AgZh3TByl1SrQDAZgn0LROV6CHdhA5PwwVd6miA/exec';
 
-    var MAIN_LEAVE_TYPES = ['必休','選休'];
-    var EXTRA_LEAVE_TYPES = ['慰勞假','病假','事假','公假','喪假','生理假','婚假','產檢假','育嬰假','產假','陪產假','家庭照護'];
+    // ── 設定（單一來源：後台 CONFIG）──────────────────
+    // 頁面載入後會呼叫 action=getConfig 抓這幾個值。抓不到時用 fallback。
+    // 規則修改一律改後台一處即可，前端自動同步。
+    var MAIN_LEAVE_TYPES  = [];   // 主要假別（必休/選休）
+    var EXTRA_LEAVE_TYPES = [];   // 其他假別（慰勞假/病假/...）
+    var ALL_LEAVE_TYPES   = [];   // 全部
+    var HOLIDAYS          = new Set();
+    var REQUIRED_OFF = {
+      label:      '必休',
+      max:        4,
+      weekendMax: 2
+    };
+    var SELECTABLE_OFF = {
+      label: '選休'
+    };
 
-    var HOLIDAYS = new Set([
-      '2026-01-01',
-      '2026-02-16','2026-02-17','2026-02-18','2026-02-19','2026-02-20',
-      '2026-02-28','2026-04-04','2026-04-05','2026-05-01',
-      '2026-09-25','2026-09-28','2026-10-10',
-      '2026-10-24','2026-10-25','2026-10-26','2026-12-25'
-    ]);
+    async function loadConfigFromBackend(){
+      try{
+        var url = GAS_URL + '?action=getConfig';
+        var res = await fetch(url, { method: 'GET' });
+        var data = await res.json();
+        if(!data || !data.ok) return;
+
+        if(Array.isArray(data.holidays)){
+          HOLIDAYS = new Set(data.holidays);
+        }
+        if(data.ftLeaveTypes){
+          if(Array.isArray(data.ftLeaveTypes.main))  MAIN_LEAVE_TYPES  = data.ftLeaveTypes.main.slice();
+          if(Array.isArray(data.ftLeaveTypes.extra)) EXTRA_LEAVE_TYPES = data.ftLeaveTypes.extra.slice();
+          if(Array.isArray(data.ftLeaveTypes.all))   ALL_LEAVE_TYPES   = data.ftLeaveTypes.all.slice();
+        }
+        if(data.ftRequiredOff){
+          if(typeof data.ftRequiredOff.label === 'string') REQUIRED_OFF.label = data.ftRequiredOff.label;
+          if(Number.isFinite(data.ftRequiredOff.max)) REQUIRED_OFF.max = data.ftRequiredOff.max;
+          if(Number.isFinite(data.ftRequiredOff.weekendMax)) REQUIRED_OFF.weekendMax = data.ftRequiredOff.weekendMax;
+        }
+        if(data.ftSelectableOff && typeof data.ftSelectableOff.label === 'string'){
+          SELECTABLE_OFF.label = data.ftSelectableOff.label;
+        }
+      }catch(err){
+        // 失敗就靜默用 fallback 預設值，不擋使用者繼續用
+        console.warn('loadConfigFromBackend failed:', err);
+      }
+      applyConfigToUi();
+    }
+
+    // 把後台拉回來的設定值，套到 HTML 上靜態顯示的文字
+    function applyConfigToUi(){
+      var ruleLi = document.getElementById('ruleRequiredOffText');
+      if(ruleLi){
+        ruleLi.textContent =
+          REQUIRED_OFF.label + '每月最多 ' + REQUIRED_OFF.max + ' 天，' +
+          '其中六日合計最多 ' + REQUIRED_OFF.weekendMax + ' 天。';
+      }
+    }
 
     var state = {
       uid: '', displayName: '', isSP: false,
@@ -1349,8 +1394,8 @@
       btn.type = 'button';
       var cls = 'leave-chip';
       if(isExtra) cls += ' leave-chip-extra';
-      if(type === '必休') cls += ' required-off';
-      else if(type !== '選休') cls += ' chip-' + type;
+      if(type === REQUIRED_OFF.label) cls += ' required-off';
+      else if(type !== SELECTABLE_OFF.label) cls += ' chip-' + type;
       if(state.selectedLeaveType === type) cls += ' active';
       btn.className = cls;
       btn.textContent = type;
@@ -1394,12 +1439,15 @@
       var el = document.getElementById('leaveStats');
       if(!el) return;
       var leaves = getMonthLeaves();
-      var required = leaves.filter(function(l){ return l.leaveType === '必休'; });
+      var label = REQUIRED_OFF.label;
+      var maxRequired = REQUIRED_OFF.max;
+      var maxWeekend = REQUIRED_OFF.weekendMax;
+      var required = leaves.filter(function(l){ return l.leaveType === label; });
       var reqWeekend = required.filter(function(l){ return isWeekend(l.date); });
 
       el.innerHTML =
-        '<div class="stat-chip' + (required.length > 4 ? ' warn' : '') + '">必休 ' + required.length + '/4 天</div>' +
-        '<div class="stat-chip' + (reqWeekend.length > 2 ? ' warn' : '') + '">必休六日 ' + reqWeekend.length + '/2 天</div>' +
+        '<div class="stat-chip' + (required.length > maxRequired ? ' warn' : '') + '">' + label + ' ' + required.length + '/' + maxRequired + ' 天</div>' +
+        '<div class="stat-chip' + (reqWeekend.length > maxWeekend ? ' warn' : '') + '">' + label + '六日 ' + reqWeekend.length + '/' + maxWeekend + ' 天</div>' +
         '<div class="stat-chip">總假單 ' + leaves.length + ' 筆</div>';
     }
 
@@ -1428,8 +1476,8 @@
           else if(wd === 6) cls += ' sat-bg';
           if(!c.outside && leaveType){
             cls += ' has-leave';
-            if(leaveType === '必休') cls += ' has-leave-required';
-            else if(leaveType === '選休') cls += ' has-leave-selected';
+            if(leaveType === REQUIRED_OFF.label) cls += ' has-leave-required';
+            else if(leaveType === SELECTABLE_OFF.label) cls += ' has-leave-selected';
             else cls += ' leave-' + leaveType;
           }
           if(!c.outside && isInvalid) cls += ' invalid';
@@ -1445,8 +1493,8 @@
           if(!c.outside){
             if(leaveType){
               var bodyClass = 'day-body';
-              if(leaveType === '必休') bodyClass += ' required-off-text';
-              else if(leaveType === '選休') bodyClass += ' selected-off-text';
+              if(leaveType === REQUIRED_OFF.label) bodyClass += ' required-off-text';
+              else if(leaveType === SELECTABLE_OFF.label) bodyClass += ' selected-off-text';
               else bodyClass += ' text-' + leaveType;
               bodyHtml = '<div class="' + bodyClass + '">' + leaveType + '</div>';
             } else {
@@ -1612,8 +1660,8 @@
           else if(wd === 6) cls += ' sat-bg';
           if(!c.outside && leaveType){
             cls += ' has-leave';
-            if(leaveType === '必休') cls += ' has-leave-required';
-            else if(leaveType === '選休') cls += ' has-leave-selected';
+            if(leaveType === REQUIRED_OFF.label) cls += ' has-leave-required';
+            else if(leaveType === SELECTABLE_OFF.label) cls += ' has-leave-selected';
             else cls += ' leave-' + leaveType;
           }
           td.className = cls;
@@ -1629,8 +1677,8 @@
           if(!c.outside){
             if(leaveType){
               var bodyClass = 'day-body';
-              if(leaveType === '必休') bodyClass += ' required-off-text';
-              else if(leaveType === '選休') bodyClass += ' selected-off-text';
+              if(leaveType === REQUIRED_OFF.label) bodyClass += ' required-off-text';
+              else if(leaveType === SELECTABLE_OFF.label) bodyClass += ' selected-off-text';
               else bodyClass += ' text-' + leaveType;
               bodyHtml = '<div class="' + bodyClass + '">' + leaveType + '</div>';
             } else {
@@ -1780,6 +1828,9 @@
 
       document.getElementById('step1Hint').textContent = '歡迎，' + state.displayName + '！';
       showAuthBox('✅ 身份驗證成功', 'ok');
+
+      // 從後台抓設定（國定假日 / 假別清單 / 必休規則）。單一來源，render 前先 await。
+      await loadConfigFromBackend();
 
       populateMonthSelector();
       document.getElementById('goStep2Btn').disabled = false;
