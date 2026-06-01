@@ -236,10 +236,13 @@
         const profile     = await liff.getProfile();
         const userId      = profile.userId      || '';
         const displayName = profile.displayName || '';
+        let idToken = '';
+        try { idToken = liff.getIDToken() || ''; } catch (e) { idToken = ''; }
 
         const url = `${GAS_URL}?action=checkPermission`
           + `&uid=${encodeURIComponent(userId)}`
-          + `&displayName=${encodeURIComponent(displayName)}`;
+          + `&displayName=${encodeURIComponent(displayName)}`
+          + `&idToken=${encodeURIComponent(idToken)}`;
 
         const res  = await fetch(url);
         const data = await res.json();
