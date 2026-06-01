@@ -1602,7 +1602,7 @@
       setUiLocked(true);
       showGlobalLoading(true, '查詢中，請稍候...');
       try {
-        var url = GAS_URL + '?action=getFtLeaves&uid=' + encodeURIComponent(state.uid) + '&month=' + encodeURIComponent(state.targetMonth);
+        var url = GAS_URL + '?action=getFtLeaves&uid=' + encodeURIComponent(state.uid) + '&idToken=' + encodeURIComponent(state.idToken || '') + '&month=' + encodeURIComponent(state.targetMonth);
         var res = await fetch(url);
         var data = await res.json();
         state.queriedLoaded = true;
@@ -1716,7 +1716,7 @@
       try {
         state.validateBusy = true;
         var leaves = getMonthLeaves();
-        var payload = { action: 'validateFt', uid: state.uid, displayName: state.displayName, month: state.targetMonth, leaves: leaves };
+        var payload = { action: 'validateFt', uid: state.uid, idToken: state.idToken, displayName: state.displayName, month: state.targetMonth, leaves: leaves };
         var res = await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
         var data = await res.json();
         state.validateBusy = false;
@@ -1774,7 +1774,7 @@
         document.getElementById('submitResultBox').classList.add('hidden');
 
         var leaves = getMonthLeaves();
-        var payload = { action: 'submitFt', uid: state.uid, displayName: state.displayName, month: state.targetMonth, leaves: leaves };
+        var payload = { action: 'submitFt', uid: state.uid, idToken: state.idToken, displayName: state.displayName, month: state.targetMonth, leaves: leaves };
         var res = await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
         var data = await res.json();
 
@@ -1807,6 +1807,17 @@
       state.displayName = params.get('displayName') || '';
       state.isSP        = params.get('isSP')        === 'true';
       state.targetMonth = params.get('month')       || '';
+
+      // 取得 LINE ID Token,送驗證用(防冒用)。失敗就空字串,後端過渡期會 fallback。
+      state.idToken = '';
+      try {
+        await liff.init({ liffId: LIFF_ID });
+        if (liff.isLoggedIn && liff.isLoggedIn()) {
+          state.idToken = liff.getIDToken() || '';
+        }
+      } catch (e) {
+        state.idToken = '';
+      }
 
       if(!state.uid || !state.targetMonth){
         document.getElementById('step1Hint').textContent = '參數錯誤，請從 LINE 重新開啟。';
