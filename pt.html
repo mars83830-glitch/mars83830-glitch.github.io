@@ -2169,7 +2169,7 @@
       if (unfilled.length > 0) return { ok:false, valid:false, message:`尚有未填日期：${unfilled.map(formatShortDateKey).join('、')}`, errors:[`尚有未填日期：${unfilled.map(formatShortDateKey).join('、')}。請把整月都填成排班或休假。`], invalidDates:unfilled };
       try {
         state.validateBusy = true;
-        const payload = { action:'validatePt', uid:state.userId, displayName:state.displayName, month:getSelectedMonthValue(), schedules:buildSchedulesPayload() };
+        const payload = { action:'validatePt', uid:state.userId, idToken:state.idToken, displayName:state.displayName, month:getSelectedMonthValue(), schedules:buildSchedulesPayload() };
         const { data } = await postJsonToGas(payload);
         state.validateBusy = false;
         if (!data||!data.ok) return { ok:false, valid:false, message:data?.message||'後台驗證失敗', errors:Array.isArray(data?.errors)&&data.errors.length?data.errors:[data?.message||'後台驗證失敗'], invalidDates:Array.isArray(data?.invalidDates)?data.invalidDates:[] };
@@ -2240,7 +2240,7 @@
         state.submitBusy = true; updateSubmitButtonState();
         showGlobalLoading(true,'送出中，請稍候...');
         document.getElementById('submitResultBox').classList.add('hidden');
-        const payload = { action:'submitPt', uid:state.userId, displayName:state.displayName, month:getSelectedMonthValue(), schedules:buildSchedulesPayload() };
+        const payload = { action:'submitPt', uid:state.userId, idToken:state.idToken, displayName:state.displayName, month:getSelectedMonthValue(), schedules:buildSchedulesPayload() };
         const { data } = await postJsonToGas(payload);
         if (!data||!data.ok){
           state.submitBusy = false; updateSubmitButtonState();
@@ -2258,7 +2258,7 @@
     // ── 查詢已送出班表 ──
     async function loadSubmittedSchedule(){
       if (!state.canQuerySchedule || !state.userId) return;
-      const payload = { action:'getPtSchedule', uid:state.userId, month:getSelectedMonthValue() };
+      const payload = { action:'getPtSchedule', uid:state.userId, idToken:state.idToken, month:getSelectedMonthValue() };
       const { data } = await postJsonToGas(payload);
       state.queriedLoaded = true;
       state.queriedFound  = !!(data&&data.ok&&data.found);
@@ -2326,6 +2326,17 @@
     }
 
     window.onload = async function(){
+      // 取得 LINE ID Token,送驗證用(防冒用)。失敗就空字串,後端過渡期會 fallback。
+      state.idToken = '';
+      try {
+        await liff.init({ liffId: LIFF_ID });
+        if (liff.isLoggedIn && liff.isLoggedIn()) {
+          state.idToken = liff.getIDToken() || '';
+        }
+      } catch (e) {
+        state.idToken = '';
+      }
+
       // 從後台抓設定（單一來源，目前只用到國定假日），渲染日曆前先 await
       await loadConfigFromBackend();
 
