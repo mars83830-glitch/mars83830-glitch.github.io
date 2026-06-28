@@ -24,6 +24,7 @@
     input::placeholder,textarea::placeholder{color:#9ca3af;opacity:1;font-weight:400}
     input::-webkit-input-placeholder,textarea::-webkit-input-placeholder{color:#9ca3af;font-weight:400}
     input::-moz-placeholder,textarea::-moz-placeholder{color:#9ca3af;opacity:1;font-weight:400}
+    /* select 在 placeholder 狀態時的灰字樣式 */
     select.is-placeholder{color:#9ca3af;font-weight:400}
     input:focus,select:focus,textarea:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.15)}
     button{cursor:pointer;font-weight:700}
@@ -368,10 +369,6 @@
     "內壢總倉"
   ];
 
-  // 除錯用:把指定 LINE UserId 放進來,只有這些人送出後會看到耗時分析
-  const DEBUG_TIMING_USER_IDS = [
-    "Ua79005da65e940cf949197b96bd7e93f"
-  ];
   /* =========================================================
    * ★★★★★ 可設定區結束 ★★★★★
    * ========================================================= */
@@ -979,9 +976,6 @@
       district: state.pickedDistrict,
       zone: state.pickedZone
     };
-    if (DEBUG_TIMING_USER_IDS.includes(state.userId)) {
-      body.debugTiming = true;
-    }
     if (state.taskType === "swap") {
       body.batteryDepot = batteryDepot;
     }
@@ -1050,20 +1044,7 @@
         return;
       }
 
-      let summary = "已記錄 " + (res.count || 0) + " 筆資料";
-      if (res.debugTiming) {
-        const t = res.debugTiming;
-        summary += "｜分頁 " + (res.sheet || "") +
-          "｜列 " + (res.startRow || "") +
-          "｜耗時 " + t.totalMs + "ms" +
-          "｜權限 " + t.authMs + "ms" +
-          "｜場站 " + t.stationMs + "ms" +
-          "｜開表 " + t.sheetMs + "ms" +
-          "｜找列 " + t.lastRowMs + "ms" +
-          "｜寫入 " + t.setValuesMs + "ms" +
-          "｜日報 " + (t.reportMs || 0) + "ms";
-      }
-      document.getElementById("successSummary").textContent = summary;
+      document.getElementById("successSummary").textContent = "已記錄 " + (res.count || 0) + " 筆資料";
       showApp("pageSuccess");
     } catch (err) {
       btn.disabled = false;
