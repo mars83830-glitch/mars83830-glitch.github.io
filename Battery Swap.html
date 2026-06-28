@@ -1,0 +1,1086 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"/>
+  <title>桃園營運處｜作業回報</title>
+  <style>
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:#eef1f5;color:#1f2937;font-family:"Noto Sans TC","Microsoft JhengHei",system-ui,-apple-system,sans-serif}
+    .wrap{max-width:520px;margin:0 auto;padding:16px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,.05);margin-top:14px}
+    h1,h2,h3{margin:0 0 10px}
+    h2{font-size:22px}
+    h3{font-size:18px}
+    .hint{font-size:13px;color:#6b7280;line-height:1.6}
+    .row{margin:12px 0}
+    .row:first-child{margin-top:0}
+    .labelRow{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+    .labelRow label{margin-bottom:0}
+    .labelRow .hintInline{font-size:12px;color:#6b7280;font-weight:400;line-height:1.4}
+    label{display:block;font-size:13px;font-weight:700;margin-bottom:6px;color:#374151}
+    label .req{color:#dc2626;margin-left:4px}
+    input,select,button,textarea{font-size:15px;padding:11px 12px;border:1px solid #9ca3af;border-radius:10px;width:100%;background:#fff;color:#111827;font-family:inherit;font-weight:700}
+    input::placeholder,textarea::placeholder{color:#9ca3af;opacity:1;font-weight:400}
+    input::-webkit-input-placeholder,textarea::-webkit-input-placeholder{color:#9ca3af;font-weight:400}
+    input::-moz-placeholder,textarea::-moz-placeholder{color:#9ca3af;opacity:1;font-weight:400}
+    select.is-placeholder{color:#9ca3af;font-weight:400}
+    input:focus,select:focus,textarea:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+    button{cursor:pointer;font-weight:700}
+    .btnMain{background:#2563eb;color:#fff;border:0;padding:14px}
+    .btnMain:disabled{background:#9ca3af;cursor:not-allowed}
+    .btnSecondary{background:#fff;color:#374151;border:1px solid #d1d5db}
+    .taskGrid{display:grid;grid-template-columns:1fr;gap:12px}
+    .taskBtn{padding:22px 16px;border-radius:14px;border:0;font-size:20px;font-weight:900;color:#fff;text-align:left;display:flex;align-items:center;gap:14px}
+    .taskBtn .ic{font-size:28px}
+    .swap{background:#1e79ff}
+    .pump{background:#c2185b}
+    .clean{background:#00796b}
+    .userbar{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;font-size:14px;color:#1e40af}
+    .ok{color:#0a7a24;font-weight:700}
+    .bad{color:#b00020;font-weight:700}
+    #statusMsg{margin-top:10px;font-size:14px;min-height:20px}
+    .hidden{display:none!important}
+    .center{text-align:center}
+    .big{font-size:22px;font-weight:900;margin:10px 0}
+    .backRow{display:flex;gap:10px;margin-top:16px}
+    .backRow button{flex:1}
+    .pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:700}
+    .pill.swap{background:#dbeafe;color:#1e40af}
+    .pill.pump{background:#fce7f3;color:#9d174d}
+    .pill.clean{background:#ccfbf1;color:#115e59}
+
+    .backBar{
+      display:flex;align-items:center;gap:6px;
+      padding:6px 10px;margin-bottom:10px;
+      background:#fff;border:1px solid #e5e7eb;border-radius:10px;
+      cursor:pointer;font-size:14px;font-weight:700;color:#4b5563;
+      width:fit-content;
+      transition:all .15s;
+    }
+    .backBar:hover,.backBar:active{background:#f3f4f6;border-color:#d1d5db}
+    .backBar .ic{font-size:16px;line-height:1}
+
+    .loadBanner{
+      display:flex;align-items:center;gap:10px;
+      padding:12px 14px;margin-bottom:12px;
+      background:#fef3c7;border:1px solid #f59e0b;border-radius:10px;
+      font-size:14px;font-weight:700;color:#92400e;
+    }
+    .loadBanner .spinner{
+      width:16px;height:16px;flex-shrink:0;
+      border:2px solid #f59e0b;border-top-color:transparent;
+      border-radius:50%;
+      animation:spin .8s linear infinite;
+    }
+    .statusWrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+    .statusCard{
+      background:#fff;border-radius:24px;
+      box-shadow:0 12px 32px rgba(0,0,0,.10);
+      padding:36px 28px 32px;
+      width:min(360px,92vw);text-align:center;
+    }
+    .app-header{display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:24px}
+    .app-dot{width:8px;height:8px;border-radius:50%;background:#4b89dc}
+    .app-name{font-size:12px;font-weight:700;color:#4b89dc;letter-spacing:.04em}
+    .icon-circle{
+      width:72px;height:72px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-size:32px;margin:0 auto 16px;
+    }
+    .icon-circle.blue   { background:#dbeafe }
+    .icon-circle.yellow { background:#fef3c7 }
+    .icon-circle.red    { background:#fee2e2 }
+    .icon-circle.orange { background:#ffedd5 }
+    .status-title{font-size:18px;font-weight:900;margin-bottom:8px;line-height:1.4}
+    .status-desc {font-size:14px;color:#6b7280;line-height:1.7;white-space:pre-wrap}
+    .divider{width:40px;height:2px;background:#f3f4f6;border-radius:2px;margin:18px auto}
+    .badge{display:inline-block;font-size:12px;font-weight:700;padding:5px 16px;border-radius:20px}
+    .badge.blue   { background:#dbeafe;color:#1d4ed8 }
+    .badge.yellow { background:#fef3c7;color:#92400e }
+    .badge.red    { background:#fee2e2;color:#991b1b }
+    .badge.orange { background:#ffedd5;color:#9a3412 }
+    .status-row{display:flex;align-items:center;justify-content:center;gap:7px;font-size:13px;color:#4b89dc;font-weight:700}
+    .spinner-sm{
+      width:14px;height:14px;border-radius:50%;
+      border:2px solid #bcd3f5;border-top-color:#4b89dc;
+      animation:spin .8s linear infinite;flex-shrink:0;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* 場站搜尋 */
+    .ac-wrap{position:relative}
+    .ac-input-wrap{position:relative}
+    .ac-clear{
+      position:absolute;top:50%;right:10px;transform:translateY(-50%);
+      background:#e5e7eb;color:#4b5563;border:0;border-radius:50%;
+      width:22px;height:22px;font-size:14px;line-height:1;padding:0;cursor:pointer;
+      display:none;align-items:center;justify-content:center
+    }
+    .ac-clear.show{display:flex}
+    .ac-list{
+      position:absolute;top:calc(100% + 4px);left:0;right:0;
+      background:#fff;border:1px solid #d1d5db;border-radius:10px;
+      max-height:260px;overflow-y:auto;z-index:50;
+      box-shadow:0 8px 24px rgba(0,0,0,.1);
+      display:none
+    }
+    .ac-list.show{display:block}
+    .ac-item{padding:10px 12px;cursor:pointer;font-size:15px;border-bottom:1px solid #f3f4f6}
+    .ac-item:last-child{border-bottom:0}
+    .ac-item:hover,.ac-item.active{background:#eff6ff;color:#1e40af}
+    .ac-item.empty{color:#9ca3af;text-align:center;cursor:default}
+    .ac-item .tag{font-size:12px;color:#6b7280;margin-left:8px}
+    .ac-item:hover .tag,.ac-item.active .tag{color:#1e40af}
+    .ac-picked{background:#f0fdf4!important;border-color:#86efac!important;color:#166534;font-weight:700}
+
+    /* 車號列表 */
+    .carRow{display:flex;gap:6px;margin-bottom:6px;align-items:center}
+    .carInputWrap{flex:1;min-width:0;position:relative}
+    .carInput{width:100%;font-family:"JetBrains Mono","Courier New",monospace;letter-spacing:1px;padding:11px 10px}
+    .carInput.invalid{border-color:#dc2626;background:#fef2f2}
+    .carInput.valid{border-color:#86efac;background:#f0fdf4}
+    .carBtn{
+      flex-shrink:0;width:40px;height:36px;padding:0;
+      font-size:18px;font-weight:900;border-radius:8px;
+      display:flex;align-items:center;justify-content:center
+    }
+    .carBtnAdd{background:#2563eb;color:#fff;border:0}
+    .carBtnDel{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca}
+    .carErrRow{font-size:12px;color:#dc2626;margin-top:-2px;margin-bottom:0px;padding-left:2px;min-height:0}
+
+    /* 新增車號大按鈕(車號列表下方) */
+    .addRowBtn{
+      width:100%;margin-top:6px;padding:10px;
+      background:#eff6ff;color:#2563eb;
+      border:1px dashed #93c5fd;border-radius:10px;
+      font-size:14px;font-weight:700;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;gap:6px;
+      transition:all .15s;
+    }
+    .addRowBtn:hover,.addRowBtn:active{background:#dbeafe;border-color:#60a5fa}
+    .addRowBtn .plus{font-size:18px;font-weight:900;line-height:1}
+
+    /* 序號標記(車號列前方) */
+    .carSeq{
+      flex-shrink:0;width:28px;height:36px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:14px;font-weight:700;color:#6b7280;
+      font-family:"JetBrains Mono","Courier New",monospace;
+      user-select:none;
+    }
+    .pumpRow .carSeq{height:34px;width:24px;font-size:13px}
+    @media (max-width:360px){
+      .pumpRow .carSeq{width:20px;font-size:12px}
+    }
+
+    /* 打氣列 */
+    .pumpRow{display:flex;gap:5px;margin-bottom:6px;align-items:center;flex-wrap:nowrap}
+    .pumpRow .cell{min-width:0;position:relative}
+    .pumpRow .cellCar{flex:1.6}
+    .pumpRow .cellPsi{flex:1}
+    .pumpRow input{
+      width:100%;padding:10px 6px;
+      font-family:"JetBrains Mono","Courier New",monospace;
+      font-size:14px;letter-spacing:0.5px;text-align:center
+    }
+    .pumpRow input.psiInvalid{border-color:#dc2626;background:#fef2f2}
+    .pumpRow .cellBtn{flex-shrink:0}
+    .pumpRow .carBtn{width:36px;height:34px;font-size:16px}
+    @media (max-width:360px){
+      .pumpRow{gap:3px}
+      .pumpRow input{padding:10px 4px;font-size:13px;letter-spacing:0}
+      .pumpRow .carBtn{width:32px;height:34px}
+    }
+    /* 打氣表頭:車號 + 胎壓(橫跨兩欄) */
+    .pumpHeader{
+      display:flex;gap:5px;align-items:center;
+      font-size:12px;color:#374151;font-weight:700;
+      margin-bottom:6px;padding:0 2px
+    }
+    .pumpHeader .h-cell{text-align:center}
+    .pumpHeader .h-seq{flex-shrink:0;width:24px}
+    .pumpHeader .h-cellCar{flex:1.6}
+    /* 胎壓標題橫跨兩欄(前輪+後輪+中間 gap) */
+    .pumpHeader .h-cellPsiMerged{flex:2;text-align:center}
+    .pumpHeader .h-cellBtn{flex-shrink:0;width:36px}
+    @media (max-width:360px){
+      .pumpHeader{font-size:11px}
+      .pumpHeader .h-seq{width:20px}
+      .pumpHeader .h-cellBtn{width:32px}
+    }
+  </style>
+</head>
+<body>
+
+<div id="statusPage" class="statusWrap">
+  <div class="statusCard">
+    <div class="app-header">
+      <div class="app-dot"></div>
+      <span class="app-name">桃園營運處｜作業回報</span>
+    </div>
+
+    <div id="stateLoading">
+      <div class="icon-circle blue">📋</div>
+      <div class="status-title" style="color:#1d4ed8">驗證身分中</div>
+      <div class="status-desc">正在確認你的帳號權限,請稍候...</div>
+      <div class="status-row" style="margin-top:14px">
+        <div class="spinner-sm"></div>
+        連線中
+      </div>
+    </div>
+
+    <div id="statePending" class="hidden">
+      <div class="icon-circle yellow">⏳</div>
+      <div class="status-title">申請審核中</div>
+      <div class="status-desc" id="msgPending">你的申請已送出,<br/>請等待管理員開通後再試。</div>
+      <div class="divider"></div>
+      <span class="badge yellow">等待審核</span>
+    </div>
+
+    <div id="stateBlocked" class="hidden">
+      <div class="icon-circle red">🚫</div>
+      <div class="status-title" style="color:#991b1b">帳號已停用</div>
+      <div class="status-desc" id="msgBlocked">你的帳號存取已被限制,<br/>請聯絡管理員處理。</div>
+      <div class="divider"></div>
+      <span class="badge red">無法存取</span>
+    </div>
+
+    <div id="stateError" class="hidden">
+      <div class="icon-circle orange">⚠️</div>
+      <div class="status-title" style="color:#92400e">系統異常</div>
+      <div class="status-desc" id="msgError">系統設定有問題,<br/>請聯絡管理員確認。</div>
+      <div class="divider"></div>
+      <span class="badge orange">請聯絡管理員</span>
+    </div>
+  </div>
+</div>
+
+<div id="appPage" class="hidden">
+  <div class="wrap">
+
+    <div id="stationsLoadBanner" class="loadBanner hidden">
+      <div class="spinner"></div>
+      <div>正在載入場站清單,請稍候...</div>
+    </div>
+
+    <div id="pageMenu" class="hidden">
+      <div class="card">
+        <div class="userbar">
+          <div>👤 <span id="userName">-</span></div>
+        </div>
+        <h2 style="margin-top:14px">請選擇作業</h2>
+        <div class="hint">點選下方作業類型開始填寫</div>
+        <div class="taskGrid" style="margin-top:16px">
+          <button class="taskBtn swap"  onclick="goTask('swap')"><span class="ic">🔋</span>換電作業</button>
+          <button class="taskBtn pump"  onclick="goTask('pump')"><span class="ic">🚲</span>打氣作業</button>
+          <button class="taskBtn clean" onclick="goTask('clean')"><span class="ic">🧹</span>清潔作業</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="pageForm" class="hidden">
+
+      <div class="card">
+        <div class="userbar">
+          <div>👤 <span id="userNameForm">-</span></div>
+          <div><span id="taskPill" class="pill swap">換電作業</span></div>
+        </div>
+
+        <div class="row hidden" id="batteryDepotWrap">
+          <label>電池領用處<span class="req">*</span></label>
+          <select id="fBatteryDepot">
+            <option value="">請選擇電池領用處</option>
+          </select>
+        </div>
+
+        <div class="row ac-wrap" id="stationWrap">
+          <label>場站名稱<span class="req">*</span></label>
+          <div class="ac-input-wrap">
+            <input
+              id="fStation"
+              type="text"
+              autocomplete="off"
+              placeholder="輸入場站名稱關鍵字搜尋"
+              oninput="onStationInput()"
+              onfocus="onStationFocus()"
+              onblur="onStationBlur()"
+              onkeydown="onStationKey(event)"
+            />
+            <button type="button" class="ac-clear" id="fStationClear" onclick="clearStation()">×</button>
+          </div>
+          <div class="ac-list" id="fStationList"></div>
+        </div>
+
+        <div class="row">
+          <div class="labelRow">
+            <label id="carLabel">車號<span class="req" id="carReq">*</span></label>
+            <span class="hintInline" id="carHint">可新增多筆,一次上傳多台</span>
+          </div>
+          <div id="carList"></div>
+        </div>
+
+        <div id="statusMsg"></div>
+
+        <div class="backRow">
+          <button class="btnSecondary" onclick="goMenu()">返回</button>
+          <button id="btnSubmit" class="btnMain" onclick="submitForm()">送出</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="pageSuccess" class="hidden">
+      <div class="card center">
+        <div style="font-size:56px">✅</div>
+        <div class="big">送出成功</div>
+        <div class="hint" id="successSummary">資料已記錄</div>
+        <div class="backRow">
+          <button class="btnMain" onclick="continueNext()">繼續鍵下一單</button>
+          <button class="btnSecondary" onclick="liffClose()">離開</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script>
+  /* =========================================================
+   * 部署設定
+   * ========================================================= */
+  const LIFF_ID  = "2009174277-pjGxQYN0";
+  const GAS_URL  = "https://script.google.com/macros/s/AKfycbwWmpzmo1V2bJk3vZZYOo_JyglNuUsDwVh0PnlignaNj-LnUz6eaMxCG37Z-guwlaHh/exec";
+  /* ========================================================= */
+
+  /* =========================================================
+   * ★★★★★ 可設定區:電池領用處(換電作業下拉選單) ★★★★★
+   *
+   * 新增/移除電池領用處時,只要修改下方陣列即可
+   * ⚠ 後端 Code.txt 的 ALLOWED_DEPOTS 也要同步修改
+   * ========================================================= */
+  const BATTERY_DEPOTS = [
+    "高城維調",
+    "桃園客服中心",
+    "中壢客服中心",
+    "南崁維調",
+    "楊梅維調",
+    "內壢總倉"
+  ];
+
+  // 除錯用:把指定 LINE UserId 放進來,只有這些人送出後會看到耗時分析
+  const DEBUG_TIMING_USER_IDS = [
+    "Ua79005da65e940cf949197b96bd7e93f"
+  ];
+  /* =========================================================
+   * ★★★★★ 可設定區結束 ★★★★★
+   * ========================================================= */
+
+  // 車號格式:7 位數,開頭必須為 0;實際存在範圍由後端「車號規則」分頁判斷
+  const CAR_NO_PATTERN = /^0\d{6}$/;
+  const CAR_NO_PLACEHOLDER = "0301234";
+  const PSI_MIN = 0;
+  const PSI_MAX = 100;
+
+  const STATION_TTL_MS = 5 * 60 * 1000; // 場站清單在瀏覽器端的快取期限
+  let stationsPromise = null; // 進行中的抓取 Promise(避免重複抓)
+
+  const state = {
+    userId: "",
+    displayName: "",
+    userName: "",
+    taskType: "",
+    stations: [],
+    stationsLoadedAt: 0,
+    pickedStation: "",
+    pickedDistrict: "",
+    pickedZone: "",
+    acActiveIndex: -1,
+    carNos: [""],
+    pumpData: [{ carNo:"", psiFront:"", psiRear:"" }]
+  };
+
+  const TASK_LABEL = { swap: "換電作業", pump: "打氣作業", clean: "清潔作業" };
+
+  function showStatus(name) {
+    document.getElementById("statusPage").classList.remove("hidden");
+    document.getElementById("appPage").classList.add("hidden");
+    ["stateLoading","statePending","stateBlocked","stateError"].forEach(id => {
+      document.getElementById(id).classList.toggle("hidden", id !== name);
+    });
+    document.body.style.background = "#eef1f5";
+  }
+
+  function showApp(pageId) {
+    document.getElementById("statusPage").classList.add("hidden");
+    document.getElementById("appPage").classList.remove("hidden");
+    ["pageMenu","pageForm","pageSuccess"].forEach(p => {
+      document.getElementById(p).classList.toggle("hidden", p !== pageId);
+    });
+    document.body.style.background = "#f5f6f8";
+  }
+
+  function setStatusMsg(msg, ok) {
+    const el = document.getElementById("statusMsg");
+    el.textContent = msg || "";
+    el.className = ok ? "ok" : "bad";
+  }
+
+  function renderBatteryDepots() {
+    const sel = document.getElementById("fBatteryDepot");
+    if (!sel) return;
+    // placeholder 用 disabled + hidden:不會出現在原生選單中,但仍可作為預設顯示文字
+    const html = ['<option value="" disabled selected hidden>請選擇電池領用處</option>']
+      .concat(BATTERY_DEPOTS.map(d =>
+        '<option value="' + escapeHtml(d) + '">' + escapeHtml(d) + '</option>'
+      ))
+      .join("");
+    sel.innerHTML = html;
+    sel.classList.add("is-placeholder");
+    sel.onchange = function() {
+      sel.classList.toggle("is-placeholder", !sel.value);
+    };
+  }
+
+  async function initLiff() {
+    renderBatteryDepots();
+    showStatus("stateLoading");
+    try {
+      await liff.init({ liffId: LIFF_ID });
+      if (!liff.isLoggedIn()) { liff.login(); return; }
+      const profile = await liff.getProfile();
+      state.userId = profile.userId;
+      state.displayName = profile.displayName || "";
+      await checkAuth();
+    } catch (err) {
+      document.getElementById("msgError").innerHTML =
+        "登入或驗證失敗,<br/>請重新開啟後再試。<br/><br/>" + escapeHtml(err && err.message ? err.message : String(err));
+      showStatus("stateError");
+    }
+  }
+
+  function liffClose() {
+    try {
+      if (typeof liff !== "undefined") {
+        if (liff.isInClient && liff.isInClient()) {
+          liff.closeWindow();
+          return;
+        }
+      }
+    } catch (_) {}
+    const sum = document.getElementById("successSummary");
+    if (sum) sum.textContent += "(瀏覽器測試環境無法自動關閉)";
+  }
+
+  async function callApi(action, body) {
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(Object.assign({ action }, body || {}))
+    });
+    return await res.json();
+  }
+
+  async function checkAuth() {
+    let res;
+    try {
+      res = await callApi("checkAuth", {
+        userId: state.userId,
+        displayName: state.displayName
+      });
+    } catch (err) {
+      document.getElementById("msgError").innerHTML =
+        "連線失敗,<br/>請確認網路後重新開啟。<br/><br/>" + escapeHtml(err && err.message ? err.message : String(err));
+      showStatus("stateError");
+      return;
+    }
+
+    const st = String(res.authStatus || "").toLowerCase();
+
+    if (res.ok && res.canUse) {
+      state.userName = res.userName || state.displayName;
+      document.getElementById("userName").textContent = state.userName;
+      document.getElementById("userNameForm").textContent = state.userName;
+
+      // 登入完成後立刻在背景開始抓場站,等使用者點作業按鈕時通常已經抓完
+      refreshStations({ background: true });
+
+      showApp("pageMenu");
+      return;
+    }
+
+    if (st === "pending" || st === "not_found") {
+      document.getElementById("msgPending").innerHTML =
+        "你的帳號尚未開通,申請已自動送出,<br/>請等待管理員開通後再試。";
+      showStatus("statePending");
+      return;
+    }
+    if (st === "blocked") {
+      document.getElementById("msgBlocked").innerHTML =
+        "你的帳號存取已被限制,<br/>請聯絡管理員處理。";
+      showStatus("stateBlocked");
+      return;
+    }
+    if (st === "config_error") {
+      document.getElementById("msgError").innerHTML =
+        "尚未設定權限名單,<br/>請聯絡管理員確認。";
+      showStatus("stateError");
+      return;
+    }
+
+    document.getElementById("msgError").innerHTML =
+      escapeHtml(res.message || "發生未知錯誤,請重新開啟後再試。");
+    showStatus("stateError");
+  }
+
+  function goMenu() {
+    state.taskType = "";
+    state.pickedStation = "";
+    state.pickedDistrict = "";
+    state.pickedZone = "";
+    state.carNos = [""];
+    state.pumpData = [{ carNo:"", psiFront:"", psiRear:"" }];
+    setStatusMsg("", true);
+    showApp("pageMenu");
+  }
+
+  async function goTask(type) {
+    state.taskType = type;
+    state.pickedStation = "";
+    state.pickedDistrict = "";
+    state.pickedZone = "";
+    state.carNos = [""];
+    state.pumpData = [{ carNo:"", psiFront:"", psiRear:"" }];
+    document.getElementById("fStation").value = "";
+    document.getElementById("fStation").classList.remove("ac-picked");
+    document.getElementById("fStationClear").classList.remove("show");
+    document.getElementById("btnSubmit").disabled = false;
+    setStatusMsg("", true);
+
+    // 電池領用處:僅換電作業顯示;切換時重置回 placeholder 狀態
+    const depotWrap = document.getElementById("batteryDepotWrap");
+    const depotSel  = document.getElementById("fBatteryDepot");
+    depotSel.selectedIndex = 0;
+    depotSel.classList.add("is-placeholder");
+    depotWrap.classList.toggle("hidden", type !== "swap");
+
+    const pill = document.getElementById("taskPill");
+    pill.className = "pill " + type;
+    pill.textContent = TASK_LABEL[type];
+
+    // 清潔作業車號為選填(其他為必填)
+    const carReq  = document.getElementById("carReq");
+    const carHint = document.getElementById("carHint");
+    if (type === "clean") {
+      carReq.style.display = "none";
+      carHint.textContent = "選填,可新增多筆。若未填則視為清潔場站";
+    } else {
+      carReq.style.display = "";
+      carHint.textContent = "可新增多筆,一次上傳多台";
+    }
+
+    renderCarArea();
+    showApp("pageForm");
+
+    // 場站清單通常已經在登入後背景抓好了;若還在抓就 await,過期就重抓
+    const stationInput = document.getElementById("fStation");
+    if (stationsPromise || !isStationsFresh_()) {
+      stationInput.disabled = true;
+      try {
+        await refreshStations();
+      } finally {
+        stationInput.disabled = false;
+      }
+    }
+  }
+
+  function isStationsFresh_() {
+    return state.stations.length > 0
+      && (Date.now() - state.stationsLoadedAt < STATION_TTL_MS);
+  }
+
+  function refreshStations(opts) {
+    const isBackground = !!(opts && opts.background);
+
+    // 已在抓中 → 共用同一個 Promise,避免並發重複請求
+    if (stationsPromise) return stationsPromise;
+    // 還新鮮 → 不重抓
+    if (isStationsFresh_()) return Promise.resolve();
+
+    const banner = document.getElementById("stationsLoadBanner");
+    banner.classList.remove("hidden");
+
+    stationsPromise = callApi("getStations", {})
+      .then(r => {
+        if (r.ok) {
+          state.stations = r.stations || [];
+          state.stationsLoadedAt = Date.now();
+          return;
+        }
+        // 背景失敗:不彈窗(使用者可能還在主選單),等 goTask 時會自動重試並彈窗
+        if (isBackground) return;
+        const tail = state.stations.length ? "將沿用上次資料。" : "請重新點選作業。";
+        alert("場站清單載入失敗," + tail + "\n" + (r.message || ""));
+      })
+      .catch(_ => {
+        if (isBackground) return;
+        const tail = state.stations.length ? "將沿用上次資料。" : "請重新點選作業。";
+        alert("場站清單載入失敗(網路錯誤)," + tail);
+      })
+      .finally(() => {
+        stationsPromise = null;
+        banner.classList.add("hidden");
+      });
+
+    return stationsPromise;
+  }
+
+  /* 場站搜尋 */
+  function onStationInput() {
+    const input = document.getElementById("fStation");
+    const q = input.value.trim();
+
+    if (state.pickedStation && state.pickedStation !== q) {
+      state.pickedStation = "";
+      state.pickedDistrict = "";
+      state.pickedZone = "";
+      input.classList.remove("ac-picked");
+    }
+    document.getElementById("fStationClear").classList.toggle("show", !!q);
+
+    renderStationList(q);
+    state.acActiveIndex = -1;
+  }
+
+  function onStationFocus() {
+    const input = document.getElementById("fStation");
+    renderStationList(input.value.trim());
+  }
+
+  function onStationBlur() {
+    setTimeout(() => {
+      document.getElementById("fStationList").classList.remove("show");
+    }, 200);
+  }
+
+  function onStationKey(e) {
+    const list = document.getElementById("fStationList");
+    const items = list.querySelectorAll(".ac-item:not(.empty)");
+    if (!list.classList.contains("show") || items.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      state.acActiveIndex = Math.min(state.acActiveIndex + 1, items.length - 1);
+      updateAcActive(items);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      state.acActiveIndex = Math.max(state.acActiveIndex - 1, 0);
+      updateAcActive(items);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const idx = state.acActiveIndex >= 0 ? state.acActiveIndex : 0;
+      const name = items[idx].getAttribute("data-name");
+      if (name) pickStation(name);
+    } else if (e.key === "Escape") {
+      list.classList.remove("show");
+    }
+  }
+
+  function updateAcActive(items) {
+    items.forEach((it, i) => it.classList.toggle("active", i === state.acActiveIndex));
+    if (state.acActiveIndex >= 0 && items[state.acActiveIndex]) {
+      items[state.acActiveIndex].scrollIntoView({ block: "nearest" });
+    }
+  }
+
+  function renderStationList(keyword) {
+    const list = document.getElementById("fStationList");
+    const kw = String(keyword || "").trim().toLowerCase();
+
+    let candidates = state.stations.slice();
+    if (kw) {
+      // ★ 只比對「場站名稱」,不再比對行政區/責任區
+      candidates = candidates.filter(s =>
+        s.station.toLowerCase().includes(kw)
+      );
+    }
+
+    const seen = new Set();
+    const unique = [];
+    for (const s of candidates) {
+      if (seen.has(s.station)) continue;
+      seen.add(s.station);
+      unique.push(s);
+    }
+
+    unique.sort((a, b) => a.station.localeCompare(b.station, "zh-Hant"));
+
+    const MAX = 50;
+    const shown = unique.slice(0, MAX);
+
+    if (shown.length === 0) {
+      list.innerHTML = '<div class="ac-item empty">找不到符合的場站</div>';
+    } else {
+      list.innerHTML = shown.map(s => {
+        const tag = (s.district && s.zone) ? '<span class="tag">' + escapeHtml(s.district) + ' / ' + escapeHtml(s.zone) + '</span>' : '';
+        return '<div class="ac-item" data-name="' + escapeHtml(s.station) + '" onmousedown="pickStation(\'' + escapeJs(s.station) + '\')">' + escapeHtml(s.station) + tag + '</div>';
+      }).join("") + (unique.length > MAX ? '<div class="ac-item empty">還有 ' + (unique.length - MAX) + ' 筆...請輸入更精確的關鍵字</div>' : "");
+    }
+
+    list.classList.add("show");
+    state.acActiveIndex = -1;
+  }
+
+  function pickStation(name) {
+    const match = state.stations.find(s => s.station === name);
+    if (!match) return;
+    state.pickedStation = match.station;
+    state.pickedDistrict = match.district;
+    state.pickedZone = match.zone;
+    const input = document.getElementById("fStation");
+    input.value = match.station;
+    input.classList.add("ac-picked");
+    document.getElementById("fStationClear").classList.add("show");
+    document.getElementById("fStationList").classList.remove("show");
+  }
+
+  function clearStation() {
+    state.pickedStation = "";
+    state.pickedDistrict = "";
+    state.pickedZone = "";
+    const input = document.getElementById("fStation");
+    input.value = "";
+    input.classList.remove("ac-picked");
+    document.getElementById("fStationClear").classList.remove("show");
+    input.focus();
+  }
+
+  /* 車號區域 */
+  function renderCarArea() {
+    if (state.taskType === "pump") renderPumpList();
+    else renderCarList();
+  }
+
+  function renderCarList() {
+    const wrap = document.getElementById("carList");
+    const canDel = state.carNos.length > 1;
+    const rows = state.carNos.map((val, i) => {
+      const valClass = validClassFor(val);
+      const errMsg = errMsgFor(val);
+
+      return '<div class="carRow">' +
+        '<div class="carSeq">' + (i + 1) + '.</div>' +
+        '<div class="carInputWrap">' +
+          '<input class="carInput ' + valClass + '" ' +
+            'type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="7" ' +
+            'placeholder="' + CAR_NO_PLACEHOLDER + '" ' +
+            'value="' + escapeHtml(val) + '" ' +
+            'oninput="onCarInput(' + i + ', this)" />' +
+        '</div>' +
+        '<button type="button" class="carBtn carBtnDel" onclick="removeRow(' + i + ')"' + (canDel ? '' : ' disabled') + '>−</button>' +
+      '</div>' +
+      '<div class="carErrRow">' + escapeHtml(errMsg) + '</div>';
+    }).join("");
+
+    const addBtn = '<button type="button" class="addRowBtn" onclick="addRow()"><span class="plus">+</span>新增車號</button>';
+    wrap.innerHTML = rows + addBtn;
+  }
+
+  function renderPumpList() {
+    const wrap = document.getElementById("carList");
+
+    // ★ 單行表頭:車號 | 打氣前胎壓(橫跨前輪/後輪兩欄)
+    const header =
+      '<div class="pumpHeader">' +
+        '<div class="h-seq"></div>' +
+        '<div class="h-cell h-cellCar">車號</div>' +
+        '<div class="h-cell h-cellPsiMerged">打氣前胎壓</div>' +
+        '<div class="h-cell h-cellBtn"></div>' +
+      '</div>';
+
+    const rows = state.pumpData.map((item, i) => {
+      const carVal = item.carNo || "";
+      const valClass = validClassFor(carVal);
+      const errMsg = errMsgFor(carVal);
+      const canDel = state.pumpData.length > 1;
+
+      // 胎壓驗證樣式
+      const psiFrontInvalid = isPsiInvalid(item.psiFront) ? "psiInvalid" : "";
+      const psiRearInvalid  = isPsiInvalid(item.psiRear)  ? "psiInvalid" : "";
+
+      return '<div class="pumpRow">' +
+        '<div class="carSeq">' + (i + 1) + '.</div>' +
+        '<div class="cell cellCar">' +
+          '<input class="carInput ' + valClass + '" ' +
+            'type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="7" ' +
+            'placeholder="' + CAR_NO_PLACEHOLDER + '" ' +
+            'value="' + escapeHtml(carVal) + '" ' +
+            'oninput="onPumpCarInput(' + i + ', this)" />' +
+        '</div>' +
+        '<div class="cell cellPsi">' +
+          '<input type="number" inputmode="decimal" step="0.1" ' +
+            'min="' + PSI_MIN + '" max="' + PSI_MAX + '" ' +
+            'class="' + psiFrontInvalid + '" ' +
+            'placeholder="前輪" ' +
+            'value="' + escapeHtml(item.psiFront || "") + '" ' +
+            'oninput="onPumpPsiInput(' + i + ', \'psiFront\', this)" />' +
+        '</div>' +
+        '<div class="cell cellPsi">' +
+          '<input type="number" inputmode="decimal" step="0.1" ' +
+            'min="' + PSI_MIN + '" max="' + PSI_MAX + '" ' +
+            'class="' + psiRearInvalid + '" ' +
+            'placeholder="後輪" ' +
+            'value="' + escapeHtml(item.psiRear || "") + '" ' +
+            'oninput="onPumpPsiInput(' + i + ', \'psiRear\', this)" />' +
+        '</div>' +
+        '<div class="cell cellBtn">' +
+          '<button type="button" class="carBtn carBtnDel" onclick="removeRow(' + i + ')"' + (canDel ? '' : ' disabled') + '>−</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="carErrRow">' + escapeHtml(errMsg) + '</div>';
+    }).join("");
+
+    const addBtn = '<button type="button" class="addRowBtn" onclick="addRow()"><span class="plus">+</span>新增車號</button>';
+    wrap.innerHTML = header + rows + addBtn;
+  }
+
+  function validClassFor(val) {
+    if (!val) return "";
+    return CAR_NO_PATTERN.test(val) ? "valid" : "invalid";
+  }
+
+  function errMsgFor(val) {
+    if (!val || CAR_NO_PATTERN.test(val)) return "";
+    if (val.length !== 7) return "車號需 7 位數";
+    if (!val.startsWith("0")) return "車號開頭必須為 0";
+    return "車號格式錯誤";
+  }
+
+  // 胎壓驗證:空白不算錯(會在送出時擋),有值時要在 0-100 之間且為數字
+  function isPsiInvalid(val) {
+    const s = String(val || "").trim();
+    if (!s) return false;
+    const n = Number(s);
+    if (!isFinite(n)) return true;
+    return n < PSI_MIN || n > PSI_MAX;
+  }
+
+  function onCarInput(idx, input) {
+    const cleaned = String(input.value || "").replace(/\D/g, "").slice(0, 7);
+    state.carNos[idx] = cleaned;
+    if (input.value !== cleaned) input.value = cleaned;
+
+    input.classList.remove("valid","invalid");
+    const c = validClassFor(cleaned);
+    if (c) input.classList.add(c);
+
+    const errRow = input.closest(".carRow").nextElementSibling;
+    if (errRow && errRow.classList.contains("carErrRow")) {
+      errRow.textContent = errMsgFor(cleaned);
+    }
+  }
+
+  function onPumpCarInput(idx, input) {
+    const cleaned = String(input.value || "").replace(/\D/g, "").slice(0, 7);
+    state.pumpData[idx].carNo = cleaned;
+    if (input.value !== cleaned) input.value = cleaned;
+
+    input.classList.remove("valid","invalid");
+    const c = validClassFor(cleaned);
+    if (c) input.classList.add(c);
+
+    const errRow = input.closest(".pumpRow").nextElementSibling;
+    if (errRow && errRow.classList.contains("carErrRow")) {
+      errRow.textContent = errMsgFor(cleaned);
+    }
+  }
+
+  function onPumpPsiInput(idx, key, input) {
+    let v = input.value;
+    // 即時擋下超過 100 的輸入:如果超過就回退到 100
+    if (v !== "" && isFinite(Number(v))) {
+      const n = Number(v);
+      if (n > PSI_MAX) {
+        v = String(PSI_MAX);
+        input.value = v;
+      } else if (n < PSI_MIN) {
+        v = String(PSI_MIN);
+        input.value = v;
+      }
+    }
+    state.pumpData[idx][key] = v;
+
+    // 即時更新紅框樣式
+    input.classList.toggle("psiInvalid", isPsiInvalid(v));
+  }
+
+  function addRow() {
+    if (state.taskType === "pump") {
+      state.pumpData.push({ carNo:"", psiFront:"", psiRear:"" });
+    } else {
+      state.carNos.push("");
+    }
+    renderCarArea();
+    setTimeout(() => {
+      const lastRow = document.querySelectorAll("#carList .pumpRow, #carList .carRow");
+      if (lastRow.length) {
+        const firstInput = lastRow[lastRow.length - 1].querySelector("input");
+        if (firstInput) firstInput.focus();
+      }
+    }, 0);
+  }
+
+  function removeRow(idx) {
+    if (state.taskType === "pump") {
+      if (state.pumpData.length <= 1) return;
+      state.pumpData.splice(idx, 1);
+    } else {
+      if (state.carNos.length <= 1) return;
+      state.carNos.splice(idx, 1);
+    }
+    renderCarArea();
+  }
+
+  function escapeHtml(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+  }
+  function escapeJs(s){
+    return String(s == null ? "" : s).replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+  }
+
+  async function submitForm() {
+    const btn = document.getElementById("btnSubmit");
+
+    if (!state.pickedStation) {
+      setStatusMsg("請從建議清單中點選場站(不能只打關鍵字)", false);
+      return;
+    }
+    const stationInputValue = document.getElementById("fStation").value.trim();
+    if (stationInputValue !== state.pickedStation) {
+      setStatusMsg("場站與輸入內容不一致,請重新選擇", false);
+      return;
+    }
+
+    // 換電作業:電池領用處必填
+    let batteryDepot = "";
+    if (state.taskType === "swap") {
+      batteryDepot = document.getElementById("fBatteryDepot").value;
+      if (!batteryDepot) {
+        setStatusMsg("請選擇電池領用處", false);
+        return;
+      }
+    }
+
+    const body = {
+      userId: state.userId,
+      displayName: state.displayName,
+      taskType: state.taskType,
+      station: state.pickedStation,
+      district: state.pickedDistrict,
+      zone: state.pickedZone
+    };
+    if (DEBUG_TIMING_USER_IDS.includes(state.userId)) {
+      body.debugTiming = true;
+    }
+    if (state.taskType === "swap") {
+      body.batteryDepot = batteryDepot;
+    }
+
+    if (state.taskType === "pump") {
+      const filled = state.pumpData.filter(it =>
+        (it.carNo && String(it.carNo).trim()) ||
+        (it.psiFront && String(it.psiFront).trim()) ||
+        (it.psiRear  && String(it.psiRear ).trim())
+      );
+      if (filled.length === 0) { setStatusMsg("請至少輸入一筆資料", false); return; }
+
+      for (let i = 0; i < filled.length; i++) {
+        const it = filled[i];
+        const carNo = String(it.carNo || "").trim();
+        const pf = String(it.psiFront || "").trim();
+        const pr = String(it.psiRear  || "").trim();
+        if (!CAR_NO_PATTERN.test(carNo)) {
+          setStatusMsg("第 " + (i+1) + " 列車號格式錯誤(需 7 位數且開頭為 0)", false); return;
+        }
+        if (!pf || !pr) { setStatusMsg("第 " + (i+1) + " 列前/後胎壓必填", false); return; }
+        if (!isFinite(Number(pf)) || !isFinite(Number(pr))) {
+          setStatusMsg("第 " + (i+1) + " 列胎壓須為數字", false); return;
+        }
+        const nf = Number(pf), nr = Number(pr);
+        if (nf < PSI_MIN || nf > PSI_MAX || nr < PSI_MIN || nr > PSI_MAX) {
+          setStatusMsg("第 " + (i+1) + " 列胎壓需在 " + PSI_MIN + "-" + PSI_MAX + " 之間", false); return;
+        }
+      }
+
+      const seen = new Set();
+      const unique = [];
+      for (const it of filled) {
+        const c = String(it.carNo).trim();
+        if (seen.has(c)) continue;
+        seen.add(c);
+        unique.push({ carNo:c, psiFront:String(it.psiFront).trim(), psiRear:String(it.psiRear).trim() });
+      }
+
+      body.pumpData = unique;
+    } else {
+      const cleaned = state.carNos.map(c => String(c || "").trim()).filter(c => c);
+
+      // 清潔作業:沒填車號時,後台寫入「清潔場站」
+      if (state.taskType === "clean" && cleaned.length === 0) {
+        body.carNos = ["清潔場站"];
+      } else {
+        if (cleaned.length === 0) { setStatusMsg("請至少輸入一個車號", false); return; }
+        const invalid = cleaned.filter(c => !CAR_NO_PATTERN.test(c));
+        if (invalid.length > 0) {
+          setStatusMsg("車號格式錯誤(需 7 位數且開頭為 0):" + invalid.join("、"), false); return;
+        }
+        body.carNos = Array.from(new Set(cleaned));
+      }
+    }
+
+    btn.disabled = true;
+    setStatusMsg("送出中...", true);
+
+    try {
+      const res = await callApi("submitTask", body);
+
+      if (!res.ok) {
+        btn.disabled = false;
+        setStatusMsg(res.message || "送出失敗", false);
+        return;
+      }
+
+      let summary = "已記錄 " + (res.count || 0) + " 筆資料";
+      if (res.debugTiming) {
+        const t = res.debugTiming;
+        summary += "｜分頁 " + (res.sheet || "") +
+          "｜列 " + (res.startRow || "") +
+          "｜耗時 " + t.totalMs + "ms" +
+          "｜權限 " + t.authMs + "ms" +
+          "｜場站 " + t.stationMs + "ms" +
+          "｜開表 " + t.sheetMs + "ms" +
+          "｜找列 " + t.lastRowMs + "ms" +
+          "｜寫入 " + t.setValuesMs + "ms" +
+          "｜日報 " + (t.reportMs || 0) + "ms";
+      }
+      document.getElementById("successSummary").textContent = summary;
+      showApp("pageSuccess");
+    } catch (err) {
+      btn.disabled = false;
+      setStatusMsg("連線失敗:" + (err && err.message ? err.message : err), false);
+    }
+  }
+
+  function continueNext() {
+    // 用同一個作業類別重新開一張表
+    goTask(state.taskType);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initLiff);
+  } else {
+    initLiff();
+  }
+</script>
+</body>
+</html>
