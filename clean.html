@@ -3,6 +3,10 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"/>
+  <!-- 盡量避免 LINE 內建瀏覽器快取舊版前端(舊版可能還指向舊的 GAS URL) -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+  <meta http-equiv="Pragma" content="no-cache"/>
+  <meta http-equiv="Expires" content="0"/>
   <title>桃園營運處｜作業回報</title>
   <style>
     *{box-sizing:border-box}
@@ -253,6 +257,7 @@
       <div class="divider"></div>
       <button id="btnRetryAuth" class="btnMain" style="margin-bottom:12px" onclick="retryAuth()">🔄 重試</button>
       <span class="badge orange">若持續失敗請聯絡管理員</span>
+      <div id="errDiag" style="margin-top:12px;font-size:11px;color:#9ca3af;line-height:1.5"></div>
     </div>
   </div>
 </div>
@@ -350,6 +355,8 @@
   /* =========================================================
    * 部署設定
    * ========================================================= */
+  // 版本標記:每次改前端就把日期往上加,錯誤畫面會顯示,一看截圖就知道對方跑的是哪一版
+  const APP_VERSION = "2026-08-07a";
   const LIFF_ID  = "2009174277-pjGxQYN0";
   const GAS_URL  = "https://script.google.com/macros/s/AKfycby3Jv-fbr1SPP6rajHvgkXPezET5qFvHqkUEq-ntcQ6aXZDDAe9Zwdp5YCmP_TwS3Ab/exec";
   /* ========================================================= */
@@ -399,12 +406,26 @@
 
   const TASK_LABEL = { swap: "換電作業", pump: "打氣作業", clean: "清潔作業" };
 
+  // 錯誤畫面底部顯示診斷資訊(版本/時間/後端尾碼),同仁截圖就能判斷是不是跑舊版
+  function setErrDiag(extra) {
+    const el = document.getElementById("errDiag");
+    if (!el) return;
+    const t = new Date();
+    const hh = String(t.getHours()).padStart(2, "0");
+    const mm = String(t.getMinutes()).padStart(2, "0");
+    const ss = String(t.getSeconds()).padStart(2, "0");
+    const tail = String(GAS_URL).slice(-12, -5); // 後端部署尾碼,可辨識新舊
+    el.textContent = "版本 " + APP_VERSION + "ㆍ" + hh + ":" + mm + ":" + ss +
+      "ㆍ後端…" + tail + (extra ? "ㆍ" + extra : "");
+  }
+
   function showStatus(name) {
     document.getElementById("statusPage").classList.remove("hidden");
     document.getElementById("appPage").classList.add("hidden");
     ["stateLoading","statePending","stateBlocked","stateError"].forEach(id => {
       document.getElementById(id).classList.toggle("hidden", id !== name);
     });
+    if (name === "stateError") setErrDiag();
     document.body.style.background = "#eef1f5";
   }
 
