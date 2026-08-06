@@ -545,15 +545,29 @@
       showStatus("stateBlocked");
       return;
     }
+    if (st === "disabled") {
+      document.getElementById("msgBlocked").innerHTML =
+        "此帳號目前停用,<br/>請聯絡管理員處理。";
+      showStatus("stateBlocked");
+      return;
+    }
     if (st === "config_error") {
       document.getElementById("msgError").innerHTML =
         "尚未設定權限名單,<br/>請聯絡管理員確認。";
       showStatus("stateError");
       return;
     }
+    if (st === "service_error") {
+      document.getElementById("msgError").innerHTML =
+        "驗證服務暫時無法使用,<br/>請稍後重新開啟再試。";
+      showStatus("stateError");
+      return;
+    }
 
+    // 落到這裡代表後端回了預期外的狀態 → 把狀態碼一併顯示,方便管理員排查
     document.getElementById("msgError").innerHTML =
-      escapeHtml(res.message || "發生未知錯誤,請重新開啟後再試。");
+      escapeHtml(res.message || "帳號狀態異常,請聯絡管理員。") +
+      "<br/><br/>(狀態:" + escapeHtml(st || "無") + ")";
     showStatus("stateError");
   }
 
