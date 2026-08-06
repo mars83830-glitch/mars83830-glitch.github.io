@@ -251,7 +251,8 @@
       <div class="status-title" style="color:#92400e">系統異常</div>
       <div class="status-desc" id="msgError">系統設定有問題,<br/>請聯絡管理員確認。</div>
       <div class="divider"></div>
-      <span class="badge orange">請聯絡管理員</span>
+      <button id="btnRetryAuth" class="btnMain" style="margin-bottom:12px" onclick="retryAuth()">🔄 重試</button>
+      <span class="badge orange">若持續失敗請聯絡管理員</span>
     </div>
   </div>
 </div>
@@ -471,10 +472,12 @@
   // GAS 偶爾會間歇性回 Google 雲端硬碟錯誤頁(<!DOCTYPE ...),而不是 JSON。
   // 那個 HTML 是在請求「還沒進到後端程式」之前就被擋掉 → 沒有任何寫入 → 重試是安全的。
   // 所以這裡自動重試,讓偶發的間歇失敗不會直接跳「系統異常」給使用者看。
-  async function callApi(action, body, retries = 2) {
+  async function callApi(action, body, retries) {
     // submitTask 會寫資料:只有「確定沒進到後端」(收到 HTML 錯誤頁) 才重試。
     // 網路中斷有可能是「已寫入但回應斷掉」,重試會產生重複紀錄 → 不重試。
     const isWrite = (action === "submitTask");
+    // 讀取類(checkAuth/getStations)純查詢,重試絕對安全 → 多試幾次扛過 GAS 間歇性抽風
+    if (retries == null) retries = isWrite ? 2 : 4;
     let lastErr;
 
     for (let attempt = 0; attempt <= retries; attempt++) {
@@ -497,12 +500,29 @@
         lastErr = err;
         if (isWrite && !gotHtmlPage) break; // 寫入類 + 非 HTML 錯誤 → 不重試,避免重複寫入
         if (attempt < retries) {
-          // 遞增延遲:0.8s、1.6s,給間歇狀況一點恢復時間
+          // 遞增延遲:0.8s、1.6s、2.4s、3.2s,給間歇狀況足夠恢復時間
           await new Promise(r => setTimeout(r, 800 * (attempt + 1)));
         }
       }
     }
     throw lastErr;
+  }
+
+  // 錯誤畫面的「重試」按鈕:原地重跑驗證,不用整個關掉 LIFF 重開
+  async function retryAuth() {
+    const btn = document.getElementById("btnRetryAuth");
+    if (btn) { btn.disabled = true; btn.textContent = "重試中..."; }
+    showStatus("stateLoading");
+    try {
+      // LIFF 已初始化過就只重跑驗證;沒有的話整個重來
+      if (typeof liff !== "undefined" && state.userId) {
+        await checkAuth();
+      } else {
+        await initLiff();
+      }
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = "🔄 重試"; }
+    }
   }
 
   async function checkAuth() {
