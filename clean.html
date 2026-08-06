@@ -24,7 +24,6 @@
     input::placeholder,textarea::placeholder{color:#9ca3af;opacity:1;font-weight:400}
     input::-webkit-input-placeholder,textarea::-webkit-input-placeholder{color:#9ca3af;font-weight:400}
     input::-moz-placeholder,textarea::-moz-placeholder{color:#9ca3af;opacity:1;font-weight:400}
-    /* select 在 placeholder 狀態時的灰字樣式 */
     select.is-placeholder{color:#9ca3af;font-weight:400}
     input:focus,select:focus,textarea:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.15)}
     button{cursor:pointer;font-weight:700}
@@ -350,8 +349,8 @@
   /* =========================================================
    * 部署設定
    * ========================================================= */
-  const LIFF_ID  = "2009174277-0sLqDpFL";
-  const GAS_URL  = "https://script.google.com/macros/s/AKfycbyk42RdWvnjzw8mk4V2BoKGoBr9a9g-RFRYqOlk1J7QKk-ojGsJsphamaLpzw4vA4Y/exec";
+  const LIFF_ID  = "2009174277-pjGxQYN0";
+  const GAS_URL  = "https://script.google.com/macros/s/AKfycbwWmpzmo1V2bJk3vZZYOo_JyglNuUsDwVh0PnlignaNj-LnUz6eaMxCG37Z-guwlaHh/exec";
   /* ========================================================= */
 
   /* =========================================================
@@ -369,10 +368,6 @@
     "內壢總倉"
   ];
 
-  // 除錯用:把指定 LINE UserId 放進來,只有這些人送出後會看到耗時分析
-  const DEBUG_TIMING_USER_IDS = [
-    "Ua79005da65e940cf949197b96bd7e93f"
-  ];
   /* =========================================================
    * ★★★★★ 可設定區結束 ★★★★★
    * ========================================================= */
@@ -473,13 +468,33 @@
     if (sum) sum.textContent += "(瀏覽器測試環境無法自動關閉)";
   }
 
-  async function callApi(action, body) {
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(Object.assign({ action }, body || {}))
-    });
-    return await res.json();
+  // GAS 偶爾會間歇性回 Google 雲端硬碟錯誤頁(<!DOCTYPE ...),而不是 JSON。
+  // 那個 HTML 是在請求「還沒進到後端程式」之前就被擋掉 → 沒有任何寫入 → 重試是安全的。
+  // 所以這裡自動重試,讓偶發的間歇失敗不會直接跳「系統異常」給使用者看。
+  async function callApi(action, body, retries = 2) {
+    let lastErr;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const res = await fetch(GAS_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(Object.assign({ action }, body || {}))
+        });
+        const text = await res.text();
+        // 回的不是 JSON(開頭是 < = HTML 錯誤頁)→ 視為暫時性失敗,重試
+        if (text.trim().charAt(0) === "<") {
+          throw new Error("後端暫時無回應");
+        }
+        return JSON.parse(text);
+      } catch (err) {
+        lastErr = err;
+        if (attempt < retries) {
+          // 遞增延遲:0.8s、1.6s,給間歇狀況一點恢復時間
+          await new Promise(r => setTimeout(r, 800 * (attempt + 1)));
+        }
+      }
+    }
+    throw lastErr;
   }
 
   async function checkAuth() {
@@ -519,12 +534,6 @@
     if (st === "blocked") {
       document.getElementById("msgBlocked").innerHTML =
         "你的帳號存取已被限制,<br/>請聯絡管理員處理。";
-      showStatus("stateBlocked");
-      return;
-    }
-    if (st === "disabled") {
-      document.getElementById("msgBlocked").innerHTML =
-        "此帳號目前停用,<br/>請聯絡管理員處理。";
       showStatus("stateBlocked");
       return;
     }
@@ -986,9 +995,6 @@
       district: state.pickedDistrict,
       zone: state.pickedZone
     };
-    if (DEBUG_TIMING_USER_IDS.includes(state.userId)) {
-      body.debugTiming = true;
-    }
     if (state.taskType === "swap") {
       body.batteryDepot = batteryDepot;
     }
@@ -1057,20 +1063,7 @@
         return;
       }
 
-      let summary = "已記錄 " + (res.count || 0) + " 筆資料";
-      if (res.debugTiming) {
-        const t = res.debugTiming;
-        summary += "｜分頁 " + (res.sheet || "") +
-          "｜列 " + (res.startRow || "") +
-          "｜耗時 " + t.totalMs + "ms" +
-          "｜權限 " + t.authMs + "ms" +
-          "｜場站 " + t.stationMs + "ms" +
-          "｜開表 " + t.sheetMs + "ms" +
-          "｜找列 " + t.lastRowMs + "ms" +
-          "｜寫入 " + t.setValuesMs + "ms" +
-          "｜日報 " + (t.reportMs || 0) + "ms";
-      }
-      document.getElementById("successSummary").textContent = summary;
+      document.getElementById("successSummary").textContent = "已記錄 " + (res.count || 0) + " 筆資料";
       showApp("pageSuccess");
     } catch (err) {
       btn.disabled = false;
