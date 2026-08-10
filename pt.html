@@ -624,13 +624,7 @@
       z-index: 1;
     }
 
-    /* 國徽章絕對置中於格子上方，不影響日期位置 */
-    .day-top .holiday-tag {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-    }
+    /* 國徽章顯示方式與 FT 前台一致:貼在日期數字旁,不置中蓋版 */
 
     .day-num {
       font-size: 14px;
@@ -645,8 +639,9 @@
     .day-num.holiday  { color: var(--holiday-red); }
     .day-num.outside  { color: var(--muted); font-weight: 500; }
 
-    /* 日期旁的「國」小徽章 */
+    /* 日期旁的「國」小徽章(樣式對齊 FT 前台) */
     .holiday-tag {
+      margin-left: 4px;
       padding: 1px 5px;
       font-size: 9px;
       font-weight: 800;
@@ -1384,7 +1379,8 @@
       weeklyOffMin:         2,
       maxConsecutiveDays:   5,
       crossDayRestMinHours: 11,
-      holidayMaxHours:      9
+      holidayMaxHours:      9,      // 0 = 國假不開放排班
+      allowTwoSegment:      true    // false = 本營運處不開放兩段班
     };
 
     async function loadConfigFromBackend(){
@@ -1402,6 +1398,7 @@
           if(Number.isFinite(data.ptRules.maxConsecutiveDays))   PT_RULES.maxConsecutiveDays = data.ptRules.maxConsecutiveDays;
           if(Number.isFinite(data.ptRules.crossDayRestMinHours)) PT_RULES.crossDayRestMinHours = data.ptRules.crossDayRestMinHours;
           if(Number.isFinite(data.ptRules.holidayMaxHours))      PT_RULES.holidayMaxHours = data.ptRules.holidayMaxHours;
+          if(typeof data.ptRules.allowTwoSegment === 'boolean')  PT_RULES.allowTwoSegment = data.ptRules.allowTwoSegment;
         }
       }catch(err){
         // 失敗就靜默用 fallback，不擋使用者繼續用
@@ -1418,7 +1415,16 @@
           '<li>每週（星期日至星期六）須排定至少 ' + PT_RULES.weeklyOffMin + ' 天休假。</li>' +
           '<li>兩工作日間需間隔至少 ' + PT_RULES.crossDayRestMinHours + ' 小時之休息時間。</li>' +
           '<li>至多連續出勤 ' + PT_RULES.maxConsecutiveDays + ' 日。</li>' +
-          '<li>國定假日排班將依實際人力需求做調整，且當日總工時最多 ' + PT_RULES.holidayMaxHours + ' 小時。</li>';
+          (PT_RULES.holidayMaxHours === 0
+            ? '<li>國定假日不開放排班。</li>'
+            : '<li>國定假日排班將依實際人力需求做調整，且當日總工時最多 ' + PT_RULES.holidayMaxHours + ' 小時。</li>') +
+          (PT_RULES.allowTwoSegment === false ? '<li>本營運處未開放兩段班。</li>' : '');
+      }
+      // 未開放兩段班:既有模板全部強制取消兩段並重繪(兩段班勾選框也會隱藏)
+      if (PT_RULES.allowTwoSegment === false && typeof state !== 'undefined' && Array.isArray(state.templates)){
+        state.templates.forEach(function(t){ if (t.isSplit) t.isSplit = false; });
+        if (typeof renderTemplates === 'function') renderTemplates();
+        if (typeof renderTemplatePalette === 'function') renderTemplatePalette();
       }
     }
 
@@ -1732,10 +1738,10 @@
           <div class="template-head">
             <div class="template-name">${tpl.label}</div>
             <div class="template-actions">
-              <label class="split-check">
+              ${PT_RULES.allowTwoSegment === false ? '' : `<label class="split-check">
                 <input type="checkbox" ${tpl.isSplit?'checked':''} onchange="toggleSplit('${tpl.id}',this.checked)">
                 <span>兩段班</span>
-              </label>
+              </label>`}
               ${state.templates.length===1?'':`<button class="btn-danger" onclick="removeTemplate('${tpl.id}')">刪除</button>`}
             </div>
           </div>
@@ -1767,6 +1773,7 @@
 
     function toggleSplit(id, checked){
       if (state.uiLocked) return;
+      if (PT_RULES.allowTwoSegment === false && checked) return;   // 未開放兩段班
       const tpl = state.templates.find(t=>t.id===id);
       if (!tpl) return;
       tpl.isSplit = checked;
@@ -1917,9 +1924,9 @@
           const td = document.createElement('td');
           let cls = 'day-cell';
           if (c.outside) cls += ' outside';
-          if (!c.outside && weekday===0) cls += ' sun-bg';
-          if (!c.outside && weekday===6) cls += ' sat-bg';
-          if (!c.outside && isHoliday)   cls += ' holiday-bg';
+          else if (isHoliday)   cls += ' holiday-bg';   // 與 FT 一致:國假優先於週末底色
+          else if (weekday===0) cls += ' sun-bg';
+          else if (weekday===6) cls += ' sat-bg';
           if (!c.outside && isInvalid)   cls += ' invalid';
           td.className = cls;
           if (assigned && assigned!=='OFF' && !isInvalid){
@@ -1992,9 +1999,9 @@
           const td = document.createElement('td');
           let cls = 'day-cell';
           if (c.outside) cls += ' outside';
-          if (!c.outside && weekday===0) cls += ' sun-bg';
-          if (!c.outside && weekday===6) cls += ' sat-bg';
-          if (!c.outside && isHoliday)   cls += ' holiday-bg';
+          else if (isHoliday)   cls += ' holiday-bg';   // 與 FT 一致:國假優先於週末底色
+          else if (weekday===0) cls += ' sun-bg';
+          else if (weekday===6) cls += ' sat-bg';
           td.className = cls;
           td.style.cursor = 'default';
           let numCls = 'day-num';
@@ -2013,6 +2020,11 @@
     function assignDate(dateKey){
       if (state.uiLocked) return;
       if (!state.selectedTemplateId) return;
+      // 國假不開放排班(上限=0):點國定假日直接擋(排「休」不擋)
+      if (PT_RULES.holidayMaxHours === 0 && HOLIDAYS_2026.has(dateKey) && state.selectedTemplateId !== 'OFF'){
+        alert('國定假日不開放排班,此日僅能排休。');
+        return;
+      }
       state.assignedDays[dateKey] = state.selectedTemplateId;
       state.step3InvalidDates = new Set();
       hideStep3Errors(); hideStep3Success(); renderStep3Calendar();
