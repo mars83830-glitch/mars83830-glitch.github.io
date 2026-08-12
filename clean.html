@@ -282,6 +282,8 @@
           <button class="taskBtn pump"  onclick="goTask('pump')"><span class="ic">🚲</span>打氣作業</button>
           <button class="taskBtn clean" onclick="goTask('clean')"><span class="ic">🧹</span>清潔作業</button>
         </div>
+        <!-- 版本標記:平常就看得到,不用等出錯才知道跑的是哪一版 -->
+        <div id="menuVersion" style="margin-top:14px;text-align:center;font-size:11px;color:#c3c8d0"></div>
       </div>
     </div>
 
@@ -481,6 +483,8 @@
   async function initLiff() {
     renderBatteryDepots();
     checkForUpdate(); // 背景檢查新版,不等它、不擋登入流程
+    const mv = document.getElementById("menuVersion");
+    if (mv) mv.textContent = "版本 " + APP_VERSION + "ㆍ後端…" + String(GAS_URL).slice(-12, -5);
     showStatus("stateLoading");
     try {
       await liff.init({ liffId: LIFF_ID });
