@@ -358,7 +358,7 @@
    * 部署設定
    * ========================================================= */
   // 版本標記:每次改前端就把日期往上加,錯誤畫面會顯示,一看截圖就知道對方跑的是哪一版
-  const APP_VERSION = "2026-08-07a";
+  const APP_VERSION = "2026-08-12a";
   const LIFF_ID  = "2009174277-pjGxQYN0";
   const GAS_URL  = "https://script.google.com/macros/s/AKfycby3Jv-fbr1SPP6rajHvgkXPezET5qFvHqkUEq-ntcQ6aXZDDAe9Zwdp5YCmP_TwS3Ab/exec";
   /* ========================================================= */
@@ -520,18 +520,25 @@
     // submitTask 會寫資料:只有「確定沒進到後端」(收到 HTML 錯誤頁) 才重試。
     // 網路中斷有可能是「已寫入但回應斷掉」,重試會產生重複紀錄 → 不重試。
     const isWrite = (action === "submitTask");
-    // 讀取類(checkAuth/getStations)純查詢,重試絕對安全 → 多試幾次扛過 GAS 間歇性抽風
-    if (retries == null) retries = isWrite ? 2 : 4;
+    // 讀取類(checkAuth/getStations)純查詢,重試安全
+    if (retries == null) retries = 2;
+    // ★ 每次嘗試都要有硬性逾時 ★
+    // 沒有逾時的話,請求「卡住」時會一直等,再乘上重試次數 → 使用者卡在載入畫面好幾分鐘。
+    const TIMEOUT_MS = isWrite ? 15000 : 10000;
     let lastErr;
 
     for (let attempt = 0; attempt <= retries; attempt++) {
       let gotHtmlPage = false;
+      const ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+      const timer = ctrl ? setTimeout(() => ctrl.abort(), TIMEOUT_MS) : null;
       try {
-        const res = await fetch(GAS_URL, {
+        const opt = {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(Object.assign({ action }, body || {}))
-        });
+        };
+        if (ctrl) opt.signal = ctrl.signal;
+        const res = await fetch(GAS_URL, opt);
         const text = await res.text();
         // 回的不是 JSON(開頭是 < = Google 的 HTML 錯誤頁)
         // → 請求還沒進到後端程式就被擋掉,沒有任何寫入,重試安全
@@ -544,9 +551,11 @@
         lastErr = err;
         if (isWrite && !gotHtmlPage) break; // 寫入類 + 非 HTML 錯誤 → 不重試,避免重複寫入
         if (attempt < retries) {
-          // 遞增延遲:0.8s、1.6s、2.4s、3.2s,給間歇狀況足夠恢復時間
-          await new Promise(r => setTimeout(r, 800 * (attempt + 1)));
+          // 遞增延遲:0.6s、1.2s,給間歇狀況一點恢復時間
+          await new Promise(r => setTimeout(r, 600 * (attempt + 1)));
         }
+      } finally {
+        if (timer) clearTimeout(timer);
       }
     }
     throw lastErr;
