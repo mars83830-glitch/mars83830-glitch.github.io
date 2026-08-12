@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <!-- ★★ 區域部署設定:每區必改 <title> 的營運處名稱 ★★ -->
-  <title>桃園營運處｜FT 排假</title>
+  <title>新竹營運處｜FT 排假</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1151,8 +1151,8 @@
        ║  GAS_URL:該區後台 Web App 網址(…/exec)               ║
        ║  另:<title> 的「營運處名稱」也要改                      ║
        ╚═══════════════════════════════════════════════════════╝ */
-    var LIFF_ID = '2009174277-wCfVKJE3';
-    var GAS_URL = 'https://script.google.com/macros/s/AKfycbzRvEWfbSu8HJG47WueuPBDSTbKkt7IqN-NZELmq5FuR4cc9_uT-q9MtzoYzSsOdOM/exec';
+    var LIFF_ID = '2011047513-FlzTudqJ';
+    var GAS_URL = 'https://script.google.com/macros/s/AKfycbxRGUt3z_OnmYmf9sg8bzO6G4LkBw3jYH4ZcnIsrWu7_uPoek3iUGSVbhcp4RUgF_2i4w/exec';
     /* ★★★ 區域部署設定結束 ★★★ */
 
     // ── 設定（單一來源：後台 CONFIG）──────────────────
@@ -1171,11 +1171,35 @@
       label: '選休'
     };
 
+    // 呼叫後端(LINE 內建瀏覽器會快取回應,且 GAS 偶發回 HTML 而非 JSON)
+    //   對策:每次帶時間戳、關快取、拿到非 JSON 就自動重試(最多 3 次)
+    async function gasFetch_(url, payload) {
+      var lastErr = '';
+      for (var i = 0; i < 3; i++) {
+        try {
+          var opt = { cache: 'no-store' };
+          if (payload) {
+            opt.method = 'POST';
+            opt.headers = { 'Content-Type': 'text/plain;charset=utf-8' };
+            opt.body = JSON.stringify(payload);
+          }
+          var sep = url.indexOf('?') > -1 ? '&' : '?';
+          var res = await fetch(url + sep + '_t=' + Date.now(), opt);
+          var text = await res.text();
+          try { return JSON.parse(text); }
+          catch (_) { lastErr = '後端回應非 JSON(第 ' + (i + 1) + ' 次)'; }
+        } catch (e) {
+          lastErr = (e && e.message) ? e.message : String(e);
+        }
+        await new Promise(function (r) { setTimeout(r, 800 * (i + 1)); });
+      }
+      throw new Error('連線後端失敗:' + lastErr);
+    }
+
     async function loadConfigFromBackend(){
       try{
         var url = GAS_URL + '?action=getConfig';
-        var res = await fetch(url, { method: 'GET' });
-        var data = await res.json();
+        var data = await gasFetch_(url, null);
         if(!data || !data.ok) return;
 
         if(Array.isArray(data.holidays)){
@@ -1611,8 +1635,7 @@
       showGlobalLoading(true, '查詢中，請稍候...');
       try {
         var url = GAS_URL + '?action=getFtLeaves&uid=' + encodeURIComponent(state.uid) + '&idToken=' + encodeURIComponent(state.idToken || '') + '&month=' + encodeURIComponent(state.targetMonth);
-        var res = await fetch(url);
-        var data = await res.json();
+        var data = await gasFetch_(url, null);
         state.queriedLoaded = true;
         state.queriedFound = !!(data && data.ok && data.found);
         state.queriedLeaves = (data && Array.isArray(data.leaves)) ? data.leaves : [];
@@ -1725,8 +1748,7 @@
         state.validateBusy = true;
         var leaves = getMonthLeaves();
         var payload = { action: 'validateFt', uid: state.uid, idToken: state.idToken, displayName: state.displayName, month: state.targetMonth, leaves: leaves };
-        var res = await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
-        var data = await res.json();
+        var data = await gasFetch_(GAS_URL, payload);
         state.validateBusy = false;
         return data;
       } catch(err){
@@ -1783,8 +1805,7 @@
 
         var leaves = getMonthLeaves();
         var payload = { action: 'submitFt', uid: state.uid, idToken: state.idToken, displayName: state.displayName, month: state.targetMonth, leaves: leaves };
-        var res = await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
-        var data = await res.json();
+        var data = await gasFetch_(GAS_URL, payload);
 
         if(!data || !data.ok){
           state.submitBusy = false;
