@@ -358,7 +358,7 @@
    * 部署設定
    * ========================================================= */
   // 版本標記:每次改前端就把日期往上加,錯誤畫面會顯示,一看截圖就知道對方跑的是哪一版
-  const APP_VERSION = "2026-08-12a";
+  const APP_VERSION = "2026-08-12b";
   const LIFF_ID  = "2009174277-pjGxQYN0";
   const GAS_URL  = "https://script.google.com/macros/s/AKfycby3Jv-fbr1SPP6rajHvgkXPezET5qFvHqkUEq-ntcQ6aXZDDAe9Zwdp5YCmP_TwS3Ab/exec";
   /* ========================================================= */
@@ -407,6 +407,30 @@
   };
 
   const TASK_LABEL = { swap: "換電作業", pump: "打氣作業", clean: "清潔作業" };
+
+  // ===== 場站清單本地保存 =====
+  // GAS 回應時間非常不穩(實測 1~35 秒),每次都等它會卡住使用者。
+  // 場站資料很少變動 → 存在手機本地,開啟就立刻可用,再於背景更新。
+  // 就算 GAS 完全連不上,只要以前成功抓過一次就還能正常作業。
+  const STATION_LS_KEY = "task_stations_cache_v1";
+  const STATION_LS_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 本地資料最多沿用 7 天
+
+  function saveStationsToLocal(list) {
+    try {
+      localStorage.setItem(STATION_LS_KEY, JSON.stringify({ t: Date.now(), list: list }));
+    } catch (_) { /* 無痕模式等情境會失敗,忽略 */ }
+  }
+
+  function loadStationsFromLocal() {
+    try {
+      const raw = localStorage.getItem(STATION_LS_KEY);
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      if (!obj || !Array.isArray(obj.list) || obj.list.length === 0) return null;
+      if (Date.now() - (obj.t || 0) > STATION_LS_MAX_AGE) return null;
+      return obj.list;
+    } catch (_) { return null; }
+  }
 
   // ===== 自動偵測新版(防 LINE 內建瀏覽器快取舊版) =====
   // 抓一份「不走快取」的自己,比對原始碼裡的 APP_VERSION。
@@ -483,6 +507,14 @@
   async function initLiff() {
     renderBatteryDepots();
     checkForUpdate(); // 背景檢查新版,不等它、不擋登入流程
+
+    // 先把上次存在手機裡的場站清單載進來 → 就算 GAS 慢或掛掉也能立刻作業
+    const cachedStations = loadStationsFromLocal();
+    if (cachedStations) {
+      state.stations = cachedStations;
+      // 不設 stationsLoadedAt,讓它仍會在背景去抓最新的
+    }
+
     const mv = document.getElementById("menuVersion");
     if (mv) mv.textContent = "版本 " + APP_VERSION + "ㆍ後端…" + String(GAS_URL).slice(-12, -5);
     showStatus("stateLoading");
@@ -524,7 +556,8 @@
     if (retries == null) retries = 2;
     // ★ 每次嘗試都要有硬性逾時 ★
     // 沒有逾時的話,請求「卡住」時會一直等,再乘上重試次數 → 使用者卡在載入畫面好幾分鐘。
-    const TIMEOUT_MS = isWrite ? 15000 : 10000;
+    // GAS 回應時間實測 1~35 秒,極不穩定 → 讀取類給寬鬆逾時(反正場站有本地保存,不會卡使用者)
+    const TIMEOUT_MS = isWrite ? 20000 : 25000;
     let lastErr;
 
     for (let attempt = 0; attempt <= retries; attempt++) {
@@ -693,15 +726,19 @@
     renderCarArea();
     showApp("pageForm");
 
-    // 場站清單通常已經在登入後背景抓好了;若還在抓就 await,過期就重抓
+    // 手上有場站資料(本地保存或先前抓到的)→ 直接可用,更新丟背景做,不讓使用者等
     const stationInput = document.getElementById("fStation");
-    if (stationsPromise || !isStationsFresh_()) {
-      stationInput.disabled = true;
-      try {
-        await refreshStations();
-      } finally {
-        stationInput.disabled = false;
-      }
+    if (state.stations.length > 0) {
+      if (!isStationsFresh_()) refreshStations({ background: true });
+      return;
+    }
+
+    // 完全沒有資料(第一次使用)才需要等
+    stationInput.disabled = true;
+    try {
+      await refreshStations();
+    } finally {
+      stationInput.disabled = false;
     }
   }
 
@@ -723,20 +760,21 @@
 
     stationsPromise = callApi("getStations", {})
       .then(r => {
-        if (r.ok) {
-          state.stations = r.stations || [];
+        if (r.ok && (r.stations || []).length > 0) {
+          state.stations = r.stations;
           state.stationsLoadedAt = Date.now();
+          saveStationsToLocal(state.stations); // 存到手機本地,下次可立即使用
           return;
         }
-        // 背景失敗:不彈窗(使用者可能還在主選單),等 goTask 時會自動重試並彈窗
         if (isBackground) return;
-        const tail = state.stations.length ? "將沿用上次資料。" : "請重新點選作業。";
-        alert("場站清單載入失敗," + tail + "\n" + (r.message || ""));
+        // 手上已有(本地或先前抓到的)資料 → 不打擾使用者,直接沿用
+        if (state.stations.length) return;
+        alert("場站清單載入失敗,請重新點選作業。\n" + (r.message || ""));
       })
       .catch(_ => {
         if (isBackground) return;
-        const tail = state.stations.length ? "將沿用上次資料。" : "請重新點選作業。";
-        alert("場站清單載入失敗(網路錯誤)," + tail);
+        if (state.stations.length) return; // 有舊資料就靜靜沿用,不彈窗
+        alert("場站清單載入失敗(網路不穩),請按「返回」再重新點選作業。");
       })
       .finally(() => {
         stationsPromise = null;
