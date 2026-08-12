@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <!-- ★★ 區域部署設定:每區必改 <title> 的營運處名稱 ★★ -->
-  <title>桃園營運處｜PT 排班</title>
+  <title>新竹營運處｜PT 排班</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1366,8 +1366,8 @@
        ║  GAS_WEB_APP_URL:該區後台 Web App 網址(…/exec)       ║
        ║  另:<title> 的「營運處名稱」也要改                      ║
        ╚═══════════════════════════════════════════════════════╝ */
-    const LIFF_ID        = '2009174277-yJdVzIb0';
-    const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzRvEWfbSu8HJG47WueuPBDSTbKkt7IqN-NZELmq5FuR4cc9_uT-q9MtzoYzSsOdOM/exec';
+    const LIFF_ID        = '2011047513-bh2ZwUy4';
+    const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxRGUt3z_OnmYmf9sg8bzO6G4LkBw3jYH4ZcnIsrWu7_uPoek3iUGSVbhcp4RUgF_2i4w/exec';
     /* ★★★ 區域部署設定結束 ★★★ */
 
     // 設定（單一來源：後台 CONFIG）。
@@ -2152,12 +2152,27 @@
       }).filter(Boolean);
     }
 
+    // 呼叫後端(LINE 內建瀏覽器會快取回應,且 GAS 偶發回 HTML 而非 JSON)
+    //   對策:每次帶時間戳、關快取、拿到非 JSON 就自動重試(最多 3 次)
     async function postJsonToGas(payload){
-      const res  = await fetch(GAS_WEB_APP_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(payload) });
-      const text = await res.text();
-      let data = {};
-      try { data = JSON.parse(text); } catch(_){}
-      return { data };
+      let lastErr = '';
+      for (let i = 0; i < 3; i++) {
+        try {
+          const res = await fetch(GAS_WEB_APP_URL + '?_t=' + Date.now(), {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload),
+            cache: 'no-store'
+          });
+          const text = await res.text();
+          try { return { data: JSON.parse(text) }; }
+          catch(_) { lastErr = '後端回應非 JSON(第 ' + (i + 1) + ' 次)'; }
+        } catch (e) {
+          lastErr = (e && e.message) ? e.message : String(e);
+        }
+        await new Promise(function (r) { setTimeout(r, 800 * (i + 1)); });
+      }
+      return { data: { ok: false, valid: false, message: '連線後端失敗:' + lastErr } };
     }
 
     function applyBackendValidationResult(data){
