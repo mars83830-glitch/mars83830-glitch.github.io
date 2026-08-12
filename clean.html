@@ -406,6 +406,24 @@
 
   const TASK_LABEL = { swap: "換電作業", pump: "打氣作業", clean: "清潔作業" };
 
+  // ===== 自動偵測新版(防 LINE 內建瀏覽器快取舊版) =====
+  // 抓一份「不走快取」的自己,比對原始碼裡的 APP_VERSION。
+  // 不一樣 → 代表 GitHub 上已有新版但這支手機用的是快取 → 用帶版號的網址重載(換網址必拿新版)。
+  // 只在啟動階段檢查,避免使用者填到一半被重整。
+  async function checkForUpdate() {
+    try {
+      const res = await fetch(location.pathname + "?_nocache=" + Date.now(), { cache: "no-store" });
+      if (!res.ok) return;
+      const html = await res.text();
+      const m = html.match(/APP_VERSION\s*=\s*"([^"]+)"/);
+      if (!m) return;
+      const remote = m[1];
+      if (remote && remote !== APP_VERSION) {
+        location.replace(location.pathname + "?v=" + encodeURIComponent(remote));
+      }
+    } catch (_) { /* 抓不到就算了,不影響正常使用 */ }
+  }
+
   // 錯誤畫面底部顯示診斷資訊(版本/時間/後端尾碼),同仁截圖就能判斷是不是跑舊版
   function setErrDiag(extra) {
     const el = document.getElementById("errDiag");
@@ -462,6 +480,7 @@
 
   async function initLiff() {
     renderBatteryDepots();
+    checkForUpdate(); // 背景檢查新版,不等它、不擋登入流程
     showStatus("stateLoading");
     try {
       await liff.init({ liffId: LIFF_ID });
