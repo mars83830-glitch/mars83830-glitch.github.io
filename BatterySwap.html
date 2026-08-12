@@ -3,6 +3,10 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"/>
+  <!-- 盡量避免 LINE 內建瀏覽器快取舊版前端(舊版可能還指向舊的 GAS URL) -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+  <meta http-equiv="Pragma" content="no-cache"/>
+  <meta http-equiv="Expires" content="0"/>
   <title>桃園營運處｜作業回報</title>
   <style>
     *{box-sizing:border-box}
@@ -251,7 +255,9 @@
       <div class="status-title" style="color:#92400e">系統異常</div>
       <div class="status-desc" id="msgError">系統設定有問題,<br/>請聯絡管理員確認。</div>
       <div class="divider"></div>
-      <span class="badge orange">請聯絡管理員</span>
+      <button id="btnRetryAuth" class="btnMain" style="margin-bottom:12px" onclick="retryAuth()">🔄 重試</button>
+      <span class="badge orange">若持續失敗請聯絡管理員</span>
+      <div id="errDiag" style="margin-top:12px;font-size:11px;color:#9ca3af;line-height:1.5"></div>
     </div>
   </div>
 </div>
@@ -276,6 +282,8 @@
           <button class="taskBtn pump"  onclick="goTask('pump')"><span class="ic">🚲</span>打氣作業</button>
           <button class="taskBtn clean" onclick="goTask('clean')"><span class="ic">🧹</span>清潔作業</button>
         </div>
+        <!-- 版本標記:平常就看得到,不用等出錯才知道跑的是哪一版 -->
+        <div id="menuVersion" style="margin-top:14px;text-align:center;font-size:11px;color:#c3c8d0"></div>
       </div>
     </div>
 
@@ -349,8 +357,10 @@
   /* =========================================================
    * 部署設定
    * ========================================================= */
+  // 版本標記:每次改前端就把日期往上加,錯誤畫面會顯示,一看截圖就知道對方跑的是哪一版
+  const APP_VERSION = "2026-08-12a";
   const LIFF_ID  = "2009174277-pjGxQYN0";
-  const GAS_URL  = "https://script.google.com/macros/s/AKfycbwWmpzmo1V2bJk3vZZYOo_JyglNuUsDwVh0PnlignaNj-LnUz6eaMxCG37Z-guwlaHh/exec";
+  const GAS_URL  = "https://script.google.com/macros/s/AKfycby3Jv-fbr1SPP6rajHvgkXPezET5qFvHqkUEq-ntcQ6aXZDDAe9Zwdp5YCmP_TwS3Ab/exec";
   /* ========================================================= */
 
   /* =========================================================
@@ -398,12 +408,44 @@
 
   const TASK_LABEL = { swap: "換電作業", pump: "打氣作業", clean: "清潔作業" };
 
+  // ===== 自動偵測新版(防 LINE 內建瀏覽器快取舊版) =====
+  // 抓一份「不走快取」的自己,比對原始碼裡的 APP_VERSION。
+  // 不一樣 → 代表 GitHub 上已有新版但這支手機用的是快取 → 用帶版號的網址重載(換網址必拿新版)。
+  // 只在啟動階段檢查,避免使用者填到一半被重整。
+  async function checkForUpdate() {
+    try {
+      const res = await fetch(location.pathname + "?_nocache=" + Date.now(), { cache: "no-store" });
+      if (!res.ok) return;
+      const html = await res.text();
+      const m = html.match(/APP_VERSION\s*=\s*"([^"]+)"/);
+      if (!m) return;
+      const remote = m[1];
+      if (remote && remote !== APP_VERSION) {
+        location.replace(location.pathname + "?v=" + encodeURIComponent(remote));
+      }
+    } catch (_) { /* 抓不到就算了,不影響正常使用 */ }
+  }
+
+  // 錯誤畫面底部顯示診斷資訊(版本/時間/後端尾碼),同仁截圖就能判斷是不是跑舊版
+  function setErrDiag(extra) {
+    const el = document.getElementById("errDiag");
+    if (!el) return;
+    const t = new Date();
+    const hh = String(t.getHours()).padStart(2, "0");
+    const mm = String(t.getMinutes()).padStart(2, "0");
+    const ss = String(t.getSeconds()).padStart(2, "0");
+    const tail = String(GAS_URL).slice(-12, -5); // 後端部署尾碼,可辨識新舊
+    el.textContent = "版本 " + APP_VERSION + "ㆍ" + hh + ":" + mm + ":" + ss +
+      "ㆍ後端…" + tail + (extra ? "ㆍ" + extra : "");
+  }
+
   function showStatus(name) {
     document.getElementById("statusPage").classList.remove("hidden");
     document.getElementById("appPage").classList.add("hidden");
     ["stateLoading","statePending","stateBlocked","stateError"].forEach(id => {
       document.getElementById(id).classList.toggle("hidden", id !== name);
     });
+    if (name === "stateError") setErrDiag();
     document.body.style.background = "#eef1f5";
   }
 
@@ -440,6 +482,9 @@
 
   async function initLiff() {
     renderBatteryDepots();
+    checkForUpdate(); // 背景檢查新版,不等它、不擋登入流程
+    const mv = document.getElementById("menuVersion");
+    if (mv) mv.textContent = "版本 " + APP_VERSION + "ㆍ後端…" + String(GAS_URL).slice(-12, -5);
     showStatus("stateLoading");
     try {
       await liff.init({ liffId: LIFF_ID });
@@ -468,13 +513,69 @@
     if (sum) sum.textContent += "(瀏覽器測試環境無法自動關閉)";
   }
 
-  async function callApi(action, body) {
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(Object.assign({ action }, body || {}))
-    });
-    return await res.json();
+  // GAS 偶爾會間歇性回 Google 雲端硬碟錯誤頁(<!DOCTYPE ...),而不是 JSON。
+  // 那個 HTML 是在請求「還沒進到後端程式」之前就被擋掉 → 沒有任何寫入 → 重試是安全的。
+  // 所以這裡自動重試,讓偶發的間歇失敗不會直接跳「系統異常」給使用者看。
+  async function callApi(action, body, retries) {
+    // submitTask 會寫資料:只有「確定沒進到後端」(收到 HTML 錯誤頁) 才重試。
+    // 網路中斷有可能是「已寫入但回應斷掉」,重試會產生重複紀錄 → 不重試。
+    const isWrite = (action === "submitTask");
+    // 讀取類(checkAuth/getStations)純查詢,重試安全
+    if (retries == null) retries = 2;
+    // ★ 每次嘗試都要有硬性逾時 ★
+    // 沒有逾時的話,請求「卡住」時會一直等,再乘上重試次數 → 使用者卡在載入畫面好幾分鐘。
+    const TIMEOUT_MS = isWrite ? 15000 : 10000;
+    let lastErr;
+
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      let gotHtmlPage = false;
+      const ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+      const timer = ctrl ? setTimeout(() => ctrl.abort(), TIMEOUT_MS) : null;
+      try {
+        const opt = {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(Object.assign({ action }, body || {}))
+        };
+        if (ctrl) opt.signal = ctrl.signal;
+        const res = await fetch(GAS_URL, opt);
+        const text = await res.text();
+        // 回的不是 JSON(開頭是 < = Google 的 HTML 錯誤頁)
+        // → 請求還沒進到後端程式就被擋掉,沒有任何寫入,重試安全
+        if (text.trim().charAt(0) === "<") {
+          gotHtmlPage = true;
+          throw new Error("後端暫時無回應");
+        }
+        return JSON.parse(text);
+      } catch (err) {
+        lastErr = err;
+        if (isWrite && !gotHtmlPage) break; // 寫入類 + 非 HTML 錯誤 → 不重試,避免重複寫入
+        if (attempt < retries) {
+          // 遞增延遲:0.6s、1.2s,給間歇狀況一點恢復時間
+          await new Promise(r => setTimeout(r, 600 * (attempt + 1)));
+        }
+      } finally {
+        if (timer) clearTimeout(timer);
+      }
+    }
+    throw lastErr;
+  }
+
+  // 錯誤畫面的「重試」按鈕:原地重跑驗證,不用整個關掉 LIFF 重開
+  async function retryAuth() {
+    const btn = document.getElementById("btnRetryAuth");
+    if (btn) { btn.disabled = true; btn.textContent = "重試中..."; }
+    showStatus("stateLoading");
+    try {
+      // LIFF 已初始化過就只重跑驗證;沒有的話整個重來
+      if (typeof liff !== "undefined" && state.userId) {
+        await checkAuth();
+      } else {
+        await initLiff();
+      }
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = "🔄 重試"; }
+    }
   }
 
   async function checkAuth() {
@@ -517,15 +618,29 @@
       showStatus("stateBlocked");
       return;
     }
+    if (st === "disabled") {
+      document.getElementById("msgBlocked").innerHTML =
+        "此帳號目前停用,<br/>請聯絡管理員處理。";
+      showStatus("stateBlocked");
+      return;
+    }
     if (st === "config_error") {
       document.getElementById("msgError").innerHTML =
         "尚未設定權限名單,<br/>請聯絡管理員確認。";
       showStatus("stateError");
       return;
     }
+    if (st === "service_error") {
+      document.getElementById("msgError").innerHTML =
+        "驗證服務暫時無法使用,<br/>請稍後重新開啟再試。";
+      showStatus("stateError");
+      return;
+    }
 
+    // 落到這裡代表後端回了預期外的狀態 → 把狀態碼一併顯示,方便管理員排查
     document.getElementById("msgError").innerHTML =
-      escapeHtml(res.message || "發生未知錯誤,請重新開啟後再試。");
+      escapeHtml(res.message || "帳號狀態異常,請聯絡管理員。") +
+      "<br/><br/>(狀態:" + escapeHtml(st || "無") + ")";
     showStatus("stateError");
   }
 
